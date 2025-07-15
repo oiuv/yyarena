@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
   if (!decodedToken || typeof decodedToken === 'string' || decodedToken.role !== 'organizer') {
     return NextResponse.json({ message: '无权限' }, { status: 403 });
   }
-  const organizerId = decodedToken.userId;
+  const organizerId = decodedToken.id;
 
   let wechatQrCodeUrl = null;
   if (wechatQrCodeFile) {

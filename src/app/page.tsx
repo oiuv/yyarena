@@ -93,7 +93,6 @@ export default function Home() {
     setIsLoggedIn(false);
     setUserRole(null);
     setCharacterName(null);
-    alert('已退出登录。');
     window.location.reload();
   };
 
@@ -105,6 +104,13 @@ export default function Home() {
     const now = new Date();
     const startTime = new Date(tournament.start_time);
     const registrationDeadline = new Date(tournament.registration_deadline);
+
+    if (now > registrationDeadline) {
+      if ((tournament.registeredPlayersCount || 0) < tournament.min_players) {
+        return '活动组织失败';
+      }
+    }
+
     if (now > startTime) return '进行中';
     if (now > registrationDeadline) return '报名已结束';
     return '报名中';

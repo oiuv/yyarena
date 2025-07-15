@@ -42,8 +42,7 @@ export default function Login() {
       const data = await res.json();
 
       if (res.ok) {
-        alert('Login successful!');
-        window.location.href = '/'; // Force full page reload
+        router.push('/');
       } else {
         setError(data.message || 'Login failed');
       }
