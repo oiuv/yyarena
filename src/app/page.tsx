@@ -2,24 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { jwtDecode } from 'jwt-decode';
 
-// Helper to get token from cookie
-function getToken() {
-  const name = 'token=';
-  const decodedCookie = decodeURIComponent(document.cookie);
-  const ca = decodedCookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) === ' ') {
-      c = c.substring(1);
-    }
-    if (c.indexOf(name) === 0) {
-      return c.substring(name.length, c.length);
-    }
-  }
-  return '';
-}
+
 
 export default function Home() {
   // State variables
@@ -43,25 +27,10 @@ export default function Home() {
   const [participationPrize, setParticipationPrize] = useState<{ prizeId: string; quantity: number }>({ prizeId: '', quantity: 1 });
   const [customPrizes, setCustomPrizes] = useState<{ customName: string; rangeStart: number; rangeEnd: number; prizeId: string; quantity: number }[]>([]);
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [characterName, setCharacterName] = useState<string | null>(null);
 
   // Effect for initial data fetching and authentication check
   useEffect(() => {
-    const token = getToken();
-    if (token) {
-      try {
-        const decodedToken: any = jwtDecode(token);
-        setIsLoggedIn(true);
-        setUserRole(decodedToken.role);
-        setCharacterName(decodedToken.character_name || '用户'); // Fallback name
-      } catch (error) {
-        console.error('Error decoding token:', error);
-        setIsLoggedIn(false);
-      }
-    }
-
     const fetchData = async () => {
       try {
         const [tournamentsRes, prizesRes] = await Promise.all([
@@ -86,14 +55,6 @@ export default function Home() {
 
   const handleRemoveCustomPrize = (index: number) => {
     setCustomPrizes(customPrizes.filter((_, i) => i !== index));
-  };
-
-  const handleLogout = () => {
-    document.cookie = 'token=; Max-Age=0; path=/';
-    setIsLoggedIn(false);
-    setUserRole(null);
-    setCharacterName(null);
-    window.location.reload();
   };
 
   const getTournamentStatus = (tournament: any) => {
@@ -167,24 +128,6 @@ export default function Home() {
   // Main component render
   return (
     <main className="flex min-h-screen flex-col items-center p-24 bg-gray-900 text-white">
-      <nav className="w-full flex justify-end gap-4 mb-8">
-        {isLoggedIn ? (
-          <>
-            <span className="text-gray-300">欢迎, {characterName}</span>
-            <button onClick={handleLogout} className="text-blue-400 hover:underline">退出登录</button>
-          </>
-        ) : (
-          <>
-            <Link href="/register" className="text-blue-400 hover:underline">注册</Link>
-            <Link href="/login" className="text-blue-400 hover:underline">登录</Link>
-          </>
-        )}
-        <Link href="/tournamentRegister" className="text-blue-400 hover:underline">报名比赛</Link>
-        {userRole === 'organizer' && (
-          <Link href="/prizes/manage" className="text-blue-400 hover:underline">管理奖品</Link>
-        )}
-      </nav>
-
       <h1 className="text-4xl font-bold mb-8">比赛列表</h1>
 
       {/* Organizer's Create Tournament Form */}

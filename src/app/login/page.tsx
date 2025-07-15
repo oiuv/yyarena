@@ -42,7 +42,7 @@ export default function Login() {
       const data = await res.json();
 
       if (res.ok) {
-        router.push('/');
+        window.location.href = '/'; // Force full page reload to update layout state
       } else {
         setError(data.message || 'Login failed');
       }

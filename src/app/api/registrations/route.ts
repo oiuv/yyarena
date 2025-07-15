@@ -13,12 +13,15 @@ export async function POST(request: NextRequest) {
   const token = authHeader.split(' ')[1];
   const decodedToken = verifyToken(token);
 
-  if (!decodedToken || typeof decodedToken === 'string' || decodedToken.role !== 'player') {
-    return NextResponse.json({ message: '只有玩家才能报名' }, { status: 403 });
+  if (!decodedToken || typeof decodedToken === 'string' || (decodedToken.role !== 'player' && decodedToken.role !== 'organizer')) {
+    return NextResponse.json({ message: '无权限' }, { status: 403 });
   }
   const playerId = decodedToken.id;
   const characterName = decodedToken.character_name;
   const characterId = decodedToken.game_id; // Assuming game_id is the character_id
+  const currentUserRole = decodedToken.role;
+
+  console.log(`Attempting to register player ID: ${playerId}, Character Name: ${characterName}, Game ID: ${characterId} for Tournament ID: ${tournamentId}`);
 
   if (!tournamentId) {
     return NextResponse.json({ message: '缺少比赛ID' }, { status: 400 });
@@ -37,6 +40,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: '比赛不存在' }, { status: 404 });
     }
 
+    // Prevent organizer from registering for their own tournament
+    if (currentUserRole === 'organizer' && tournament.organizer_id === playerId) {
+      return NextResponse.json({ message: '您不能报名自己组织的比赛' }, { status: 400 });
+    }
+
     const now = new Date();
     const registrationDeadline = new Date(tournament.registration_deadline);
     if (now > registrationDeadline) {
@@ -49,8 +57,8 @@ export async function POST(request: NextRequest) {
     // 3. Insert Registration
     const result: any = await new Promise((resolve, reject) => {
       db.run(
-        'INSERT INTO Registrations (tournament_id, player_id, character_name, character_id) VALUES (?, ?, ?, ?)',
-        [tournamentId, playerId, characterName, characterId],
+        'INSERT INTO Registrations (tournament_id, player_id, character_name, character_id, registration_time, status) VALUES (?, ?, ?, ?, ?, ?)',
+        [tournamentId, playerId, characterName, characterId, new Date().toISOString(), 'active'],
         function (err) {
           if (err) {
             if (err.message.includes('UNIQUE constraint failed')) {

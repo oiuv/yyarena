@@ -77,6 +77,8 @@ db.serialize(() => {
       player_id INTEGER NOT NULL,
       character_name TEXT NOT NULL,
       character_id TEXT NOT NULL,
+      registration_time TEXT, -- Added registration_time
+      status TEXT NOT NULL CHECK(status IN ('active', 'withdrawn', 'forfeited')) DEFAULT 'active',
       FOREIGN KEY (tournament_id) REFERENCES Tournaments(id),
       FOREIGN KEY (player_id) REFERENCES Users(id),
       UNIQUE (tournament_id, player_id)

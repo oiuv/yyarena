@@ -26,6 +26,20 @@ export default function TournamentRegisterPage() {
   const [message, setMessage] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null);
 
+  const fetchTournaments = async () => {
+    try {
+      const res = await fetch('/api/tournaments');
+      const data = await res.json();
+      if (res.ok) {
+        setTournaments(data);
+      } else {
+        setMessage(data.message || '获取比赛列表失败。');
+      }
+    } catch (err) {
+      setMessage('获取比赛列表时发生网络错误。');
+    }
+  };
+
   useEffect(() => {
     const token = getToken();
     if (token) {
@@ -37,19 +51,6 @@ export default function TournamentRegisterPage() {
       }
     }
 
-    const fetchTournaments = async () => {
-      try {
-        const res = await fetch('/api/tournaments');
-        const data = await res.json();
-        if (res.ok) {
-          setTournaments(data);
-        } else {
-          setMessage(data.message || '获取比赛列表失败。');
-        }
-      } catch (err) {
-        setMessage('获取比赛列表时发生网络错误。');
-      }
-    };
     fetchTournaments();
   }, []);
 
@@ -57,8 +58,8 @@ export default function TournamentRegisterPage() {
     setMessage('');
     const token = getToken();
 
-    if (!token || !currentUser || currentUser.role !== 'player') {
-      setMessage('请以玩家身份登录后报名比赛。');
+    if (!token || !currentUser || (currentUser.role !== 'player' && currentUser.role !== 'organizer')) {
+      setMessage('请登录后报名比赛。');
       return;
     }
 
@@ -72,15 +73,21 @@ export default function TournamentRegisterPage() {
         body: JSON.stringify({ tournamentId }),
       });
 
+      console.log('Registration API Response Status:', res.status);
+      console.log('Registration API Response OK:', res.ok);
+
       const data = await res.json();
+      console.log('Registration API Response Data:', data);
+
       if (res.ok) {
         setMessage(data.message || '报名成功！');
-        // Optionally refresh tournament list or update UI to reflect registration
+        fetchTournaments(); // Re-fetch tournaments to update the list
       } else {
         setMessage(data.message || '报名失败。');
       }
-    } catch (err) {
-      setMessage('报名时发生网络错误。');
+    } catch (err: any) {
+      console.error('Error during registration fetch:', err);
+      setMessage(err.message || '报名时发生网络错误。');
     }
   };
 
@@ -115,8 +122,8 @@ export default function TournamentRegisterPage() {
       <h1 className="text-4xl font-bold mb-8">报名比赛</h1>
       {message && <p className="mt-4 text-lg text-center text-red-500">{message}</p>}
 
-      {!currentUser || currentUser.role !== 'player' ? (
-        <p className="text-xl">请先<a href="/login" className="text-blue-500 hover:underline">登录</a>以玩家身份报名比赛。</p>
+      {!currentUser || (currentUser.role !== 'player' && currentUser.role !== 'organizer') ? (
+        <p className="text-xl">请先<a href="/login" className="text-blue-500 hover:underline">登录</a>以玩家或主办方身份报名比赛。</p>
       ) : (
         <div className="w-full max-w-2xl">
           <h2 className="text-2xl font-bold mb-4">可报名的比赛</h2>
