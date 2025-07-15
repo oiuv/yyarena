@@ -211,7 +211,7 @@ export default function Home() {
                   <option value="">无奖品</option>
                   {prizes.map(prize => <option key={prize.id} value={prize.id}>{prize.name}</option>)}
                 </select>
-                <input type="number" value={rp.quantity} onChange={(e) => setRankedPrizes(rankedPrizes.map((p, i) => i === index ? { ...p, quantity: parseInt(e.target.value) } : p))} className="p-2 w-20 border rounded bg-gray-700 text-white" />
+                <input type="number" min="1" value={rp.quantity} onChange={(e) => setRankedPrizes(rankedPrizes.map((p, i) => i === index ? { ...p, quantity: parseInt(e.target.value) } : p))} className="p-2 w-20 border rounded bg-gray-700 text-white" />
               </div>
             ))}
             {/* Participation Prize */}
@@ -221,7 +221,7 @@ export default function Home() {
                 <option value="">无奖品</option>
                 {prizes.map(prize => <option key={prize.id} value={prize.id}>{prize.name}</option>)}
               </select>
-              <input type="number" value={participationPrize.quantity} onChange={(e) => setParticipationPrize({ ...participationPrize, quantity: parseInt(e.target.value) })} className="p-2 w-20 border rounded bg-gray-700 text-white" />
+              <input type="number" min="1" value={participationPrize.quantity} onChange={(e) => setParticipationPrize({ ...participationPrize, quantity: parseInt(e.target.value) })} className="p-2 w-20 border rounded bg-gray-700 text-white" />
             </div>
             {/* Custom Prizes */}
             {customPrizes.map((cp, index) => (
@@ -235,7 +235,7 @@ export default function Home() {
                   <option value="">无奖品</option>
                   {prizes.map(prize => <option key={prize.id} value={prize.id}>{prize.name}</option>)}
                 </select>
-                <input type="number" placeholder="数量" value={cp.quantity} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, quantity: parseInt(e.target.value) } : p))} className="p-2 w-full border rounded mt-2 bg-gray-600"/>
+                <input type="number" min="1" placeholder="数量" value={cp.quantity} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, quantity: parseInt(e.target.value) } : p))} className="p-2 w-full border rounded mt-2 bg-gray-600"/>
                 <button type="button" onClick={() => handleRemoveCustomPrize(index)} className="p-2 bg-red-500 text-white rounded mt-2 w-full">移除自定义奖项</button>
               </div>
             ))}

@@ -7,16 +7,16 @@ const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-defa
 const protectedRoutes: { [key: string]: string[] } = {
   '/api/tournaments': ['organizer'], // POST for creating tournaments
   '/api/matches/winner': ['organizer'], // POST for updating match winner
-  '/api/tournaments/register': ['player'], // POST for player registration
+  '/api/registrations': ['player'], // POST for player registration
 };
 
 export async function middleware(request: NextRequest) {
-  const token = request.cookies.get('token')?.value;
+  const token = request.cookies.get('token')?.value || request.headers.get('authorization')?.split(' ')[1];
   const path = request.nextUrl.pathname;
   const method = request.method;
 
   // Allow access to login/register and public routes without token
-  if (path.startsWith('/api/auth') || path === '/' || path.startsWith('/_next') || path.startsWith('/login') || path.startsWith('/register')) {
+  if (path.startsWith('/api/auth') || path === '/' || path.startsWith('/_next') || path.startsWith('/login') || path.startsWith('/register') || (path === '/api/tournaments' && method === 'GET') || (path.startsWith('/api/tournaments/') && path.endsWith('/matches') && method === 'GET')) {
     return NextResponse.next();
   }
 

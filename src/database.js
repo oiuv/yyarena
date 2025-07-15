@@ -40,7 +40,7 @@ db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS Prizes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
+      name TEXT NOT NULL UNIQUE,
       description TEXT,
       image_url TEXT
     )
@@ -76,9 +76,10 @@ db.serialize(() => {
       tournament_id INTEGER NOT NULL,
       player_id INTEGER NOT NULL,
       character_name TEXT NOT NULL,
-      character_id TEXT NOT NULL UNIQUE,
+      character_id TEXT NOT NULL,
       FOREIGN KEY (tournament_id) REFERENCES Tournaments(id),
-      FOREIGN KEY (player_id) REFERENCES Users(id)
+      FOREIGN KEY (player_id) REFERENCES Users(id),
+      UNIQUE (tournament_id, player_id)
     )
   `);
 
