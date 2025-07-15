@@ -12,6 +12,7 @@
     *   **注册与登录:** 需提供账号密码，同时绑定个人**燕云十六声角色编号**和**燕云十六声角色名称**（要求与玩家一致，数据自动保存到玩家表中）。注册后自动登录，网页除了显示其游戏角色名称外，还拥有创建和管理比赛的相关权限。
     *   **比赛管理权限:** 对已创建的比赛无删除权限，只允许修改资料。
     *   **直播间/主页地址:** 注册时可提供直播间地址（如 `https://live.douyin.com/813154277194`）或平台主页地址（如 `https://www.douyin.com/user/MS4wLjABAAAA...`），方便引导宣传。
+    *   **组织者作为玩家:** 组织者在游戏中也是玩家，拥有玩家的全部权限。组织者登录后可以直接用自己的玩家身份报名符合条件的比赛，但**禁止报名自己组织的比赛**。组织者也可以和普通玩家一样直接用自己的玩家角色编号登录系统，以纯玩家的权限访问。
 *   **玩家 (Player):**
     *   无需注册账号密码，只用输入自己的游戏ID即可参与。
     *   可以浏览和报名参加由主办者创建的比赛。
@@ -20,6 +21,7 @@
     *   **报名比赛:** 登录的玩家可以一键报名可报名的比赛，玩家可以同时报名多个比赛，且暂不做任何限制。
     *   **查看已报名比赛:** 玩家可以查看自己已报名的比赛列表。
     *   **退出报名:** 在比赛开始前可以退出报名，如果系统已完成对战分组，则此玩家视为弃权。
+    *   **玩家升级为主办者:** 在系统中登记过的玩家，可以补充账号密码信息，注册成为比赛主办者。
 *   **平台管理员 (Admin - Implied):**
     *   负责在后台配置和管理平台可选的奖品池。
 
@@ -98,7 +100,8 @@
 *   **Tournaments (比赛表):** `id`, `name`, `organizer_id`, `start_time`, `registration_deadline` (报名截止时间), `min_players`, `max_players` (最大48), `status` (pending, registration_closed, ongoing, finished, failed, extended_registration), `prize_settings` (TEXT/JSONB存储奖品分配), `event_description` (TEXT), `wechat_qr_code_url` (TEXT，存储图片URL，可选), `room_name` (TEXT), `room_number` (TEXT，10位数字), `room_password` (TEXT，4位数字，可选), `winner_id`
 *   **Prizes (奖品表):** `id`, `name`, `description`, `image_url`
     *   默认奖品列表：八音窍、2680长鸣珠时装、1280长鸣珠时装/武学特效/坐骑、980长鸣珠奇术特效、680长鸣珠时装/武器外观/坐骑、60长鸣珠时装/武器外观/坐骑、128元典藏战令、68元精英战令、30元月卡。
-*   **Registrations (报名表):** `id`, `tournament_id`, `player_id`, `character_name`, `character_id`, `status` (active, withdrawn, forfeited)
+*   **Registrations (报名表):** `id`, `tournament_id`, `player_id`, `character_name`, `character_id`, `registration_time` (报名时间), `status` (active, withdrawn, forfeited)
+    *   **退出报名处理:** 玩家退出报名时，将 `status` 字段从 `active` 更新为 `withdrawn`，而不是删除记录。如果系统已完成对战分组，则此玩家视为弃权，`status` 更新为 `forfeited`。
 *   **Matches (对阵表):** `id`, `tournament_id`, `round_number`, `player1_id`, `player2_id`, `winner_id`, `status` (pending, finished)
 
 ## 5. 开发计划
@@ -111,4 +114,5 @@
 
 ## 6. 开发流程/规范
 
-*   **版本控制:** 项目使用Git进行管理，每次提交需自动更新Git Log（此功能通常通过CI/CD或本地Git Hooks实现，不在当前开发范围内）。
+*   **版本控制:** 项目使用Git进行管理。
+    *   **提交规范:** 每开发完成一个功能模块并由用户测试确认无误后，我会与用户确认是否提交git commit。如果用户认可，将使用 `git commit -F` 的方式把当前开发完成的代码提交。
