@@ -12,6 +12,7 @@ export default function CreateTournamentPage() {
   const [eventDescription, setEventDescription] = useState('');
   const [wechatQrCodeFile, setWechatQrCodeFile] = useState<File | null>(null);
   const [registrationDeadline, setRegistrationDeadline] = useState('');
+  const [defaultMatchFormat, setDefaultMatchFormat] = useState<string>('1局1胜'); // New state for default match format
 
   const [rankedPrizes, setRankedPrizes] = useState<{ rank: number; prizeId: string; quantity: number }[]>([
     { rank: 1, prizeId: '', quantity: 1 },
@@ -62,6 +63,7 @@ export default function CreateTournamentPage() {
     if (wechatQrCodeFile) {
       formData.append('wechat_qr_code_image', wechatQrCodeFile);
     }
+    formData.append('default_match_format', defaultMatchFormat); // Add default match format
 
     const prize_settings = {
       ranked: rankedPrizes.filter(p => p.prizeId).map(p => ({ ...p, prize_id: parseInt(p.prizeId) })),
@@ -87,6 +89,7 @@ export default function CreateTournamentPage() {
         setEventDescription('');
         setWechatQrCodeFile(null);
         setRegistrationDeadline('');
+        setDefaultMatchFormat('1局1胜'); // Reset default match format
         setRankedPrizes([
           { rank: 1, prizeId: '', quantity: 1 },
           { rank: 2, prizeId: '', quantity: 1 },
@@ -122,6 +125,19 @@ export default function CreateTournamentPage() {
           <input type="file" accept="image/*" onChange={(e) => setWechatQrCodeFile(e.target.files ? e.target.files[0] : null)} className="p-2 border rounded bg-gray-700 text-white" />
           <input type="datetime-local" placeholder="报名截止时间" value={registrationDeadline} onChange={(e) => setRegistrationDeadline(e.target.value)} className="p-2 border rounded bg-gray-700 text-white" required />
           
+          <label className="block text-white text-sm font-bold mb-2">
+            默认比赛赛制:
+          </label>
+          <select
+            className="p-2 border rounded bg-gray-700 text-white"
+            value={defaultMatchFormat}
+            onChange={(e) => setDefaultMatchFormat(e.target.value)}
+          >
+            <option value="1局1胜">1局1胜</option>
+            <option value="3局2胜">3局2胜</option>
+            <option value="5局3胜">5局3胜</option>
+          </select>
+
           <h3 className="text-xl font-bold mb-2 mt-4">奖品设置</h3>
           {rankedPrizes.map((rp, index) => (
             <div key={index} className="flex gap-2 items-center">

@@ -1,136 +1,82 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import db from '@/database.js';
-import { verifyToken } from '@/utils/auth';
+import { advanceTournamentRound } from '@/tournamentUtils';
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
-  const matchId = parseInt(params.id, 10);
-  const { winnerId } = await request.json();
+export async function POST(request: Request, { params }: { params: { id: string } }) {
+  console.error('--- NEW winner.ts loaded ---'); // Unique debug statement
 
-  // 1. Verify Organizer
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader) {
-    return NextResponse.json({ message: '需要认证' }, { status: 401 });
+  const match_id = parseInt(params.id, 10); // Get match_id from URL params
+  const { winner_id, match_format } = await request.json();
+
+  if (isNaN(match_id) || !winner_id || !match_format) {
+    return NextResponse.json({ error: 'Match ID (from URL), Winner ID, and Match Format are required.' }, { status: 400 });
   }
-  const token = authHeader.split(' ')[1];
-  const decodedToken = verifyToken(token);
-
-  if (!decodedToken || typeof decodedToken === 'string' || decodedToken.role !== 'organizer') {
-    return NextResponse.json({ message: '无权限' }, { status: 403 });
-  }
-  const currentOrganizerId = decodedToken.id;
 
   try {
-    // 2. Get Match and Tournament Info
+    // 1. Get match details
     const match: any = await new Promise((resolve, reject) => {
-      db.get('SELECT m.*, t.organizer_id FROM Matches m JOIN Tournaments t ON m.tournament_id = t.id WHERE m.id = ?', [matchId], (err, row) => {
+      db.get('SELECT * FROM Matches WHERE id = ?', [match_id], (err, row) => {
         if (err) reject(err);
-        else resolve(row);
+        resolve(row);
       });
     });
 
     if (!match) {
-      return NextResponse.json({ message: '对局不存在' }, { status: 404 });
-    }
-
-    if (match.organizer_id !== currentOrganizerId) {
-      return NextResponse.json({ message: '无权限操作此对局' }, { status: 403 });
+      return NextResponse.json({ error: 'Match not found.' }, { status: 404 });
     }
 
     if (match.status === 'finished') {
-      return NextResponse.json({ message: '对局已结束，无法更改' }, { status: 400 });
+      return NextResponse.json({ error: 'Match already finished.' }, { status: 400 });
     }
 
-    // 3. Validate Winner ID
-    if (winnerId !== match.player1_id && winnerId !== match.player2_id) {
-      return NextResponse.json({ message: '获胜者ID无效' }, { status: 400 });
+    // 2. Validate winner_id
+    if (match.player1_id !== winner_id && match.player2_id !== winner_id) {
+      return NextResponse.json({
+        error: `Winner ID ${winner_id} is not a player in this match. Players are ${match.player1_id} and ${match.player2_id}.`
+      }, { status: 400 });
     }
 
-    // 4. Update Match and Handle Next Round in a Transaction
-    await new Promise<void>((resolve, reject) => {
-      db.serialize(() => {
-        db.run('BEGIN TRANSACTION;', (err) => {
-          if (err) return reject(err);
-        });
-
-        db.run('UPDATE Matches SET winner_id = ?, status = ? WHERE id = ?', [winnerId, 'finished', matchId], async function (err) {
-          if (err) {
-            db.run('ROLLBACK;');
-            return reject(err);
-          }
-
-          try {
-            // Check if all matches in the current round are finished
-            const currentRoundMatches: any[] = await new Promise((res, rej) => {
-              db.all('SELECT * FROM Matches WHERE tournament_id = ? AND round_number = ?', [match.tournament_id, match.round_number], (err, rows) => {
-                if (err) rej(err);
-                else res(rows);
-              });
-            });
-
-            const allMatchesFinishedInRound = currentRoundMatches.every(m => m.status === 'finished');
-
-            if (allMatchesFinishedInRound) {
-              // Collect winners for the next round
-              const winners: any[] = await new Promise((res, rej) => {
-                db.all('SELECT winner_id FROM Matches WHERE tournament_id = ? AND round_number = ? AND winner_id IS NOT NULL', [match.tournament_id, match.round_number], (err, rows) => {
-                  if (err) rej(err);
-                  else res(rows);
-                });
-              });
-
-              const winnerPlayerIds = winners.map(w => w.winner_id);
-
-              if (winnerPlayerIds.length === 1) {
-                // Tournament finished, one winner
-                db.run('UPDATE Tournaments SET winner_id = ?, status = ? WHERE id = ?', [winnerPlayerIds[0], 'finished', match.tournament_id]);
-              } else if (winnerPlayerIds.length > 1) {
-                // Generate next round matches
-                // Shuffle winners
-                for (let i = winnerPlayerIds.length - 1; i > 0; i--) {
-                  const j = Math.floor(Math.random() * (i + 1));
-                  [winnerPlayerIds[i], winnerPlayerIds[j]] = [winnerPlayerIds[j], winnerPlayerIds[i]];
-                }
-
-                const nextRoundNumber = match.round_number + 1;
-                const nextMatchesToInsert: { player1: number; player2: number | null }[] = [];
-                for (let i = 0; i < winnerPlayerIds.length; i += 2) {
-                  if (i + 1 < winnerPlayerIds.length) {
-                    nextMatchesToInsert.push({ player1: winnerPlayerIds[i], player2: winnerPlayerIds[i + 1] });
-                  } else {
-                    // Handle bye for odd number of players
-                    nextMatchesToInsert.push({ player1: winnerPlayerIds[i], player2: null });
-                  }
-                }
-
-                const stmt = db.prepare('INSERT INTO Matches (tournament_id, round_number, player1_id, player2_id, winner_id, status) VALUES (?, ?, ?, ?, ?, ?)');
-                for (const nextMatch of nextMatchesToInsert) {
-                  const nextWinnerId = nextMatch.player2 === null ? nextMatch.player1 : null;
-                  const nextStatus = nextMatch.player2 === null ? 'finished' : 'pending';
-                  stmt.run(match.tournament_id, nextRoundNumber, nextMatch.player1, nextMatch.player2, nextWinnerId, nextStatus);
-                }
-                stmt.finalize();
-              }
+    // 3. Update match with winner, status, finished_at timestamp, and match_format
+    const now = new Date().toISOString();
+    let changes = 0;
+    try {
+      changes = await new Promise((resolve, reject) => {
+        db.run(
+          'UPDATE Matches SET winner_id = ?, status = ?, finished_at = ?, match_format = ? WHERE id = ?',
+          [winner_id, 'finished', now, match_format, match_id],
+          function (err) {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(this.changes);
             }
-            db.run('COMMIT;', (err) => {
-              if (err) {
-                db.run('ROLLBACK;');
-                reject(err);
-              } else {
-                resolve();
-              }
-            });
-          } catch (innerError) {
-            db.run('ROLLBACK;');
-            reject(innerError);
           }
-        });
+        );
+      });
+    } catch (dbError: any) {
+      console.error('Database update error during db.run:', dbError);
+      return NextResponse.json({ error: `Failed to update match in DB: ${dbError.message}` }, { status: 500 });
+    }
+
+    // 4. Re-query the database to confirm the update and get the full updated record
+    const updatedMatch: any = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM Matches WHERE id = ?', [match_id], (err, row) => {
+        if (err) reject(err);
+        resolve(row);
       });
     });
 
-    return NextResponse.json({ message: '获胜者已标记' }, { status: 200 });
+    // 5. Advance tournament round
+    await advanceTournamentRound(match.tournament_id, match.round_number);
 
-  } catch (error) {
-    console.error('Error marking winner:', error);
-    return NextResponse.json({ message: '标记获胜者失败' }, { status: 500 });
+    return NextResponse.json({
+      message: 'Match winner updated successfully.',
+      updatedMatch: updatedMatch, // Full updated match object
+      dbChanges: changes, // Number of rows affected by the DB update
+      timestampAttempted: now // The timestamp we attempted to write
+    });
+  } catch (error: any) {
+    console.error('Error updating match winner (general catch):', error);
+    return NextResponse.json({ error: `Failed to update match winner: ${error.message}` }, { status: 500 });
   }
 }

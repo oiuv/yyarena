@@ -102,7 +102,7 @@ export async function POST(request: Request) {
       { expiresIn: '1h' }
     );
 
-    const response = NextResponse.json({ message: 'Registration successful!', user }, { status: 201 });
+    const response = NextResponse.json({ message: 'Registration successful!', user, token }, { status: 201 });
     response.cookies.set('token', token, {
       httpOnly: false,
       secure: process.env.NODE_ENV !== 'development',

@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       { expiresIn: '1h' }
     );
 
-    const response = NextResponse.json({ message: 'Logged in successfully', role: user.role, username: user.username, game_id: user.game_id });
+    const response = NextResponse.json({ message: 'Logged in successfully', role: user.role, username: user.username, game_id: user.game_id, token });
     response.cookies.set('token', token, {
       httpOnly: false,
       secure: process.env.NODE_ENV !== 'development',

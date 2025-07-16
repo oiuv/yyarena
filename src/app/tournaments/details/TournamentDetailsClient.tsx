@@ -15,6 +15,7 @@ export default function TournamentDetailsClient() {
   const [error, setError] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [selectedWinner, setSelectedWinner] = useState<number | null>(null);
+  const [selectedMatchFormat, setSelectedMatchFormat] = useState<string>('1局1胜'); // New state for match format
 
   useEffect(() => {
     const token = getToken();
@@ -63,7 +64,6 @@ export default function TournamentDetailsClient() {
         const data = await res.json();
         if (res.ok) {
             alert('比赛已成功开始！');
-            // Refresh data
             window.location.reload();
         } else {
             alert(`错误: ${data.message}`);
@@ -92,19 +92,19 @@ export default function TournamentDetailsClient() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ winnerId }),
+        body: JSON.stringify({ winner_id: winnerId, match_format: selectedMatchFormat }), // Pass match_format
       });
 
       const data = await res.json();
       if (res.ok) {
-        alert('获胜者已标记！');
+        console.log('获胜者已标记！响应数据:', data); // Log the full response
         // Refresh data
         window.location.reload();
       } else {
-        alert(`错误: ${data.message}`);
+        console.error(`错误: ${data.error || data.message}`);
       }
     } catch (err) {
-      alert('一个未知错误发生');
+      console.error('一个未知错误发生:', err);
     }
   };
 
@@ -148,7 +148,7 @@ export default function TournamentDetailsClient() {
               </div>
               <div>
                 {match.winner_id ? (
-                  <span>胜者: {match.winner_character_name}</span>
+                  <span>胜者: {match.winner_character_name} (赛制: {match.match_format})</span> // Display match format
                 ) : (
                   isOrganizer && match.status === 'pending' ? (
                     <div className="flex items-center gap-2">
@@ -160,9 +160,18 @@ export default function TournamentDetailsClient() {
                         {match.player1_id && <option value={match.player1_id}>{match.player1_character_name}</option>}
                         {match.player2_id && <option value={match.player2_id}>{match.player2_character_name}</option>}
                       </select>
+                      <select
+                        className="p-2 border rounded bg-gray-700 text-white"
+                        value={selectedMatchFormat}
+                        onChange={(e) => setSelectedMatchFormat(e.target.value)}
+                      >
+                        <option value="1局1胜">1局1胜</option>
+                        <option value="3局2胜">3局2胜</option>
+                        <option value="5局3胜">5局3胜</option>
+                      </select>
                       <button
                         onClick={() => handleMarkWinner(match.id, selectedWinner)}
-                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded"
+                        className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                       >
                         确认胜者
                       </button>

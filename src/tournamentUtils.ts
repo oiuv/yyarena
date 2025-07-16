@@ -7,6 +7,7 @@ interface Match {
   player2_id: number | null; // player2_id can be null for bye matches
   winner_id?: number; // winner_id is optional, only for finished matches
   status: string;
+  match_format?: string; // Add this line for match format
 }
 
 export async function generateMatchesAndStartTournament(tournamentId: number) {
@@ -53,15 +54,20 @@ export async function generateMatchesAndStartTournament(tournamentId: number) {
       db.serialize(() => {
         db.run('BEGIN TRANSACTION');
         const stmt = db.prepare(
-          'INSERT INTO Matches (tournament_id, round_number, player1_id, player2_id, status) VALUES (?, ?, ?, ?, ?)'
+          'INSERT INTO Matches (tournament_id, round_number, player1_id, player2_id, winner_id, status, finished_at, match_format) VALUES (?, ?, ?, ?, ?, ?, ?, ?)' // Changed NULL to ? for finished_at
         );
+        console.log(`[generateMatchesAndStartTournament] SQL for insert: ${stmt.sql}`); // Log SQL
         matches.forEach(match => {
+          console.log(`[generateMatchesAndStartTournament] Inserting match: ${JSON.stringify(match)}`); // Log match object
           stmt.run(
             match.tournament_id,
             match.round_number,
             match.player1_id,
             match.player2_id,
-            match.status
+            null, // winner_id is null initially
+            match.status,
+            null, // Explicitly set finished_at to NULL
+            "1局1胜" // Default match format for Round 1, can be dynamic later
           );
         });
         stmt.finalize();
@@ -81,6 +87,7 @@ export async function generateMatchesAndStartTournament(tournamentId: number) {
         player2_id: null, // Indicate a bye
         winner_id: byePlayer,
         status: 'finished', // Bye matches are immediately finished
+        match_format: "1局1胜", // Add match_format for bye player
       });
       console.log(`Player ${byePlayer} gets a bye in Tournament ${tournamentId} Round 1.`);
     }
@@ -106,6 +113,7 @@ export async function generateMatchesAndStartTournament(tournamentId: number) {
 }
 
 export async function advanceTournamentRound(tournamentId: number, currentRound: number) {
+  console.log(`[advanceTournamentRound] Advancing tournament ${tournamentId}, current round: ${currentRound}`);
   try {
     // 1. Get all matches for the current round
     const currentRoundMatches: any[] = await new Promise((resolve, reject) => {
@@ -114,17 +122,21 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
         resolve(rows);
       });
     });
+    console.log(`[advanceTournamentRound] Current round matches fetched: ${currentRoundMatches.length}`);
 
     // 2. Check if all matches in the current round are finished
     const allMatchesFinished = currentRoundMatches.every(match => match.status === 'finished');
 
     if (!allMatchesFinished) {
-      console.log(`Not all matches in round ${currentRound} for tournament ${tournamentId} are finished.`);
+      console.log(`[advanceTournamentRound] Not all matches in round ${currentRound} for tournament ${tournamentId} are finished. Skipping advance.`);
       return;
     }
 
-    // 3. Get all winners from the current round
-    const winners = currentRoundMatches.map(match => match.winner_id);
+    // 3. Get all valid winners from the current round
+    const winners = currentRoundMatches
+      .filter(match => match.winner_id !== null && match.winner_id !== undefined) // Filter out null/undefined winners
+      .map(match => match.winner_id);
+    console.log(`[advanceTournamentRound] Valid winners from current round: ${winners.length}`);
 
     // 4. Determine the next round number
     const nextRound = currentRound + 1;
@@ -145,16 +157,44 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
           }
         );
       });
-      console.log(`Tournament ${tournamentId} finished. Champion: ${championId}`);
+      console.log(`[advanceTournamentRound] Tournament ${tournamentId} finished. Champion: ${championId}`);
       return;
     }
+
+    // If no winners, or odd number of winners (after filtering), handle bye or end tournament
+    if (winners.length === 0) {
+        console.log(`[advanceTournamentRound] No winners in round ${currentRound} for tournament ${tournamentId}. Ending tournament.`);
+        await new Promise((resolve, reject) => {
+            db.run(
+                'UPDATE Tournaments SET status = ? WHERE id = ?',
+                ['finished', tournamentId], // Mark as finished without a winner
+                function (err) {
+                    if (err) reject(err);
+                    else resolve(this);
+                }
+            );
+        });
+        return;
+    }
+
 
     // 6. Otherwise, create new match pairings for the next round
     const nextRoundMatches: Match[] = [];
     let byePlayer = null;
     if (winners.length % 2 !== 0) {
       byePlayer = winners.pop(); // Last winner gets a bye
+      console.log(`[advanceTournamentRound] Player ${byePlayer} gets a bye in Tournament ${tournamentId} Round ${nextRound}.`);
     }
+
+    // Determine match format for the next round (simplified for now, can be more complex later)
+    let nextRoundMatchFormat = "1局1胜"; // Default
+    if (winners.length <= 2) { // Example: Finals or semi-finals
+        nextRoundMatchFormat = "5局3胜";
+    } else if (winners.length <= 6) { // Example: Quarter-finals
+        nextRoundMatchFormat = "3局2胜";
+    }
+    console.log(`[advanceTournamentRound] Next round match format: ${nextRoundMatchFormat}`);
+
 
     for (let i = 0; i < winners.length; i += 2) {
       nextRoundMatches.push({
@@ -163,23 +203,31 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
         player1_id: winners[i],
         player2_id: winners[i + 1],
         status: 'pending',
+        match_format: nextRoundMatchFormat,
       });
     }
+    console.log(`[advanceTournamentRound] Generated ${nextRoundMatches.length} new matches for Round ${nextRound}.`);
+
 
     // 7. Insert new matches into the Matches table
     await new Promise((resolve, reject) => {
       db.serialize(() => {
         db.run('BEGIN TRANSACTION');
         const stmt = db.prepare(
-          'INSERT INTO Matches (tournament_id, round_number, player1_id, player2_id, status) VALUES (?, ?, ?, ?, ?)'
+          'INSERT INTO Matches (tournament_id, round_number, player1_id, player2_id, winner_id, status, finished_at, match_format) VALUES (?, ?, ?, ?, ?, ?, ?, ?)' // Changed NULL to ? for finished_at
         );
+        console.log(`[advanceTournamentRound] SQL for insert: ${stmt.sql}`); // Log SQL
         nextRoundMatches.forEach(match => {
+          console.log(`[advanceTournamentRound] Inserting match: ${JSON.stringify(match)}`); // Log match object
           stmt.run(
             match.tournament_id,
             match.round_number,
             match.player1_id,
             match.player2_id,
-            match.status
+            null, // winner_id is null initially
+            match.status,
+            null, // Explicitly set finished_at to NULL
+            match.match_format
           );
         });
         stmt.finalize();
@@ -190,9 +238,18 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
       });
     });
 
-    // Handle bye player if any
+    // Handle bye player if any (insert as a finished match)
     if (byePlayer) {
-      console.log(`Player ${byePlayer} gets a bye in Tournament ${tournamentId} Round ${nextRound}.`);
+        await new Promise((resolve, reject) => {
+            db.run(
+                'INSERT INTO Matches (tournament_id, round_number, player1_id, player2_id, winner_id, status, finished_at, match_format) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                [tournamentId, nextRound, byePlayer, null, byePlayer, 'finished', new Date().toISOString(), nextRoundMatchFormat],
+                function (err) {
+                    if (err) reject(err);
+                    else resolve(this);
+                }
+            );
+        });
     }
 
     console.log(`Generated ${nextRoundMatches.length} matches for Round ${nextRound} of Tournament ${tournamentId}.`);

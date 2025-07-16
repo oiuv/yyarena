@@ -1,0 +1,8 @@
+feat: Implement match time and format recording, and fix auto-advance
+
+- Updated Matches table schema to include `finished_at` and `match_format` fields.
+- Refactored `src/app/api/matches/[id]/winner/route.ts` to correctly record `finished_at` and `match_format` upon winner selection.
+- Enhanced `src/tournamentUtils.ts` to correctly handle `winner_id` and `match_format` during match creation and auto-advancement.
+- Fixed `SQLITE_RANGE` error by ensuring correct parameter count in `INSERT` statements for Matches table.
+- Added automated test scripts (`createTestOrganizer.js`, `createTestTournament.js`) for easier testing.
+- Updated `GEMINI.md` with new rules and requirements.

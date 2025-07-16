@@ -32,6 +32,7 @@ db.serialize(() => {
       room_number TEXT,
       room_password TEXT,
       winner_id INTEGER,
+      default_match_format TEXT, -- Add this line for default match format
       FOREIGN KEY (organizer_id) REFERENCES Users(id),
       FOREIGN KEY (winner_id) REFERENCES Users(id)
     )
@@ -93,7 +94,9 @@ db.serialize(() => {
       player1_id INTEGER,
       player2_id INTEGER,
       winner_id INTEGER,
-      status TEXT NOT NULL CHECK(status IN ('pending', 'finished')) DEFAULT 'pending',
+      status TEXT NOT NULL CHECK(status IN ('pending', 'finished', 'forfeited')) DEFAULT 'pending',
+      finished_at TEXT,
+      match_format TEXT, -- Add this line for match format
       FOREIGN KEY (tournament_id) REFERENCES Tournaments(id),
       FOREIGN KEY (player1_id) REFERENCES Users(id),
       FOREIGN KEY (player2_id) REFERENCES Users(id),
