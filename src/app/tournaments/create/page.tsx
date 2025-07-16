@@ -53,6 +53,20 @@ export default function CreateTournamentPage() {
       return;
     }
 
+    // Validation
+    const startDateTime = new Date(startTime);
+    const registrationDeadlineDateTime = registrationDeadline ? new Date(registrationDeadline) : null;
+
+    if (registrationDeadlineDateTime && registrationDeadlineDateTime > startDateTime) {
+      alert('报名截止时间不得大于比赛开始时间。');
+      return;
+    }
+
+    if (minPlayers % 2 !== 0 || maxPlayers % 2 !== 0) {
+      alert('最少参赛人数和最多参赛人数必须是偶数。');
+      return;
+    }
+
     const formData = new FormData();
     formData.append('name', name);
     formData.append('start_time', startTime);

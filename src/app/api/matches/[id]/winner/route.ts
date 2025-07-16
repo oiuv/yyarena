@@ -5,11 +5,15 @@ import { advanceTournamentRound } from '@/tournamentUtils';
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   console.error('--- NEW winner.ts loaded ---'); // Unique debug statement
 
-  const match_id = parseInt(params.id, 10); // Get match_id from URL params
-  const { winner_id, match_format } = await request.json();
+  const match_id = parseInt(params.id, 10);
+  const { winner_id, match_format, forfeit_type } = await request.json(); // Added forfeit_type
 
-  if (isNaN(match_id) || !winner_id || !match_format) {
-    return NextResponse.json({ error: 'Match ID (from URL), Winner ID, and Match Format are required.' }, { status: 400 });
+  if (isNaN(match_id) || !match_format) { // winner_id can be null for forfeit_both
+    return NextResponse.json({ error: 'Match ID (from URL) and Match Format are required.' }, { status: 400 });
+  }
+
+  if (!winner_id && !forfeit_type) { // Either winner_id or forfeit_type must be present
+    return NextResponse.json({ error: 'Winner ID or Forfeit Type is required.' }, { status: 400 });
   }
 
   try {
@@ -29,11 +33,48 @@ export async function POST(request: Request, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Match already finished.' }, { status: 400 });
     }
 
-    // 2. Validate winner_id
-    if (match.player1_id !== winner_id && match.player2_id !== winner_id) {
-      return NextResponse.json({
-        error: `Winner ID ${winner_id} is not a player in this match. Players are ${match.player1_id} and ${match.player2_id}.`
-      }, { status: 400 });
+    let finalWinnerId: number | null = null;
+    let finalStatus: string = 'finished';
+
+    if (forfeit_type === 'both') {
+      finalWinnerId = null;
+      finalStatus = 'forfeited';
+    } else if (forfeit_type === 'player1') {
+      finalWinnerId = match.player2_id;
+      finalStatus = 'finished';
+      // Update player1's registration status to forfeited
+      await new Promise((resolve, reject) => {
+        db.run(
+          'UPDATE Registrations SET status = ? WHERE tournament_id = ? AND player_id = ?',
+          ['forfeited', match.tournament_id, match.player1_id],
+          function (err) {
+            if (err) reject(err);
+            else resolve(this);
+          }
+        );
+      });
+    } else if (forfeit_type === 'player2') {
+      finalWinnerId = match.player1_id;
+      finalStatus = 'finished';
+      // Update player2's registration status to forfeited
+      await new Promise((resolve, reject) => {
+        db.run(
+          'UPDATE Registrations SET status = ? WHERE tournament_id = ? AND player_id = ?',
+          ['forfeited', match.tournament_id, match.player2_id],
+          function (err) {
+            if (err) reject(err);
+            else resolve(this);
+          }
+        );
+      });
+    } else { // Normal winner selection
+      // 2. Validate winner_id
+      if (match.player1_id !== winner_id && match.player2_id !== winner_id) {
+        return NextResponse.json({
+          error: `Winner ID ${winner_id} is not a player in this match. Players are ${match.player1_id} and ${match.player2_id}.`
+        }, { status: 400 });
+      }
+      finalWinnerId = winner_id;
     }
 
     // 3. Update match with winner, status, finished_at timestamp, and match_format
@@ -43,7 +84,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
       changes = await new Promise((resolve, reject) => {
         db.run(
           'UPDATE Matches SET winner_id = ?, status = ?, finished_at = ?, match_format = ? WHERE id = ?',
-          [winner_id, 'finished', now, match_format, match_id],
+          [finalWinnerId, finalStatus, now, match_format, match_id],
           function (err) {
             if (err) {
               reject(err);

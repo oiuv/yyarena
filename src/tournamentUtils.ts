@@ -54,7 +54,7 @@ export async function generateMatchesAndStartTournament(tournamentId: number) {
       db.serialize(() => {
         db.run('BEGIN TRANSACTION');
         const stmt = db.prepare(
-          'INSERT INTO Matches (tournament_id, round_number, player1_id, player2_id, winner_id, status, finished_at, match_format) VALUES (?, ?, ?, ?, ?, ?, ?, ?)' // Changed NULL to ? for finished_at
+          'INSERT INTO Matches (tournament_id, round_number, player1_id, player2_id, winner_id, status, finished_at, match_format) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         );
         console.log(`[generateMatchesAndStartTournament] SQL for insert: ${stmt.sql}`); // Log SQL
         matches.forEach(match => {
@@ -125,7 +125,8 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
     console.log(`[advanceTournamentRound] Current round matches fetched: ${currentRoundMatches.length}`);
 
     // 2. Check if all matches in the current round are finished
-    const allMatchesFinished = currentRoundMatches.every(match => match.status === 'finished');
+    const allMatchesFinished = currentRoundMatches.every(match => match.status === 'finished' || match.status === 'forfeited'); // Added forfeited status
+    console.log(`[advanceTournamentRound] All matches in current round finished: ${allMatchesFinished}`); // Added log
 
     if (!allMatchesFinished) {
       console.log(`[advanceTournamentRound] Not all matches in round ${currentRound} for tournament ${tournamentId} are finished. Skipping advance.`);
@@ -136,7 +137,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
     const winners = currentRoundMatches
       .filter(match => match.winner_id !== null && match.winner_id !== undefined) // Filter out null/undefined winners
       .map(match => match.winner_id);
-    console.log(`[advanceTournamentRound] Valid winners from current round: ${winners.length}`);
+    console.log(`[advanceTournamentRound] Valid winners from current round: ${winners.length}`); // Added log
 
     // 4. Determine the next round number
     const nextRound = currentRound + 1;
@@ -214,7 +215,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
       db.serialize(() => {
         db.run('BEGIN TRANSACTION');
         const stmt = db.prepare(
-          'INSERT INTO Matches (tournament_id, round_number, player1_id, player2_id, winner_id, status, finished_at, match_format) VALUES (?, ?, ?, ?, ?, ?, ?, ?)' // Changed NULL to ? for finished_at
+          'INSERT INTO Matches (tournament_id, round_number, player1_id, player2_id, winner_id, status, finished_at, match_format) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         );
         console.log(`[advanceTournamentRound] SQL for insert: ${stmt.sql}`); // Log SQL
         nextRoundMatches.forEach(match => {
@@ -226,7 +227,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
             match.player2_id,
             null, // winner_id is null initially
             match.status,
-            null, // Explicitly set finished_at to NULL
+            null,
             match.match_format
           );
         });

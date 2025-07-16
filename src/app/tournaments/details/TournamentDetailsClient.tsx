@@ -14,7 +14,7 @@ export default function TournamentDetailsClient() {
   const [matches, setMatches] = useState<any[]>([]);
   const [error, setError] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [selectedWinner, setSelectedWinner] = useState<number | null>(null);
+  const [selectedWinner, setSelectedWinner] = useState<number | 'forfeit_player1' | 'forfeit_player2' | 'forfeit_both' | null>(null); // Updated type for selectedWinner
   const [selectedMatchFormat, setSelectedMatchFormat] = useState<string>('1局1胜'); // New state for match format
 
   useEffect(() => {
@@ -53,6 +53,16 @@ export default function TournamentDetailsClient() {
         return;
     }
 
+    const now = new Date();
+    const tournamentStartTime = new Date(tournament.start_time);
+
+    if (now < tournamentStartTime) {
+      const confirmStart = window.confirm('比赛尚未到开始时间，确定要提前开始吗？');
+      if (!confirmStart) {
+        return;
+      }
+    }
+
     try {
         const res = await fetch(`/api/tournaments/${tournamentId}/start`, {
             method: 'POST',
@@ -73,9 +83,9 @@ export default function TournamentDetailsClient() {
     }
   };
 
-  const handleMarkWinner = async (matchId: number, winnerId: number | null) => {
-    if (!winnerId) {
-      alert('请选择一个获胜者。');
+  const handleMarkWinner = async (match: any, winnerSelection: number | 'forfeit_player1' | 'forfeit_player2' | 'forfeit_both' | null) => {
+    if (!winnerSelection) {
+      alert('请选择一个获胜者或弃权类型。');
       return;
     }
 
@@ -85,20 +95,40 @@ export default function TournamentDetailsClient() {
       return;
     }
 
+    let winnerIdToSend: number | null = null;
+    let forfeitType: string | null = null;
+
+    // Determine winnerIdToSend and forfeitType based on winnerSelection
+    if (typeof winnerSelection === 'number') {
+      winnerIdToSend = winnerSelection;
+    } else if (winnerSelection === 'forfeit_player1') {
+      winnerIdToSend = match.player2_id; // Player 2 wins by Player 1 forfeiting
+      forfeitType = 'player1';
+    } else if (winnerSelection === 'forfeit_player2') {
+      winnerIdToSend = match.player1_id; // Player 1 wins by Player 2 forfeiting
+      forfeitType = 'player2';
+    } else if (winnerSelection === 'forfeit_both') {
+      winnerIdToSend = null; // No winner
+      forfeitType = 'both';
+    }
+
     try {
-      const res = await fetch(`/api/matches/${matchId}/winner`, {
+      const res = await fetch(`/api/matches/${match.id}/winner`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ winner_id: winnerId, match_format: selectedMatchFormat }), // Pass match_format
+        body: JSON.stringify({
+          winner_id: winnerIdToSend,
+          match_format: selectedMatchFormat,
+          forfeit_type: forfeitType,
+        }),
       });
 
       const data = await res.json();
       if (res.ok) {
-        console.log('获胜者已标记！响应数据:', data); // Log the full response
-        // Refresh data
+        console.log('获胜者已标记！响应数据:', data);
         window.location.reload();
       } else {
         console.error(`错误: ${data.error || data.message}`);
@@ -117,6 +147,7 @@ export default function TournamentDetailsClient() {
   }
 
   const isOrganizer = currentUser && currentUser.role === 'organizer' && currentUser.id === tournament.organizer_id;
+  const isTournamentUpcoming = new Date(tournament.start_time) > new Date();
 
   return (
     <main className="flex min-h-screen flex-col items-center p-12 bg-gray-900 text-white">
@@ -132,7 +163,7 @@ export default function TournamentDetailsClient() {
           onClick={handleStartTournament} 
           className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded mb-8"
         >
-          开始比赛
+          {isTournamentUpcoming ? '提前开始比赛' : '开始比赛'}
         </button>
       )}
 
@@ -154,11 +185,15 @@ export default function TournamentDetailsClient() {
                     <div className="flex items-center gap-2">
                       <select
                         className="p-2 border rounded bg-gray-700 text-white"
-                        onChange={(e) => setSelectedWinner(parseInt(e.target.value))}
+                        onChange={(e) => setSelectedWinner(e.target.value === "" ? null : (e.target.value.startsWith("forfeit_") ? e.target.value : parseInt(e.target.value)))} // Handle string values for forfeit
+                        value={selectedWinner || ""} // Control the select component
                       >
-                        <option value="">选择胜者</option>
+                        <option value="">选择胜者或弃权</option>
                         {match.player1_id && <option value={match.player1_id}>{match.player1_character_name}</option>}
                         {match.player2_id && <option value={match.player2_id}>{match.player2_character_name}</option>}
+                        {match.player1_id && <option value="forfeit_player1">{match.player1_character_name} 弃权</option>}
+                        {match.player2_id && <option value="forfeit_player2">{match.player2_character_name} 弃权</option>}
+                        <option value="forfeit_both">双方弃权</option>
                       </select>
                       <select
                         className="p-2 border rounded bg-gray-700 text-white"
@@ -170,14 +205,15 @@ export default function TournamentDetailsClient() {
                         <option value="5局3胜">5局3胜</option>
                       </select>
                       <button
-                        onClick={() => handleMarkWinner(match.id, selectedWinner)}
+                        onClick={() => handleMarkWinner(match, selectedWinner)}
                         className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                       >
                         确认胜者
                       </button>
                     </div>
                   ) : (
-                    <span>未开始</span>
+                    // Display "双方弃权" if status is 'forfeited', otherwise "未开始"
+                    <span>{match.status === 'forfeited' ? '双方弃权' : '未开始'}</span>
                   )
                 )}
               </div>
