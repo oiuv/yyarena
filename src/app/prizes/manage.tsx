@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
+import Image from 'next/image';
+
 function getToken() {
   const name = 'token=';
   const decodedCookie = decodeURIComponent(document.cookie);
@@ -125,7 +127,7 @@ export default function ManagePrizesPage() {
                 <div>
                   <h3 className="text-xl font-bold">{prize.name}</h3>
                   <p>{prize.description}</p>
-                  {prize.image_url && <img src={prize.image_url} alt={prize.name} className="w-24 h-24 object-cover mt-2" />}
+                  {prize.image_url && <Image src={prize.image_url} alt={prize.name} width={96} height={96} className="w-24 h-24 object-cover mt-2" />}
                 </div>
                 <div>
                   <Link href={`/prizes/edit?id=${prize.id}`} className="text-blue-500 hover:underline mr-4">

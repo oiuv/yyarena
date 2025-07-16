@@ -10,22 +10,7 @@ import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
-// Helper to get token from cookie
-function getToken() {
-  const name = 'token=';
-  const decodedCookie = decodeURIComponent(document.cookie);
-  const ca = decodedCookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) === ' ') {
-      c = c.substring(1);
-    }
-    if (c.indexOf(name) === 0) {
-      return c.substring(name.length, c.length);
-    }
-  }
-  return '';
-}
+import { getToken } from '@/utils/clientAuth';
 
 
 
@@ -81,7 +66,10 @@ export default function RootLayout({
             <Link href="/my-registrations" className="text-blue-400 hover:underline">我的报名</Link>
           )}
           {userRole === 'organizer' && (
-            <Link href="/prizes/manage" className="text-blue-400 hover:underline">管理奖品</Link>
+            <>
+              <Link href="/prizes/manage" className="text-blue-400 hover:underline">管理奖品</Link>
+              <Link href="/tournaments/create" className="text-blue-400 hover:underline">创建比赛</Link>
+            </>
           )}
         </nav>
         {children}

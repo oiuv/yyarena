@@ -1,5 +1,14 @@
 import db from '@/database.js';
 
+interface Match {
+  tournament_id: number;
+  round_number: number;
+  player1_id: number;
+  player2_id: number | null; // player2_id can be null for bye matches
+  winner_id?: number; // winner_id is optional, only for finished matches
+  status: string;
+}
+
 export async function generateMatchesAndStartTournament(tournamentId: number) {
   try {
     // 1. Fetch all registered players
@@ -23,7 +32,7 @@ export async function generateMatchesAndStartTournament(tournamentId: number) {
     }
 
     // 3. Create initial match pairings (Round 1)
-    const matches = [];
+    const matches: Match[] = [];
     let byePlayer = null;
     if (players.length % 2 !== 0) {
       byePlayer = players.pop(); // Last player gets a bye
@@ -141,7 +150,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
     }
 
     // 6. Otherwise, create new match pairings for the next round
-    const nextRoundMatches = [];
+    const nextRoundMatches: Match[] = [];
     let byePlayer = null;
     if (winners.length % 2 !== 0) {
       byePlayer = winners.pop(); // Last winner gets a bye

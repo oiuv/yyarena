@@ -1,3 +1,4 @@
+import { NextResponse } from 'next/server';
 import db from '@/database.js';
 import { advanceTournamentRound } from '@/tournamentUtils';
 

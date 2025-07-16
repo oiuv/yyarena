@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { jwtDecode } from 'jwt-decode';
+import Image from 'next/image';
 
 function getToken() {
   const name = 'token=';
@@ -187,7 +188,7 @@ export default function TournamentDetailsPage() {
         {tournament.wechat_qr_code_url && (
           <div className="mb-4 p-4 border border-gray-600 rounded bg-gray-700">
             <h3 className="text-xl font-bold mb-2">微信群二维码</h3>
-            <img src={tournament.wechat_qr_code_url} alt="微信群二维码" className="w-48 h-48 object-contain" />
+            <Image src={tournament.wechat_qr_code_url} alt="微信群二维码" width={192} height={192} className="w-48 h-48 object-contain" />
           </div>
         )}
 
