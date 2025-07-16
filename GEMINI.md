@@ -24,6 +24,8 @@
     *   **玩家升级为主办者:** 在系统中登记过的玩家，可以补充账号密码信息，注册成为比赛主办者。
 *   **平台管理员 (Admin - Implied):**
     *   负责在后台配置和管理平台可选的奖品池。
+    *   **权限扩展建议:** 后续可考虑增加管理用户（如封禁违规用户）、管理比赛（如删除虚假或违规比赛）等权限。
+    *   **管理界面:** 后续可考虑开发独立的后台管理仪表盘。
 
 ## 3. 核心功能
 
@@ -34,7 +36,7 @@
     *   设置最少参赛人数（硬性要求：不得少于10人）。
     *   设置最大参赛人数（**单次最大人数上限规定为48人**，因为砺兵台房间人数上限是50人）。
     *   **赛事说明:** 提供赛事说明文本框，让玩家了解参赛条件、比赛流程、注意事项等。
-    *   **微信群二维码:** 提供一个微信群二维码**图片上传**功能，此项为非必填项。如果未填写，需要玩家在游戏中主动加主办者为好友参加比赛。
+    *   **微信群二维码:** 提供一个微信群二维码**图片上传**功能，此项为非必填项。如果未填写，需要玩家在游戏中主动加主办者为好友参加比赛。（**注：开发阶段图片文件暂时存储在代码库中，后期迭代再考虑优化至云存储服务，如阿里云OSS。**）
     *   **奖品设置:**
         *   默认提供第一名到第五名的奖品和数量设置。
         *   设置参与奖的奖品和数量（所有未获得名次奖品的参赛玩家）。
@@ -63,17 +65,19 @@
 *   **比赛规则自动配置:**
     *   系统会根据最终参赛人数，自动配置最合适的比赛赛制（例如，1局1胜、3局2胜）。
     *   **特殊规则:** 冠军赛（决赛）必须为5局3胜制。
-    *   **赛制建议:** 平台可根据报名分组给出建议的赛制，例如48进24推荐一局一胜，12进6推荐三局二胜，决赛推荐五局三胜。同一场比赛可以有不同的赛制。
+    *   **赛制建议:** 平台可根据报名分组给出建议的赛制（例如48进24推荐一局一胜，12进6推荐三局二胜，决赛推荐五局三胜）。这些赛制建议仅用于在对阵图上展示，实际比赛的几局几胜制由主办者在游戏中控制。
     *   **砺兵台挑战模式:** 房间挑战模式必须设置为管理模式，由主办者根据网站生成的1v1分组选择成员上场。
 *   **报名与匹配:**
-    *   当报名人数达到主办者设置的“最少参赛人数”后，系统自动开始生成对阵图，比赛正式开始。
     *   当报名人数达到“最大参赛人数”后，系统自动关闭报名通道。
+    *   当报名截止时间到达时，系统检查报名人数。
+        *   如果报名人数达到主办者设置的“最少参赛人数”，则比赛状态变为“报名已结束”，系统可以预生成对阵图。
+        *   如果报名人数未达到“最少参赛人数”，则视为活动组织失败，比赛状态变为“已失败 (failed)”，由主办者决定关闭比赛或延长报名时间。
 *   **晋级流程:**
     *   主办者选定胜者后，系统自动将胜者匹配到下一轮比赛，直到决出最终冠军。当出现冠军后，比赛状态自动改为“已结束”。
 *   **比赛状态流转:**
     *   创建比赛后状态为“待定”。
-    *   报名截止时间后，如果达到最少人数，状态变为“报名已结束”。
-    *   当到达主办者设置的比赛时间后，比赛状态为“进行中”。
+    *   报名截止时间到达后，根据报名人数，状态可能变为“报名已结束”或“已失败 (failed)”。
+    *   当到达主办者设置的比赛时间后，或者主办者手动点击“开始比赛”后，比赛状态变为“进行中”。
     *   当出现冠军后，自动改状态为“已结束”。
 
 ### 3.4. 网站首页展示
@@ -97,9 +101,10 @@
 ## 4. 数据库设计草案
 
 *   **Users (用户表):** `id`, `username` (主办者账号), `password` (主办者密码), `game_id` (燕云十六声角色编号，唯一), `character_name` (燕云十六声角色名称，唯一), `phone_number` (可选), `role` (organizer, player), `stream_url` (TEXT, 主播直播间/主页地址，可选)
-*   **Tournaments (比赛表):** `id`, `name`, `organizer_id`, `start_time`, `registration_deadline` (报名截止时间), `min_players`, `max_players` (最大48), `status` (pending, registration_closed, ongoing, finished, failed, extended_registration), `prize_settings` (TEXT/JSONB存储奖品分配), `event_description` (TEXT), `wechat_qr_code_url` (TEXT，存储图片URL，可选), `room_name` (TEXT), `room_number` (TEXT，10位数字), `room_password` (TEXT，4位数字，可选), `winner_id`
+*   **Tournaments (比赛表):** `id`, `name`, `organizer_id`, `start_time`, `registration_deadline` (报名截止时间), `min_players`, `max_players` (最大48), `status` (pending, registration_closed, ongoing, finished, failed, extended_registration), `event_description` (TEXT), `wechat_qr_code_url` (TEXT，存储图片URL，可选), `room_name` (TEXT), `room_number` (TEXT，10位数字), `room_password` (TEXT，4位数字，可选), `winner_id`
 *   **Prizes (奖品表):** `id`, `name`, `description`, `image_url`
     *   默认奖品列表：八音窍、2680长鸣珠时装、1280长鸣珠时装/武学特效/坐骑、980长鸣珠奇术特效、680长鸣珠时装/武器外观/坐骑、60长鸣珠时装/武器外观/坐骑、128元典藏战令、68元精英战令、30元月卡。
+*   **TournamentPrizes (比赛奖品表):** `id`, `tournament_id` (外键), `prize_id` (外键, 可为空), `rank_start` (名次开始), `rank_end` (名次结束), `custom_prize_name` (自定义奖品名), `quantity` (数量)。
 *   **Registrations (报名表):** `id`, `tournament_id`, `player_id`, `character_name`, `character_id`, `registration_time` (报名时间), `status` (active, withdrawn, forfeited)
     *   **退出报名处理:** 玩家退出报名时，将 `status` 字段从 `active` 更新为 `withdrawn`，而不是删除记录。如果系统已完成对战分组，则此玩家视为弃权，`status` 更新为 `forfeited`。
 *   **Matches (对阵表):** `id`, `tournament_id`, `round_number`, `player1_id`, `player2_id`, `winner_id`, `status` (pending, finished)
