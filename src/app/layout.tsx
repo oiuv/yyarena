@@ -49,29 +49,34 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <nav className="w-full flex justify-end gap-4 mb-8 p-4 bg-gray-800 text-white">
-          {isLoggedIn ? (
-            <>
-              <span className="text-gray-300">欢迎, {characterName}</span>
-              <button onClick={handleLogout} className="text-blue-400 hover:underline">退出登录</button>
-            </>
-          ) : (
-            <>
-              <Link href="/register" className="text-blue-400 hover:underline">注册</Link>
-              <Link href="/login" className="text-blue-400 hover:underline">登录</Link>
-            </>
-          )}
-          <Link href="/tournamentRegister" className="text-blue-400 hover:underline">报名比赛</Link>
-          {isLoggedIn && (
-            <Link href="/my-registrations" className="text-blue-400 hover:underline">我的报名</Link>
-          )}
-          {userRole === 'organizer' && (
-            <>
-              <Link href="/my-tournaments" className="text-blue-400 hover:underline">我的比赛</Link>
-              <Link href="/prizes/manage" className="text-blue-400 hover:underline">管理奖品</Link>
-              <Link href="/tournaments/create" className="text-blue-400 hover:underline">创建比赛</Link>
-            </>
-          )}
+        <nav className="w-full flex justify-between items-center mb-8 p-4 bg-gray-800 text-white">
+          <Link href="/" className="text-2xl font-bold text-blue-400 hover:text-blue-300">
+            燕云砺兵台
+          </Link>
+          <div className="flex items-center gap-4">
+            {isLoggedIn ? (
+              <>
+                <span className="text-gray-300">欢迎, {characterName}</span>
+                <button onClick={handleLogout} className="text-blue-400 hover:underline">退出登录</button>
+                <Link href="/tournamentRegister" className="text-blue-400 hover:underline">报名比赛</Link>
+              </>
+            ) : (
+              <>
+                <Link href="/register" className="text-blue-400 hover:underline">注册</Link>
+                <Link href="/login" className="text-blue-400 hover:underline">登录</Link>
+              </>
+            )}
+            {isLoggedIn && (
+              <Link href="/my-registrations" className="text-blue-400 hover:underline">我的报名</Link>
+            )}
+            {userRole === 'organizer' && (
+              <>
+                <Link href="/my-tournaments" className="text-blue-400 hover:underline">我的比赛</Link>
+                <Link href="/prizes/manage" className="text-blue-400 hover:underline">管理奖品</Link>
+                <Link href="/tournaments/create" className="text-blue-400 hover:underline">创建比赛</Link>
+              </>
+            )}
+          </div>
         </nav>
         {children}
       </body>

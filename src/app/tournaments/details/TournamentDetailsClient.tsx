@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
 
 import { getToken } from '@/utils/clientAuth';
+import { getTournamentStatusText } from '@/utils/statusTranslators';
 
 // Helper function to determine match stage
 const getMatchStage = (matchesInRound: number): string => {
@@ -219,7 +220,7 @@ export default function TournamentDetailsClient() {
       <h1 className="text-4xl font-bold mb-4">{tournament.name}</h1>
       <div className="w-full max-w-4xl bg-gray-800 rounded-lg shadow-md p-6 mb-8">
         <p><span className="font-bold">开始时间:</span> {new Date(tournament.start_time).toLocaleString()}</p>
-        <p><span className="font-bold">状态:</span> {tournament.status}</p>
+        <p><span className="font-bold">状态:</span> {getTournamentStatusText(tournament.status)}</p>
         <p><span className="font-bold">说明:</span> {tournament.event_description}</p>
       </div>
 
@@ -253,9 +254,9 @@ export default function TournamentDetailsClient() {
               <div>
                 <p><b>第 {match.round_number} 轮</b>
                   <span> ({getMatchStage(matches.filter(m => m.round_number === match.round_number).length)})</span></p> {/* Display round number */}
-                <span>{match.player1_character_name || 'Player 1'}</span>
+                <span>{match.player1_character_name || 'Player 1'}{match.player1_registration_status === 'forfeited' ? ' (弃权)' : ''}</span>
                 <span className="mx-4">VS</span>
-                <span>{match.player2_character_name || (match.player2_id === null ? '(轮空)' : 'Player 2')}</span>
+                <span>{match.player2_character_name || (match.player2_id === null ? '(轮空)' : 'Player 2')}{match.player2_registration_status === 'forfeited' ? ' (弃权)' : ''}</span>
                 {match.finished_at && ( // Display finished_at if available
                   <p className="text-sm text-gray-400">结束时间: {new Date(match.finished_at).toLocaleString()}</p>
                 )}

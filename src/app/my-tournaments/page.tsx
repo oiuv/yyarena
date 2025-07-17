@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getToken } from '@/utils/clientAuth';
 import Link from 'next/link';
+import { getTournamentStatusText } from '@/utils/statusTranslators';
 
 interface Tournament {
   id: number;
@@ -12,7 +13,7 @@ interface Tournament {
   registration_deadline: string;
   status: string;
   min_players: number;
-  max_players;
+  max_players: number;
   event_description: string;
   organizer_name: string;
 }
@@ -75,7 +76,7 @@ export default function MyTournamentsPage() {
               <h2 className="text-2xl font-semibold text-white mb-2">{tournament.name}</h2>
               <p className="text-gray-300 mb-1">开始时间: {new Date(tournament.start_time).toLocaleString()}</p>
               <p className="text-gray-300 mb-1">报名截止: {new Date(tournament.registration_deadline).toLocaleString()}</p>
-              <p className="text-gray-300 mb-1">状态: {tournament.status}</p>
+              <p className="text-gray-300 mb-1">状态: {getTournamentStatusText(tournament.status)}</p>
               <p className="text-gray-300 mb-4">参赛人数: {tournament.min_players}-{tournament.max_players}</p>
               <Link href={`/tournaments/details?id=${tournament.id}`}>
                 <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">

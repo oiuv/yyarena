@@ -11,11 +11,15 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           m.*,
           p1.character_name as player1_character_name,
           p2.character_name as player2_character_name,
-          w.character_name as winner_character_name
+          w.character_name as winner_character_name,
+          r1.status as player1_registration_status,
+          r2.status as player2_registration_status
         FROM Matches m
         LEFT JOIN Users p1 ON m.player1_id = p1.id
         LEFT JOIN Users p2 ON m.player2_id = p2.id
         LEFT JOIN Users w ON m.winner_id = w.id
+        LEFT JOIN Registrations r1 ON m.tournament_id = r1.tournament_id AND m.player1_id = r1.player_id
+        LEFT JOIN Registrations r2 ON m.tournament_id = r2.tournament_id AND m.player2_id = r2.player_id
         WHERE m.tournament_id = ?
         ORDER BY m.round_number, m.id
       `;

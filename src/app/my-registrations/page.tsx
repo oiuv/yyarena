@@ -4,44 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { jwtDecode } from 'jwt-decode';
 
-function getToken() {
-  const name = 'token=';
-  const decodedCookie = decodeURIComponent(document.cookie);
-  const ca = decodedCookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) === ' ') {
-      c = c.substring(1);
-    }
-    if (c.indexOf(name) === 0) {
-      return c.substring(name.length, c.length);
-    }
-  }
-  return '';
-}
-
-// 辅助函数：将报名状态英文转换为中文
-const getRegistrationStatusText = (status: string) => {
-  switch (status) {
-    case 'active': return '已报名';
-    case 'withdrawn': return '已退出';
-    case 'forfeited': return '已弃权';
-    default: return status;
-  }
-};
-
-// 辅助函数：将比赛状态英文转换为中文
-const getTournamentStatusText = (status: string) => {
-  switch (status) {
-    case 'pending': return '待定';
-    case 'registration_closed': return '报名已截止';
-    case 'ongoing': return '进行中';
-    case 'finished': return '已结束';
-    case 'failed': return '已失败';
-    case 'extended_registration': return '延期报名中';
-    default: return status;
-  }
-};
+import { getToken } from '@/utils/clientAuth'; // Assuming getToken is in clientAuth.ts
+import { getRegistrationStatusText, getTournamentStatusText } from '@/utils/statusTranslators';
 
 export default function MyRegistrationsPage() {
   const [registrations, setRegistrations] = useState<any[]>([]);

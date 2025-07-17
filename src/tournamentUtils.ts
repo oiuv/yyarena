@@ -12,9 +12,9 @@ interface Match {
 
 export async function generateMatchesAndStartTournament(tournamentId: number) {
   try {
-    // 1. Fetch all registered players
+    // 1. Fetch all active registered players
     const registrations: any[] = await new Promise((resolve, reject) => {
-      db.all('SELECT player_id FROM Registrations WHERE tournament_id = ?', [tournamentId], (err, rows) => {
+      db.all('SELECT player_id FROM Registrations WHERE tournament_id = ? AND status = ?', [tournamentId, 'active'], (err, rows) => {
         if (err) reject(err);
         resolve(rows);
       });
@@ -167,7 +167,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
       });
 
       const allRegistrations: any[] = await new Promise((resolve, reject) => {
-        db.all('SELECT player_id, character_name FROM Registrations WHERE tournament_id = ?', [tournamentId], (err, rows) => {
+        db.all(`SELECT player_id, character_name, status as registration_status FROM Registrations WHERE tournament_id = ? AND (status = 'active' OR status = 'forfeited')`, [tournamentId], (err, rows) => {
           if (err) reject(err);
           resolve(rows);
         });
@@ -179,6 +179,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
           character_name: reg.character_name,
           elimination_round: 0, // Default for players with no matches played or no losses
           lost_to_player_id: null, // ID of the player they lost to
+          is_forfeited_registration: reg.registration_status === 'forfeited', // New flag
         });
       }
 
@@ -200,40 +201,56 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
         championStats.elimination_round = maxRound + 1; // Give champion the highest round
       }
 
-      // Sort players based on elimination round, then by opponent's elimination round
-      const sortedPlayers = [...playerStats.entries()].sort(([, a], [, b]) => {
+      // Sort players based on elimination round, then by opponent's elimination round, and finally by forfeited status
+      const sortedPlayers = Array.from(playerStats.entries()).sort(([, a], [, b]) => {
+        // Primary sort: Forfeited registrations come last
+        if (a.is_forfeited_registration && !b.is_forfeited_registration) return 1;
+        if (!a.is_forfeited_registration && b.is_forfeited_registration) return -1;
+
+        // If both are forfeited or both are not forfeited, then sort by elimination_round
         if (a.elimination_round !== b.elimination_round) {
           return b.elimination_round - a.elimination_round;
         }
-        // Tie-breaker: Opponent's strength (their elimination round)
-        const opponentAStats = a.lost_to_player_id ? playerStats.get(a.lost_to_player_id) : { elimination_round: 0 };
-        const opponentBStats = b.lost_to_player_id ? playerStats.get(b.lost_to_player_id) : { elimination_round: 0 };
-        return (opponentBStats?.elimination_round || 0) - (opponentAStats?.elimination_round || 0);
+
+        // If elimination_round is same (and not forfeited), then tie-breaker: Opponent's strength
+        // This part only applies to players who actually lost a match
+        if (!a.is_forfeited_registration && !b.is_forfeited_registration) {
+          const opponentAStats = a.lost_to_player_id ? playerStats.get(a.lost_to_player_id) : null;
+          const opponentBStats = b.lost_to_player_id ? playerStats.get(b.lost_to_player_id) : null;
+          return (opponentBStats?.elimination_round || 0) - (opponentAStats?.elimination_round || 0);
+        }
+
+        // If both are forfeited and elimination_round is same, maintain original order (or sort by ID if needed)
+        return 0;
       });
 
       const finalRankings: any[] = [];
       let currentRank = 0;
       let lastEliminationRound = -1;
       let lastOpponentRound = -1;
+      let lastForfeitedStatus = false;
 
       for (let i = 0; i < sortedPlayers.length; i++) {
         const [playerId, stats] = sortedPlayers[i];
-        const opponentStats = stats.lost_to_player_id ? playerStats.get(stats.lost_to_player_id) : { elimination_round: 0 };
+        const opponentStats = stats.lost_to_player_id ? playerStats.get(stats.lost_to_player_id) : null;
         const opponentRound = opponentStats?.elimination_round || 0;
 
         // Determine rank - only advance rank if primary or secondary sort criteria change
-        if (stats.elimination_round !== lastEliminationRound || opponentRound !== lastOpponentRound) {
+        if (stats.elimination_round !== lastEliminationRound || 
+            opponentRound !== lastOpponentRound || 
+            stats.is_forfeited_registration !== lastForfeitedStatus) {
           currentRank = i + 1;
         }
 
         finalRankings.push({
           rank: currentRank,
           player_id: playerId,
-          character_name: stats.character_name,
+          character_name: stats.character_name + (stats.is_forfeited_registration ? ' (弃权)' : ''),
         });
 
         lastEliminationRound = stats.elimination_round;
         lastOpponentRound = opponentRound;
+        lastForfeitedStatus = stats.is_forfeited_registration;
       }
 
       await new Promise((resolve, reject) => {
