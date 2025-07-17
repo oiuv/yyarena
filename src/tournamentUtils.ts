@@ -157,6 +157,34 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
         );
       });
       console.log(`[advanceTournamentRound] Tournament ${tournamentId} finished. Champion: ${championId}`);
+
+      // Calculate and store final rankings
+      const allRegisteredPlayers: any[] = await new Promise((resolve, reject) => {
+        db.all('SELECT player_id, character_name FROM Registrations WHERE tournament_id = ?', [tournamentId], (err, rows) => {
+          if (err) reject(err);
+          resolve(rows);
+        });
+      });
+
+      const championPlayer = allRegisteredPlayers.find(p => p.player_id === championId);
+      const otherPlayers = allRegisteredPlayers.filter(p => p.player_id !== championId);
+
+      const finalRankings = [
+        { rank: 1, player_id: championId, character_name: championPlayer?.character_name || '未知' },
+        ...otherPlayers.map((p, index) => ({ rank: index + 2, player_id: p.player_id, character_name: p.character_name }))
+      ];
+
+      await new Promise((resolve, reject) => {
+        db.run(
+          'UPDATE Tournaments SET final_rankings = ? WHERE id = ?',
+          [JSON.stringify(finalRankings), tournamentId],
+          function (err) {
+            if (err) reject(err);
+            else resolve(this);
+          }
+        );
+      });
+      console.log(`[advanceTournamentRound] Final rankings stored for tournament ${tournamentId}.`);
       return;
     }
 

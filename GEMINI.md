@@ -49,7 +49,7 @@
     *   为每一组对局手动选择获胜者，以推进比赛进入下一轮。
     *   对已创建的比赛无删除权限，只允许修改资料。
     *   **活动组织失败处理:** 如果报名截止时已报名比赛玩家未达最少参赛人数设置，视为活动组织失败，由主办者决定关闭比赛（状态为“已关闭”）或延长报名时间调整比赛日期（状态可以为“报名中”或“延期报名中”）。
-    *   **获胜者标记:** 主办者要能方便快捷地标记分组中的获胜玩家。**包括标记单方弃权（另一方获胜）或双方弃权（无胜者）。**
+    *   **获胜者标记:** 主办者要能方便快捷地标记分组中的获胜者。**支持标记单方弃权（另一方获胜）或双方弃权（无胜者）。**
 
 ### 3.2. 玩家功能
 
@@ -100,6 +100,12 @@
 *   **玩家分组状态:** 显示比赛匹配的玩家分组状态。
 *   **获胜者设置:** 正在进行中的比赛要由主办者设置每组获胜者玩家。
 *   **玩家信息显示:** 玩家信息只公开显示角色名称，角色编号只公开显示前3位和最后3位。
+*   **对阵图显示优化:**
+    *   显示对阵轮数（例如：“第 1 轮”）。
+    *   显示比赛阶段（例如：“淘汰赛”、“1/8 决赛”、“1/4 决赛”、“半决赛”、“决赛”）。
+    *   显示每一局对战的结束时间。
+    *   在比赛结束后，显示最终排名（目前为冠军和其余玩家的简易排名）。
+    *   双方弃权的比赛结果显示为“双方弃权”。
 
 ### 3.6. 奖品管理
 
@@ -109,13 +115,13 @@
 ## 4. 数据库设计草案
 
 *   **Users (用户表):** `id`, `username` (主办者账号), `password` (主办者密码), `game_id` (燕云十六声角色编号，唯一), `character_name` (燕云十六声角色名称，唯一), `phone_number` (可选), `role` (organizer, player), `stream_url` (TEXT, 主播直播间/主页地址，可选)
-*   **Tournaments (比赛表):** `id`, `name`, `organizer_id`, `start_time`, `registration_deadline` (报名截止时间), `min_players`, `max_players` (最大48), `status` (pending, registration_closed, ongoing, finished, failed, extended_registration), `event_description` (TEXT), `wechat_qr_code_url` (TEXT，存储图片URL，可选), `room_name` (TEXT), `room_number` (TEXT，10位数字), `room_password` (TEXT，4位数字，可选), `winner_id`, **`default_match_format` (TEXT)**
+*   **Tournaments (比赛表):** `id`, `name`, `organizer_id`, `start_time`, `registration_deadline` (报名截止时间), `min_players`, `max_players` (最大48), `status` (pending, registration_closed, ongoing, finished, failed, extended_registration), `event_description` (TEXT), `wechat_qr_code_url` (TEXT，存储图片URL，可选), `room_name` (TEXT), `room_number` (TEXT，10位数字), `room_password` (TEXT，4位数字，可选), `winner_id`, `default_match_format` (TEXT), **`final_rankings` (TEXT)**
 *   **Prizes (奖品表):** `id`, `name`, `description`, `image_url`
     *   默认奖品列表：八音窍、2680长鸣珠时装、1280长鸣珠时装/武学特效/坐骑、980长鸣珠奇术特效、680长鸣珠时装/武器外观/坐骑、60长鸣珠时装/武器外观/坐骑、128元典藏战令、68元精英战令、30元月卡。
 *   **TournamentPrizes (比赛奖品表):** `id`, `tournament_id` (外键), `prize_id` (外键, 可为空), `rank_start` (名次开始), `rank_end` (名次结束), `custom_prize_name` (自定义奖品名), `quantity` (数量)。
 *   **Registrations (报名表):** `id`, `tournament_id`, `player_id`, `character_name`, `character_id`, `registration_time` (报名时间), `status` (active, withdrawn, forfeited)
     *   **退出报名处理:** 玩家退出报名时，将 `status` 字段从 `active` 更新为 `withdrawn`，而不是删除记录。如果系统已完成对战分组，则此玩家视为弃权，`status` 更新为 `forfeited`。
-*   **Matches (对阵表):** `id`, `tournament_id`, `round_number`, `player1_id`, `player2_id`, `winner_id`, `status` (pending, finished, forfeited), **`finished_at` (TEXT)**, **`match_format` (TEXT)**
+*   **Matches (对阵表):** `id`, `tournament_id`, `round_number`, `player1_id`, `player2_id`, `winner_id`, `status` (pending, finished, forfeited), `finished_at` (TEXT), `match_format` (TEXT)
     *   **`status` 字段新增 `forfeited` 状态，用于标记双方弃权的比赛。**
 
 ## 5. 开发计划

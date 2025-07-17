@@ -32,7 +32,8 @@ db.serialize(() => {
       room_number TEXT,
       room_password TEXT,
       winner_id INTEGER,
-      default_match_format TEXT, -- Add this line for default match format
+      default_match_format TEXT,
+      final_rankings TEXT, -- Add this line for final rankings
       FOREIGN KEY (organizer_id) REFERENCES Users(id),
       FOREIGN KEY (winner_id) REFERENCES Users(id)
     )

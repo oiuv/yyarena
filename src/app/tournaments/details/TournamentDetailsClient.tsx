@@ -6,6 +6,23 @@ import { jwtDecode } from 'jwt-decode';
 
 import { getToken } from '@/utils/clientAuth';
 
+// Helper function to determine match stage
+const getMatchStage = (matchesInRound: number): string => {
+  if (matchesInRound === 1) {
+    return '决赛';
+  } else if (matchesInRound === 2) {
+    return '半决赛';
+  } else if (matchesInRound <= 4) { // 3 or 4 matches
+    return '1/4 决赛';
+  } else if (matchesInRound <= 8) { // 5 to 8 matches
+    return '1/8 决赛';
+  } else if (matchesInRound <= 16) { // 9 to 16 matches
+    return '1/16 决赛';
+  } else {
+    return '淘汰赛'; // For earlier rounds or larger tournaments (including what was 1/32 finals)
+  }
+};
+
 export default function TournamentDetailsClient() {
   const searchParams = useSearchParams();
   const tournamentId = searchParams.get('id');
@@ -150,13 +167,29 @@ export default function TournamentDetailsClient() {
   };
 
   const handleWinnerSelectionChange = (matchId: number, value: string) => {
-    setMatchSelections(prev => ({
-      ...prev,
-      [matchId]: {
-        ...prev[matchId],
-        winnerSelection: value === "" ? null : (value.startsWith("forfeit_") ? value : parseInt(value)),
+    setMatchSelections(prev => {
+      let newWinnerSelection: number | 'forfeit_player1' | 'forfeit_player2' | 'forfeit_both' | null;
+
+      if (value === "") {
+        newWinnerSelection = null;
+      } else if (value === "forfeit_player1") {
+        newWinnerSelection = "forfeit_player1";
+      } else if (value === "forfeit_player2") {
+        newWinnerSelection = "forfeit_player2";
+      } else if (value === "forfeit_both") {
+        newWinnerSelection = "forfeit_both";
+      } else {
+        newWinnerSelection = parseInt(value, 10);
       }
-    }));
+
+      return {
+        ...prev,
+        [matchId]: {
+          ...prev[matchId],
+          winnerSelection: newWinnerSelection,
+        }
+      };
+    });
   };
 
   const handleMatchFormatChange = (matchId: number, value: string) => {
@@ -199,13 +232,27 @@ export default function TournamentDetailsClient() {
         </button>
       )}
 
+      {tournament.status === 'finished' && tournament.final_rankings && (
+        <div className="w-full max-w-4xl bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-3xl font-bold mb-4">最终排名</h2>
+          <ul>
+            {tournament.final_rankings.map((player: any) => (
+              <li key={player.player_id} className="mb-2">
+                <b>第 {player.rank} 名:</b> {player.character_name}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <h2 className="text-3xl font-bold mb-4">对阵图</h2>
       <div className="w-full max-w-4xl">
         {matches.length > 0 ? (
           matches.map(match => (
             <div key={match.id} className="bg-gray-700 p-4 rounded-lg mb-2 flex justify-between items-center">
               <div>
-                <p><b>第 {match.round_number} 轮</b></p> {/* Display round number */}
+                <p><b>第 {match.round_number} 轮</b>
+                  <span> ({getMatchStage(matches.filter(m => m.round_number === match.round_number).length)})</span></p> {/* Display round number */}
                 <span>{match.player1_character_name || 'Player 1'}</span>
                 <span className="mx-4">VS</span>
                 <span>{match.player2_character_name || (match.player2_id === null ? '(轮空)' : 'Player 2')}</span>
