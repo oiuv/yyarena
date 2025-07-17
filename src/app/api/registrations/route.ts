@@ -54,6 +54,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: '比赛当前不可报名' }, { status: 400 });
     }
 
+    // Check if the tournament is full
+    const registrationCount: any = await new Promise((resolve, reject) => {
+      db.get('SELECT COUNT(*) as count FROM Registrations WHERE tournament_id = ? AND status = ?', [tournamentId, 'active'], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    if (registrationCount.count >= tournament.max_players) {
+      return NextResponse.json({ message: '比赛报名人数已满' }, { status: 400 });
+    }
+
     // 3. Insert Registration
     const result: any = await new Promise((resolve, reject) => {
       db.run(

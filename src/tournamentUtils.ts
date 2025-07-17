@@ -49,6 +49,20 @@ export async function generateMatchesAndStartTournament(tournamentId: number) {
       });
     }
 
+    // Handle bye player if any, by creating a finished match for them
+    if (byePlayer) {
+      matches.push({
+        tournament_id: tournamentId,
+        round_number: 1,
+        player1_id: byePlayer,
+        player2_id: null, // Indicate a bye
+        winner_id: byePlayer,
+        status: 'finished', // Bye matches are immediately finished
+        match_format: "1局1胜",
+      });
+      console.log(`Player ${byePlayer} gets a bye in Tournament ${tournamentId} Round 1.`);
+    }
+
     // 4. Insert these matches into the Matches table
     await new Promise((resolve, reject) => {
       db.serialize(() => {
@@ -62,10 +76,10 @@ export async function generateMatchesAndStartTournament(tournamentId: number) {
             match.round_number,
             match.player1_id,
             match.player2_id,
-            null, // winner_id is null initially
+            match.winner_id || null, // Handle winner_id for bye matches
             match.status,
-            null, // Explicitly set finished_at to NULL
-            "1局1胜" // Default match format for Round 1, can be dynamic later
+            match.status === 'finished' ? new Date().toISOString() : null, // Set finished_at for bye
+            match.match_format || "1局1胜" // Default match format
           );
         });
         stmt.finalize();
@@ -75,20 +89,6 @@ export async function generateMatchesAndStartTournament(tournamentId: number) {
         });
       });
     });
-
-    // Handle bye player if any
-    if (byePlayer) {
-      matches.push({
-        tournament_id: tournamentId,
-        round_number: 1,
-        player1_id: byePlayer,
-        player2_id: null, // Indicate a bye
-        winner_id: byePlayer,
-        status: 'finished', // Bye matches are immediately finished
-        match_format: "1局1胜", // Add match_format for bye player
-      });
-      console.log(`Player ${byePlayer} gets a bye in Tournament ${tournamentId} Round 1.`);
-    }
 
     // 5. Update tournament status to 'ongoing'
     await new Promise((resolve, reject) => {
@@ -158,7 +158,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
       });
       console.log(`[advanceTournamentRound] Tournament ${tournamentId} finished. Champion: ${championId}`);
 
-      // Calculate and store final rankings with tie-handling
+      // Calculate and store final rankings with tie-breaking based on opponent strength
       const allMatches: any[] = await new Promise((resolve, reject) => {
         db.all('SELECT * FROM Matches WHERE tournament_id = ? ORDER BY round_number DESC', [tournamentId], (err, rows) => {
           if (err) reject(err);
@@ -178,6 +178,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
         playerStats.set(reg.player_id, {
           character_name: reg.character_name,
           elimination_round: 0, // Default for players with no matches played or no losses
+          lost_to_player_id: null, // ID of the player they lost to
         });
       }
 
@@ -188,6 +189,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
           const stats = playerStats.get(loserId);
           if (stats && stats.elimination_round === 0) { // Only record the first loss
             stats.elimination_round = match.round_number;
+            stats.lost_to_player_id = match.winner_id;
           }
         }
       }
@@ -198,22 +200,40 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
         championStats.elimination_round = maxRound + 1; // Give champion the highest round
       }
 
-      const sortedPlayers = [...playerStats.entries()].sort(([, a], [, b]) => b.elimination_round - a.elimination_round);
+      // Sort players based on elimination round, then by opponent's elimination round
+      const sortedPlayers = [...playerStats.entries()].sort(([, a], [, b]) => {
+        if (a.elimination_round !== b.elimination_round) {
+          return b.elimination_round - a.elimination_round;
+        }
+        // Tie-breaker: Opponent's strength (their elimination round)
+        const opponentAStats = a.lost_to_player_id ? playerStats.get(a.lost_to_player_id) : { elimination_round: 0 };
+        const opponentBStats = b.lost_to_player_id ? playerStats.get(b.lost_to_player_id) : { elimination_round: 0 };
+        return (opponentBStats?.elimination_round || 0) - (opponentAStats?.elimination_round || 0);
+      });
 
       const finalRankings: any[] = [];
       let currentRank = 0;
-      let lastRound = -1;
+      let lastEliminationRound = -1;
+      let lastOpponentRound = -1;
+
       for (let i = 0; i < sortedPlayers.length; i++) {
         const [playerId, stats] = sortedPlayers[i];
-        if (stats.elimination_round !== lastRound) {
+        const opponentStats = stats.lost_to_player_id ? playerStats.get(stats.lost_to_player_id) : { elimination_round: 0 };
+        const opponentRound = opponentStats?.elimination_round || 0;
+
+        // Determine rank - only advance rank if primary or secondary sort criteria change
+        if (stats.elimination_round !== lastEliminationRound || opponentRound !== lastOpponentRound) {
           currentRank = i + 1;
         }
+
         finalRankings.push({
           rank: currentRank,
           player_id: playerId,
           character_name: stats.character_name,
         });
-        lastRound = stats.elimination_round;
+
+        lastEliminationRound = stats.elimination_round;
+        lastOpponentRound = opponentRound;
       }
 
       await new Promise((resolve, reject) => {
