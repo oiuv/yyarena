@@ -158,21 +158,63 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
       });
       console.log(`[advanceTournamentRound] Tournament ${tournamentId} finished. Champion: ${championId}`);
 
-      // Calculate and store final rankings
-      const allRegisteredPlayers: any[] = await new Promise((resolve, reject) => {
+      // Calculate and store final rankings with tie-handling
+      const allMatches: any[] = await new Promise((resolve, reject) => {
+        db.all('SELECT * FROM Matches WHERE tournament_id = ? ORDER BY round_number DESC', [tournamentId], (err, rows) => {
+          if (err) reject(err);
+          resolve(rows);
+        });
+      });
+
+      const allRegistrations: any[] = await new Promise((resolve, reject) => {
         db.all('SELECT player_id, character_name FROM Registrations WHERE tournament_id = ?', [tournamentId], (err, rows) => {
           if (err) reject(err);
           resolve(rows);
         });
       });
 
-      const championPlayer = allRegisteredPlayers.find(p => p.player_id === championId);
-      const otherPlayers = allRegisteredPlayers.filter(p => p.player_id !== championId);
+      const playerStats = new Map();
+      for (const reg of allRegistrations) {
+        playerStats.set(reg.player_id, {
+          character_name: reg.character_name,
+          elimination_round: 0, // Default for players with no matches played or no losses
+        });
+      }
 
-      const finalRankings = [
-        { rank: 1, player_id: championId, character_name: championPlayer?.character_name || '未知' },
-        ...otherPlayers.map((p, index) => ({ rank: index + 2, player_id: p.player_id, character_name: p.character_name }))
-      ];
+      for (const match of allMatches) {
+        if (match.winner_id === null || match.winner_id === undefined) continue;
+        const loserId = match.player1_id === match.winner_id ? match.player2_id : match.player1_id;
+        if (loserId) {
+          const stats = playerStats.get(loserId);
+          if (stats && stats.elimination_round === 0) { // Only record the first loss
+            stats.elimination_round = match.round_number;
+          }
+        }
+      }
+
+      const championStats = playerStats.get(championId);
+      if (championStats) {
+        const maxRound = allMatches.length > 0 ? Math.max(...allMatches.map(m => m.round_number)) : 0;
+        championStats.elimination_round = maxRound + 1; // Give champion the highest round
+      }
+
+      const sortedPlayers = [...playerStats.entries()].sort(([, a], [, b]) => b.elimination_round - a.elimination_round);
+
+      const finalRankings: any[] = [];
+      let currentRank = 0;
+      let lastRound = -1;
+      for (let i = 0; i < sortedPlayers.length; i++) {
+        const [playerId, stats] = sortedPlayers[i];
+        if (stats.elimination_round !== lastRound) {
+          currentRank = i + 1;
+        }
+        finalRankings.push({
+          rank: currentRank,
+          player_id: playerId,
+          character_name: stats.character_name,
+        });
+        lastRound = stats.elimination_round;
+      }
 
       await new Promise((resolve, reject) => {
         db.run(
@@ -208,6 +250,13 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
     // 6. Otherwise, create new match pairings for the next round
     const nextRoundMatches: Match[] = [];
     let byePlayer = null;
+
+    // Shuffle winners to ensure the bye is random
+    for (let i = winners.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [winners[i], winners[j]] = [winners[j], winners[i]];
+    }
+
     if (winners.length % 2 !== 0) {
       byePlayer = winners.pop(); // Last winner gets a bye
       console.log(`[advanceTournamentRound] Player ${byePlayer} gets a bye in Tournament ${tournamentId} Round ${nextRound}.`);
