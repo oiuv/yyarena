@@ -67,6 +67,7 @@ export default function RootLayout({
           )}
           {userRole === 'organizer' && (
             <>
+              <Link href="/my-tournaments" className="text-blue-400 hover:underline">我的比赛</Link>
               <Link href="/prizes/manage" className="text-blue-400 hover:underline">管理奖品</Link>
               <Link href="/tournaments/create" className="text-blue-400 hover:underline">创建比赛</Link>
             </>

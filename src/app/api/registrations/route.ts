@@ -66,26 +66,46 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: '比赛报名人数已满' }, { status: 400 });
     }
 
-    // 3. Insert Registration
-    const result: any = await new Promise((resolve, reject) => {
-      db.run(
-        'INSERT INTO Registrations (tournament_id, player_id, character_name, character_id, registration_time, status) VALUES (?, ?, ?, ?, ?, ?)',
-        [tournamentId, playerId, characterName, characterId, new Date().toISOString(), 'active'],
-        function (err) {
-          if (err) {
-            if (err.message.includes('UNIQUE constraint failed')) {
-                reject(new Error('您已经报名过此比赛'));
-            } else {
-                reject(err);
-            }
-          } else {
-            resolve({ id: this.lastID });
-          }
-        }
-      );
+    // 3. Check for existing registration and update or insert
+    const existingRegistration: any = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM Registrations WHERE tournament_id = ? AND player_id = ?', [tournamentId, playerId], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
     });
 
-    return NextResponse.json({ message: '报名成功', registrationId: result.id }, { status: 201 });
+    if (existingRegistration) {
+      if (existingRegistration.status === 'active') {
+        return NextResponse.json({ message: '您已经报名过此比赛' }, { status: 400 });
+      } else if (existingRegistration.status === 'forfeited') {
+        return NextResponse.json({ message: '您已弃权，无法重新报名' }, { status: 400 });
+      } else { // withdrawn, allow re-registration
+        const result: any = await new Promise((resolve, reject) => {
+          db.run(
+            'UPDATE Registrations SET status = ?, registration_time = ? WHERE id = ?',
+            ['active', new Date().toISOString(), existingRegistration.id],
+            function (err) {
+              if (err) reject(err);
+              else resolve({ id: existingRegistration.id });
+            }
+          );
+        });
+        return NextResponse.json({ message: '重新报名成功', registrationId: result.id }, { status: 200 });
+      }
+    } else {
+      // No existing registration, insert new one
+      const result: any = await new Promise((resolve, reject) => {
+        db.run(
+          'INSERT INTO Registrations (tournament_id, player_id, character_name, character_id, registration_time, status) VALUES (?, ?, ?, ?, ?, ?)',
+          [tournamentId, playerId, characterName, characterId, new Date().toISOString(), 'active'],
+          function (err) {
+            if (err) reject(err);
+            else resolve({ id: this.lastID });
+          }
+        );
+      });
+      return NextResponse.json({ message: '报名成功', registrationId: result.id }, { status: 201 });
+    }
 
   } catch (error: any) {
     console.error('Error creating registration:', error);

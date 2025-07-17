@@ -35,20 +35,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const now = new Date();
     const registrationDeadline = new Date(registration.registration_deadline);
 
-    if (now > registrationDeadline) {
-      // If registration deadline passed, check if tournament has started or is ongoing
-      if (registration.tournament_status === 'ongoing' || registration.tournament_status === 'finished') {
-        return NextResponse.json({ message: '比赛已开始或已结束，无法退出报名' }, { status: 400 });
-      } else {
-        // If deadline passed but tournament not started/ongoing, it's a forfeiture
-        await new Promise<void>((resolve, reject) => {
-          db.run('UPDATE Registrations SET status = ? WHERE id = ?', ['forfeited', registrationId], function (err) {
-            if (err) reject(err);
-            else resolve();
-          });
-        });
-        return NextResponse.json({ message: '报名已截止，您已弃权' }, { status: 200 });
-      }
+    if (now > registrationDeadline || registration.tournament_status === 'ongoing' || registration.tournament_status === 'finished') {
+      return NextResponse.json({ message: '比赛已开始或已结束，无法退出报名' }, { status: 400 });
     }
 
     // If deadline not passed, allow withdrawal

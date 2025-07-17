@@ -20,6 +20,29 @@ function getToken() {
   return '';
 }
 
+// 辅助函数：将报名状态英文转换为中文
+const getRegistrationStatusText = (status: string) => {
+  switch (status) {
+    case 'active': return '已报名';
+    case 'withdrawn': return '已退出';
+    case 'forfeited': return '已弃权';
+    default: return status;
+  }
+};
+
+// 辅助函数：将比赛状态英文转换为中文
+const getTournamentStatusText = (status: string) => {
+  switch (status) {
+    case 'pending': return '待定';
+    case 'registration_closed': return '报名已截止';
+    case 'ongoing': return '进行中';
+    case 'finished': return '已结束';
+    case 'failed': return '已失败';
+    case 'extended_registration': return '延期报名中';
+    default: return status;
+  }
+};
+
 export default function MyRegistrationsPage() {
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [error, setError] = useState('');
@@ -98,6 +121,40 @@ export default function MyRegistrationsPage() {
     }
   };
 
+  const handleReRegister = async (tournamentId: number) => {
+    const token = getToken();
+    if (!token) {
+      alert('请先登录');
+      return;
+    }
+
+    if (!confirm('确定要重新报名本次比赛吗？')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/registrations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ tournamentId }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message);
+        // Refresh registrations list
+        window.location.reload();
+      } else {
+        alert(`错误: ${data.message}`);
+      }
+    } catch (err) {
+      alert('一个未知错误发生');
+    }
+  };
+
   if (loading) {
     return <div className="text-center p-8">加载中...</div>;
   }
@@ -125,16 +182,30 @@ export default function MyRegistrationsPage() {
                     <p>报名时间: {new Date(reg.registration_time).toLocaleString()}</p>
                     <p>比赛开始: {new Date(reg.start_time).toLocaleString()}</p>
                     <p>报名截止: {new Date(reg.registration_deadline).toLocaleString()}</p>
-                    <p>报名状态: {reg.registration_status}</p>
-                    <p>比赛状态: {reg.tournament_status}</p>
+                    <p>报名状态: {getRegistrationStatusText(reg.registration_status)}</p>
+                    <p>比赛状态: {getTournamentStatusText(reg.tournament_status)}</p>
                   </Link>
                 </div>
-                {reg.registration_status === 'active' && new Date() < new Date(reg.registration_deadline) && (
+                {reg.registration_status === 'active' && 
+                 reg.tournament_status !== 'ongoing' && 
+                 reg.tournament_status !== 'finished' && 
+                 new Date() < new Date(reg.registration_deadline) && (
                   <button
                     onClick={() => handleWithdraw(reg.registration_id)}
                     className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
                   >
                     退出报名
+                  </button>
+                )}
+                {reg.registration_status === 'withdrawn' && 
+                 reg.tournament_status !== 'ongoing' && 
+                 reg.tournament_status !== 'finished' && 
+                 new Date() < new Date(reg.registration_deadline) && (
+                  <button
+                    onClick={() => handleReRegister(reg.tournament_id)}
+                    className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded ml-2"
+                  >
+                    重新报名
                   </button>
                 )}
               </li>
