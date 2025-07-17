@@ -61,6 +61,9 @@
         *   **手机号:** 可选补充，用于管理游戏ID。
 *   **查看比赛记录和获奖记录:** 玩家角色可以查看自己参与过的比赛记录和获奖记录。（**待开发**）
 *   **退出报名:** 对已报名的比赛只能在比赛开始前退出报名，比赛开始后无法退出。**退出报名后在报名截止时间前还可以重新报名。**
+*   **玩家数据统计:**
+    *   新增小节，描述需要统计的玩家数据：参赛数量、获得第1、2、3名的次数。
+    *   提及未来实现玩家排行榜的功能，激励玩家参与。
 
 ### 3.3. 系统自动化逻辑
 
@@ -80,7 +83,7 @@
         *   **一人未到场:** 默认到场玩家获胜。
         *   **两人均未到场:** 比赛结果为“无胜者”或“平局”，不产生晋级者。主办者可选择标记为“双方弃权”。
         *   **弃赛标记:** 主办者可以标记玩家为“弃赛”状态。
-        *   **恶意弃赛风险管理:** 标记弃赛玩家后期可显示在玩家资料中，甚至限制弃赛超过多少次的玩家报名比赛。（**待开发**）
+        *   **恶意弃赛风险管理:** 标记弃赛玩家后期可显示在玩家资料中，甚至限制弃赛超过多少次的玩家报名比赛。（这将通过在用户表中增加弃赛次数统计字段来实现）。
 *   **比赛状态流转:**
     *   创建比赛后状态为“待定”。
     *   报名截止时间到达后，根据报名人数，状态可能变为“报名已结束”或“已失败 (failed)”。
@@ -114,7 +117,7 @@
 
 ## 4. 数据库设计草案
 
-*   **Users (用户表):** `id`, `username` (主办者账号), `password` (主办者密码), `game_id` (燕云十六声角色编号，唯一), `character_name` (燕云十六声角色名称，唯一), `phone_number` (可选), `role` (organizer, player), `stream_url` (TEXT, 主播直播间/主页地址，可选)
+*   **Users (用户表):** `id`, `username` (主办者账号), `password` (主办者密码), `game_id` (燕云十六声角色编号，唯一), `character_name` (燕云十六声角色名称，唯一), `phone_number` (可选), `role` (organizer, player), `stream_url` (TEXT, 主播直播间/主页地址，可选), `total_participations` (INTEGER, 默认 0), `first_place_count` (INTEGER, 默认 0), `second_place_count` (INTEGER, 默认 0), `third_place_count` (INTEGER, 默认 0), `forfeit_count` (INTEGER, 默认 0)
 *   **Tournaments (比赛表):** `id`, `name`, `organizer_id`, `start_time`, `registration_deadline` (报名截止时间), `min_players`, `max_players` (最大48), `status` (pending, registration_closed, ongoing, finished, failed, extended_registration), `event_description` (TEXT), `wechat_qr_code_url` (TEXT，存储图片URL，可选), `room_name` (TEXT), `room_number` (TEXT，10位数字), `room_password` (TEXT，4位数字，可选), `winner_id`, `default_match_format` (TEXT), **`final_rankings` (TEXT)**
 *   **Prizes (奖品表):** `id`, `name`, `description`, `image_url`
     *   默认奖品列表：八音窍、2680长鸣珠时装、1280长鸣珠时装/武学特效/坐骑、980长鸣珠奇术特效、680长鸣珠时装/武器外观/坐骑、60长鸣珠时装/武器外观/坐骑、128元典藏战令、68元精英战令、30元月卡。
