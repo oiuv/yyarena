@@ -56,9 +56,7 @@ export async function generateMatchesAndStartTournament(tournamentId: number) {
         const stmt = db.prepare(
           'INSERT INTO Matches (tournament_id, round_number, player1_id, player2_id, winner_id, status, finished_at, match_format) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         );
-        console.log(`[generateMatchesAndStartTournament] SQL for insert: ${stmt.sql}`); // Log SQL
         matches.forEach(match => {
-          console.log(`[generateMatchesAndStartTournament] Inserting match: ${JSON.stringify(match)}`); // Log match object
           stmt.run(
             match.tournament_id,
             match.round_number,
@@ -217,9 +215,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
         const stmt = db.prepare(
           'INSERT INTO Matches (tournament_id, round_number, player1_id, player2_id, winner_id, status, finished_at, match_format) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         );
-        console.log(`[advanceTournamentRound] SQL for insert: ${stmt.sql}`); // Log SQL
         nextRoundMatches.forEach(match => {
-          console.log(`[advanceTournamentRound] Inserting match: ${JSON.stringify(match)}`); // Log match object
           stmt.run(
             match.tournament_id,
             match.round_number,

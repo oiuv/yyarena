@@ -14,8 +14,7 @@ export default function TournamentDetailsClient() {
   const [matches, setMatches] = useState<any[]>([]);
   const [error, setError] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [selectedWinner, setSelectedWinner] = useState<number | 'forfeit_player1' | 'forfeit_player2' | 'forfeit_both' | null>(null); // Updated type for selectedWinner
-  const [selectedMatchFormat, setSelectedMatchFormat] = useState<string>('1局1胜'); // New state for match format
+  const [matchSelections, setMatchSelections] = useState<{[matchId: number]: { winnerSelection: number | 'forfeit_player1' | 'forfeit_player2' | 'forfeit_both' | null, matchFormat: string }}>({}); // New state for individual match selections
 
   useEffect(() => {
     const token = getToken();
@@ -38,6 +37,17 @@ export default function TournamentDetailsClient() {
           const matchesData = await matchesRes.json();
           setTournament(tournamentData);
           setMatches(matchesData);
+
+          // Initialize matchSelections based on fetched matches
+          const initialSelections: {[matchId: number]: { winnerSelection: number | 'forfeit_player1' | 'forfeit_player2' | 'forfeit_both' | null, matchFormat: string }} = {};
+          matchesData.forEach((match: any) => {
+            initialSelections[match.id] = {
+              winnerSelection: match.winner_id || null, // Use existing winner if any
+              matchFormat: match.match_format || '1局1胜', // Use existing format or default
+            };
+          });
+          setMatchSelections(initialSelections);
+
         } catch (err) {
           setError('Failed to fetch tournament details.');
         }
@@ -83,8 +93,9 @@ export default function TournamentDetailsClient() {
     }
   };
 
-  const handleMarkWinner = async (match: any, winnerSelection: number | 'forfeit_player1' | 'forfeit_player2' | 'forfeit_both' | null) => {
-    if (!winnerSelection) {
+  const handleMarkWinner = async (match: any) => { // Removed winnerSelection and selectedMatchFormat from params
+    const currentSelection = matchSelections[match.id];
+    if (!currentSelection || !currentSelection.winnerSelection) {
       alert('请选择一个获胜者或弃权类型。');
       return;
     }
@@ -99,15 +110,15 @@ export default function TournamentDetailsClient() {
     let forfeitType: string | null = null;
 
     // Determine winnerIdToSend and forfeitType based on winnerSelection
-    if (typeof winnerSelection === 'number') {
-      winnerIdToSend = winnerSelection;
-    } else if (winnerSelection === 'forfeit_player1') {
+    if (typeof currentSelection.winnerSelection === 'number') {
+      winnerIdToSend = currentSelection.winnerSelection;
+    } else if (currentSelection.winnerSelection === 'forfeit_player1') {
       winnerIdToSend = match.player2_id; // Player 2 wins by Player 1 forfeiting
       forfeitType = 'player1';
-    } else if (winnerSelection === 'forfeit_player2') {
+    } else if (currentSelection.winnerSelection === 'forfeit_player2') {
       winnerIdToSend = match.player1_id; // Player 1 wins by Player 2 forfeiting
       forfeitType = 'player2';
-    } else if (winnerSelection === 'forfeit_both') {
+    } else if (currentSelection.winnerSelection === 'forfeit_both') {
       winnerIdToSend = null; // No winner
       forfeitType = 'both';
     }
@@ -121,7 +132,7 @@ export default function TournamentDetailsClient() {
         },
         body: JSON.stringify({
           winner_id: winnerIdToSend,
-          match_format: selectedMatchFormat,
+          match_format: currentSelection.matchFormat, // Use individual match format
           forfeit_type: forfeitType,
         }),
       });
@@ -137,6 +148,27 @@ export default function TournamentDetailsClient() {
       console.error('一个未知错误发生:', err);
     }
   };
+
+  const handleWinnerSelectionChange = (matchId: number, value: string) => {
+    setMatchSelections(prev => ({
+      ...prev,
+      [matchId]: {
+        ...prev[matchId],
+        winnerSelection: value === "" ? null : (value.startsWith("forfeit_") ? value : parseInt(value)),
+      }
+    }));
+  };
+
+  const handleMatchFormatChange = (matchId: number, value: string) => {
+    setMatchSelections(prev => ({
+      ...prev,
+      [matchId]: {
+        ...prev[matchId],
+        matchFormat: value,
+      }
+    }));
+  };
+
 
   if (error) {
     return <div className="text-red-500 text-center p-8">{error}</div>;
@@ -173,9 +205,13 @@ export default function TournamentDetailsClient() {
           matches.map(match => (
             <div key={match.id} className="bg-gray-700 p-4 rounded-lg mb-2 flex justify-between items-center">
               <div>
+                <p><b>第 {match.round_number} 轮</b></p> {/* Display round number */}
                 <span>{match.player1_character_name || 'Player 1'}</span>
                 <span className="mx-4">VS</span>
                 <span>{match.player2_character_name || (match.player2_id === null ? '(轮空)' : 'Player 2')}</span>
+                {match.finished_at && ( // Display finished_at if available
+                  <p className="text-sm text-gray-400">结束时间: {new Date(match.finished_at).toLocaleString()}</p>
+                )}
               </div>
               <div>
                 {match.winner_id ? (
@@ -185,8 +221,8 @@ export default function TournamentDetailsClient() {
                     <div className="flex items-center gap-2">
                       <select
                         className="p-2 border rounded bg-gray-700 text-white"
-                        onChange={(e) => setSelectedWinner(e.target.value === "" ? null : (e.target.value.startsWith("forfeit_") ? e.target.value : parseInt(e.target.value)))} // Handle string values for forfeit
-                        value={selectedWinner || ""} // Control the select component
+                        onChange={(e) => handleWinnerSelectionChange(match.id, e.target.value)} // Use new handler
+                        value={matchSelections[match.id]?.winnerSelection || ""} // Control the select component
                       >
                         <option value="">选择胜者或弃权</option>
                         {match.player1_id && <option value={match.player1_id}>{match.player1_character_name}</option>}
@@ -197,18 +233,25 @@ export default function TournamentDetailsClient() {
                       </select>
                       <select
                         className="p-2 border rounded bg-gray-700 text-white"
-                        value={selectedMatchFormat}
-                        onChange={(e) => setSelectedMatchFormat(e.target.value)}
+                        value={matchSelections[match.id]?.matchFormat || "1局1胜"} // Control the select component
+                        onChange={(e) => handleMatchFormatChange(match.id, e.target.value)} // Use new handler
                       >
                         <option value="1局1胜">1局1胜</option>
                         <option value="3局2胜">3局2胜</option>
                         <option value="5局3胜">5局3胜</option>
                       </select>
                       <button
-                        onClick={() => handleMarkWinner(match, selectedWinner)}
+                        onClick={() => handleMarkWinner(match)} // Pass only match object
                         className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                       >
-                        确认胜者
+                        {/* Dynamic button text based on selection */}
+                        {(() => {
+                          const selection = matchSelections[match.id]?.winnerSelection;
+                          if (typeof selection === 'number') return '确认胜者';
+                          if (selection === 'forfeit_player1' || selection === 'forfeit_player2') return '确认单方弃权';
+                          if (selection === 'forfeit_both') return '确认双方弃权';
+                          return '确认';
+                        })()}
                       </button>
                     </div>
                   ) : (
