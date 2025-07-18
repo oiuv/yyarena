@@ -3,7 +3,7 @@ import db from '@/database.js';
 import { verifyToken } from '@/utils/auth';
 
 export async function POST(request: NextRequest) {
-  const { tournamentId } = await request.json();
+  const { tournamentId, registrationCode } = await request.json();
 
   // 1. Verify Player
   const authHeader = request.headers.get('authorization');
@@ -38,6 +38,11 @@ export async function POST(request: NextRequest) {
 
     if (!tournament) {
       return NextResponse.json({ message: '比赛不存在' }, { status: 404 });
+    }
+
+    // Check registration code if required
+    if (tournament.registration_code && tournament.registration_code !== registrationCode) {
+      return NextResponse.json({ message: '参赛验证码不正确' }, { status: 400 });
     }
 
     // Prevent organizer from registering for their own tournament

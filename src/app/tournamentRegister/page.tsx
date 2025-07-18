@@ -25,6 +25,7 @@ export default function TournamentRegisterPage() {
   const [tournaments, setTournaments] = useState<any[]>([]);
   const [message, setMessage] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [registrationCodeInput, setRegistrationCodeInput] = useState<{ [tournamentId: number]: string }>({}); // New state for registration code input
 
   const fetchTournaments = async () => {
     try {
@@ -54,7 +55,7 @@ export default function TournamentRegisterPage() {
     fetchTournaments();
   }, []);
 
-  const handleRegister = async (tournamentId: number) => {
+  const handleRegister = async (tournamentId: number, requiresCode: boolean) => {
     setMessage('');
     const token = getToken();
 
@@ -63,6 +64,8 @@ export default function TournamentRegisterPage() {
       return;
     }
 
+    const registrationCode = registrationCodeInput[tournamentId] || '';
+
     try {
       const res = await fetch('/api/registrations', {
         method: 'POST',
@@ -70,7 +73,7 @@ export default function TournamentRegisterPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ tournamentId }),
+        body: JSON.stringify({ tournamentId, registrationCode }),
       });
 
       console.log('Registration API Response Status:', res.status);
@@ -138,12 +141,30 @@ export default function TournamentRegisterPage() {
                     <p>当前状态: {getTournamentStatus(tournament)}</p>
                     <p>已报名: {tournament.registeredPlayersCount || 0} / {tournament.max_players}</p>
                   </div>
-                  <button
-                    onClick={() => handleRegister(tournament.id)}
-                    className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-                  >
-                    一键报名
-                  </button>
+                  {tournament.registration_code ? (
+                    <div className="flex flex-col items-end gap-2">
+                      <input
+                        type="text"
+                        placeholder="请输入验证码"
+                        value={registrationCodeInput[tournament.id] || ''}
+                        onChange={(e) => setRegistrationCodeInput(prev => ({ ...prev, [tournament.id]: e.target.value }))}
+                        className="p-2 border rounded bg-gray-700 text-white w-40"
+                      />
+                      <button
+                        onClick={() => handleRegister(tournament.id, true)}
+                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                      >
+                        报名参赛
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleRegister(tournament.id, false)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                    >
+                      一键报名
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>

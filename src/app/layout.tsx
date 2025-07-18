@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { jwtDecode } from 'jwt-decode';
+import Image from 'next/image'; // Add this line
 
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
@@ -50,8 +51,14 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <nav className="w-full flex justify-between items-center mb-8 p-4 bg-gray-900 text-white border-b-2 border-amber-600 shadow-lg">
-          <Link href="/" className="text-3xl font-extrabold text-amber-400 hover:text-amber-300 transition-colors duration-200">
-            燕云砺兵台
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/images/logo.png"
+              alt="燕云砺兵台 LOGO"
+              width={150} // 示例宽度，你可以根据实际效果调整
+              height={40} // 示例高度，你可以根据实际效果调整
+              priority // 优化加载，对于LCP元素很有用
+            />
           </Link>
           <div className="flex items-center gap-6">
             {isLoggedIn ? (

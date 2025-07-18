@@ -96,6 +96,7 @@ async function registerOrLoginOrganizer(username, password) {
       game_id: '1234567890', // 固定测试主办方ID
       character_name: '燕子',
       role: 'organizer',
+      stream_url: 'https://v.douyin.com/aEtLhQOXrV8/', // 新增主播主页地址
     };
     const registerResponse = await fetch('http://localhost:3000/api/auth/register', {
       method: 'POST',

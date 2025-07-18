@@ -75,8 +75,8 @@ export default function CreateTournamentPage() {
 
     const formData = new FormData();
     formData.append('name', name);
-    formData.append('start_time', startTime);
-    formData.append('registration_deadline', registrationDeadline || startTime);
+    formData.append('start_time', new Date(startTime).toISOString());
+    formData.append('registration_deadline', registrationDeadline ? new Date(registrationDeadline).toISOString() : new Date(startTime).toISOString());
     formData.append('min_players', String(minPlayers));
     formData.append('max_players', String(maxPlayers));
     formData.append('event_description', eventDescription);
@@ -87,6 +87,9 @@ export default function CreateTournamentPage() {
       formData.append('cover_image', coverImageFile);
     }
     formData.append('default_match_format', defaultMatchFormat); // Add default match format
+    if (registrationCode) {
+      formData.append('registration_code', registrationCode);
+    }
 
     const prize_settings = {
       ranked: rankedPrizes.filter(p => p.prizeId).map(p => ({ ...p, prize_id: parseInt(p.prizeId) })),
@@ -122,6 +125,7 @@ export default function CreateTournamentPage() {
         ]);
         setParticipationPrize({ prizeId: '', quantity: 1 });
         setCustomPrizes([]);
+        setRegistrationCode(''); // Reset registration code
       } else {
         const errorData = await res.json();
         alert(`创建比赛失败: ${errorData.message || '未知错误'}`);
@@ -175,6 +179,11 @@ export default function CreateTournamentPage() {
             比赛封面图 (可选):
           </label>
           <input type="file" accept="image/*" onChange={(e) => setCoverImageFile(e.target.files ? e.target.files[0] : null)} className="p-2 border rounded bg-gray-700 text-white" />
+
+          <label htmlFor="registrationCode" className="block text-white text-sm font-bold mb-2">
+            参赛验证码 (可选):
+          </label>
+          <input type="text" id="registrationCode" value={registrationCode} onChange={(e) => setRegistrationCode(e.target.value)} className="p-2 border rounded bg-gray-700 text-white" placeholder="用于非公开比赛，如内部赛" />
           
           <label className="block text-white text-sm font-bold mb-2">
             默认比赛赛制:

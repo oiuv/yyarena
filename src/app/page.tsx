@@ -16,6 +16,9 @@ export default function Home() {
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [userRegisteredTournamentIds, setUserRegisteredTournamentIds] = useState<Set<number>>(new Set());
   const [registeredPlayersAvatars, setRegisteredPlayersAvatars] = useState<{ [key: number]: any[] }>({});
+  const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
+  const [selectedTournamentForRegistration, setSelectedTournamentForRegistration] = useState<any>(null);
+  const [registrationCodeInput, setRegistrationCodeInput] = useState('');
 
   const fetchRegisteredPlayersAvatars = useCallback(async (tournamentId: number) => {
     try {
@@ -29,7 +32,7 @@ export default function Home() {
     }
   }, []);
 
-  const handleRegister = useCallback(async (tournamentId: number, tournamentName: string) => {
+  const executeRegistration = useCallback(async (tournamentId: number, tournamentName: string, code: string | null) => {
     const token = getToken();
     if (!token) {
       alert('请登录后报名比赛。');
@@ -43,7 +46,7 @@ export default function Home() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ tournamentId }),
+        body: JSON.stringify({ tournamentId, registrationCode: code }),
       });
 
       const data = await res.json();
@@ -51,6 +54,8 @@ export default function Home() {
         alert(`成功报名比赛: ${tournamentName}！`);
         setUserRegisteredTournamentIds(prev => new Set(prev).add(tournamentId));
         fetchRegisteredPlayersAvatars(tournamentId);
+        setIsRegistrationModalOpen(false); // Close modal on success
+        setRegistrationCodeInput(''); // Clear input
       } else {
         alert(`报名失败: ${data.message || '未知错误'}`);
       }
@@ -59,6 +64,26 @@ export default function Home() {
       alert('报名时发生网络错误。');
     }
   }, [fetchRegisteredPlayersAvatars]);
+
+  const handleRegister = useCallback(async (tournamentId: number, tournamentName: string, requiresCode: boolean) => {
+    if (requiresCode) {
+      setSelectedTournamentForRegistration({ id: tournamentId, name: tournamentName });
+      setIsRegistrationModalOpen(true);
+      return;
+    }
+    
+    await executeRegistration(tournamentId, tournamentName, null); // No code needed
+  }, [executeRegistration]);
+
+  const handleModalSubmit = () => {
+    if (selectedTournamentForRegistration) {
+      if (!registrationCodeInput) {
+        alert('请输入参赛验证码。');
+        return;
+      }
+      executeRegistration(selectedTournamentForRegistration.id, selectedTournamentForRegistration.name, registrationCodeInput);
+    }
+  };
 
   const fetchUserDataAndTournaments = useCallback(async () => {
     const token = getToken();
@@ -98,6 +123,7 @@ export default function Home() {
           const startTime = new Date(tournament.start_time);
           const registrationDeadline = new Date(tournament.registration_deadline);
           const registeredPlayersCount = tournament.registeredPlayersCount || 0;
+          const registrationCode = tournament.registration_code; // Get registration code
 
           if (tournament.status === 'ongoing') {
             ongoing.push(tournament);
@@ -264,11 +290,11 @@ export default function Home() {
                                 <button
                                 onClick={(e) => {
                                     e.preventDefault();
-                                    handleRegister(tournament.id, tournament.name);
+                                    handleRegister(tournament.id, tournament.name, !!tournament.registration_code);
                                 }}
                                 className="bg-lime-600 hover:bg-lime-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-200"
                                 >
-                                报名参赛
+                                {tournament.registration_code ? '报名参赛' : '一键报名'}
                                 </button>
                             )}
                             </div>
@@ -280,6 +306,43 @@ export default function Home() {
               ))}
             </div>
           </section>
+        )}
+
+        {isRegistrationModalOpen && selectedTournamentForRegistration && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div className="bg-gray-800 p-8 rounded-lg shadow-xl w-96">
+              <h2 className="text-2xl font-bold mb-4">{selectedTournamentForRegistration.name}</h2>
+              <p className="mb-4">此比赛需要验证码才能报名。</p>
+              <input
+                type="text"
+                placeholder="请输入参赛验证码"
+                value={registrationCodeInput}
+                onChange={(e) => setRegistrationCodeInput(e.target.value)}
+                className="w-full p-2 border rounded bg-gray-700 text-white mb-4"
+                required
+              />
+              <div className="flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRegistrationModalOpen(false);
+                    setRegistrationCodeInput('');
+                    setSelectedTournamentForRegistration(null);
+                  }}
+                  className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+                >
+                  取消
+                </button>
+                <button
+                  type="button"
+                  onClick={handleModalSubmit}
+                  className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                >
+                  确认报名
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {registrationClosedTournaments.length > 0 && (

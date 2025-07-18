@@ -29,3 +29,6 @@ next-env.d.ts
 # 可选忽略（根据需求调整）
 # public/  # 如果public目录包含需要版本控制的内容，请注释掉此行
 # package-lock.json  # 如果需要锁定依赖版本，请注释掉此行
+
+# 用户上传的图片
+public/tournament_covers/

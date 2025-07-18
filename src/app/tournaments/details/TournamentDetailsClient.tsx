@@ -289,7 +289,7 @@ export default function TournamentDetailsClient() {
       <div className="w-full max-w-4xl bg-gray-800 rounded-lg shadow-md p-6 mb-8">
         <div className="mb-4 text-center">
           <Image
-            src={tournament.cover_image_url ? `/images/${tournament.cover_image_url.replace(/^\/images\//, '').replace(/^\//, '')}` : '/images/default_cover.jpg'}
+            src={tournament.cover_image_url ? `/${tournament.cover_image_url.startsWith('/') ? tournament.cover_image_url.substring(1) : tournament.cover_image_url}` : '/images/default_cover.jpg'}
             alt="Tournament Cover"
             width={800}
             height={450}
@@ -451,11 +451,7 @@ export default function TournamentDetailsClient() {
         </Link>
       )}
 
-      {isPlayer && tournament.status === 'pending' && (
-        <button className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mb-8">
-          报名参赛
-        </button>
-      )}
+      
 
       {tournament.status === 'finished' && tournament.final_rankings && (
         <div className="w-full max-w-4xl bg-gray-800 rounded-lg shadow-md p-6 mb-8">

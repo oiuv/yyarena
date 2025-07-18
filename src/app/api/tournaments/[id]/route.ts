@@ -28,10 +28,23 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ message: '比赛不存在' }, { status: 404 });
     }
 
+    console.log('Tournament start_time from DB:', tournament.start_time);
+    console.log('Tournament registration_deadline from DB:', tournament.registration_deadline);
+
     // Parse prize_settings and fetch prize details
     let parsedPrizes = [];
     if (tournament.prize_settings) {
-      const prizeSettings = JSON.parse(tournament.prize_settings);
+      let prizeSettings;
+      try {
+        prizeSettings = JSON.parse(tournament.prize_settings);
+        // Ensure prizeSettings is an array before iterating
+        if (!Array.isArray(prizeSettings)) {
+          prizeSettings = [];
+        }
+      } catch (parseError) {
+        console.error('Error parsing prize_settings:', parseError);
+        prizeSettings = []; // Default to empty array on parse error
+      }
       for (const setting of prizeSettings) {
         if (setting.prize_id) {
           const prizeDetail: any = await new Promise((resolve, reject) => {
