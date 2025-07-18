@@ -55,6 +55,13 @@ export default function CreateTournamentPage() {
 
     // Validation
     const startDateTime = new Date(startTime);
+    const now = new Date();
+
+    if (startDateTime < now) {
+      alert('比赛开始时间不能是过去的时间。');
+      return;
+    }
+
     const registrationDeadlineDateTime = registrationDeadline ? new Date(registrationDeadline) : null;
 
     if (registrationDeadlineDateTime && registrationDeadlineDateTime > startDateTime) {
@@ -62,10 +69,7 @@ export default function CreateTournamentPage() {
       return;
     }
 
-    if (minPlayers % 2 !== 0 || maxPlayers % 2 !== 0) {
-      alert('最少参赛人数和最多参赛人数必须是偶数。');
-      return;
-    }
+    // No longer require minPlayers and maxPlayers to be even, as per new requirements.
 
     const formData = new FormData();
     formData.append('name', name);
@@ -128,30 +132,40 @@ export default function CreateTournamentPage() {
       <div className="w-full max-w-2xl p-6 bg-gray-800 rounded-lg shadow-md mb-8">
         <h2 className="text-2xl font-bold mb-4">创建比赛</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <input type="text" placeholder="比赛名称" value={name} onChange={(e) => setName(e.target.value)} className="p-2 border rounded bg-gray-700 text-white" required />
-          <input type="datetime-local" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="p-2 border rounded bg-gray-700 text-white" required />
-          <input type="number" placeholder="最少参赛人数" value={minPlayers} onChange={(e) => setMinPlayers(parseInt(e.target.value))} className="p-2 border rounded bg-gray-700 text-white" required />
-          <input type="number" placeholder="最多参赛人数" value={maxPlayers} onChange={(e) => setMaxPlayers(parseInt(e.target.value))} className="p-2 border rounded bg-gray-700 text-white" required />
-          <textarea placeholder="赛事说明" value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} className="p-2 border rounded bg-gray-700 text-white" rows={5} required />
+          <label htmlFor="name" className="block text-white text-sm font-bold mb-2">
+            比赛名称:
+          </label>
+          <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} className="p-2 border rounded bg-gray-700 text-white" required />
+
+          <label htmlFor="startTime" className="block text-white text-sm font-bold mb-2">
+            比赛开始时间:
+          </label>
+          <input type="datetime-local" id="startTime" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="p-2 border rounded bg-gray-700 text-white" required />
+
+          <label htmlFor="registrationDeadline" className="block text-white text-sm font-bold mb-2">
+            报名截止时间 (可选):
+          </label>
+          <input type="datetime-local" id="registrationDeadline" value={registrationDeadline} onChange={(e) => setRegistrationDeadline(e.target.value)} className="p-2 border rounded bg-gray-700 text-white" />
+
+          <label htmlFor="minPlayers" className="block text-white text-sm font-bold mb-2">
+            最少参赛人数:
+          </label>
+          <input type="number" id="minPlayers" value={minPlayers} onChange={(e) => setMinPlayers(parseInt(e.target.value))} className="p-2 border rounded bg-gray-700 text-white" required />
+
+          <label htmlFor="maxPlayers" className="block text-white text-sm font-bold mb-2">
+            最多参赛人数:
+          </label>
+          <input type="number" id="maxPlayers" value={maxPlayers} onChange={(e) => setMaxPlayers(parseInt(e.target.value))} className="p-2 border rounded bg-gray-700 text-white" required />
+
+          <label htmlFor="eventDescription" className="block text-white text-sm font-bold mb-2">
+            赛事说明:
+          </label>
+          <textarea id="eventDescription" value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} className="p-2 border rounded bg-gray-700 text-white" rows={5} required />
           <label className="block text-white text-sm font-bold mb-2">
             微信群二维码 (可选):
           </label>
           <input type="file" accept="image/*" onChange={(e) => setWechatQrCodeFile(e.target.files ? e.target.files[0] : null)} className="p-2 border rounded bg-gray-700 text-white" />
-          <input type="datetime-local" placeholder="报名截止时间" value={registrationDeadline} onChange={(e) => setRegistrationDeadline(e.target.value)} className="p-2 border rounded bg-gray-700 text-white" required />
           
-          <label className="block text-white text-sm font-bold mb-2">
-            默认比赛赛制:
-          </label>
-          <select
-            className="p-2 border rounded bg-gray-700 text-white"
-            value={defaultMatchFormat}
-            onChange={(e) => setDefaultMatchFormat(e.target.value)}
-          >
-            <option value="1局1胜">1局1胜</option>
-            <option value="3局2胜">3局2胜</option>
-            <option value="5局3胜">5局3胜</option>
-          </select>
-
           <h3 className="text-xl font-bold mb-2 mt-4">奖品设置</h3>
           {rankedPrizes.map((rp, index) => (
             <div key={index} className="flex gap-2 items-center">

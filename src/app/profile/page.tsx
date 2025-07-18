@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getToken } from '@/utils/clientAuth';
@@ -109,9 +110,11 @@ export default function ProfilePage() {
         <div className="mb-4">
           <h2 className="text-2xl font-bold mb-4">角色图像</h2>
           <div className="flex items-center mb-4">
-            <img
+            <Image
               src={`/avatars/${selectedAvatar}`}
               alt="Current Avatar"
+              width={96}
+              height={96}
               className="w-24 h-24 rounded-lg object-cover mr-4 border-2 border-blue-500"
             />
             <select

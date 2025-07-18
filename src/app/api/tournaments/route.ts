@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const name = formData.get('name') as string;
   const startTime = formData.get('start_time') as string;
-  const registrationDeadline = formData.get('registration_deadline') as string;
+  const registrationDeadline = (formData.get('registration_deadline') as string) || startTime;
   const minPlayers = parseInt(formData.get('min_players') as string, 10);
   const maxPlayers = parseInt(formData.get('max_players') as string, 10);
   const eventDescription = formData.get('event_description') as string;
