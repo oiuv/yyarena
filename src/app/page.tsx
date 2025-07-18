@@ -19,7 +19,7 @@ export default function Home() {
 
   const fetchRegisteredPlayersAvatars = useCallback(async (tournamentId: number) => {
     try {
-      const res = await fetch(`/api/tournaments/${tournamentId}/registered-players-avatars`);
+      const res = await fetch(`/api/tournaments/${tournamentId}/registered-players-avatars?limit=10`);
       if (res.ok) {
         const avatars = await res.json();
         setRegisteredPlayersAvatars(prev => ({ ...prev, [tournamentId]: avatars }));

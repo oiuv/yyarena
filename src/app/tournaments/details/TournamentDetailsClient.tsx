@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
 import Link from 'next/link';
+import Image from 'next/image';
 
 import { getToken } from '@/utils/clientAuth';
 import { getTournamentStatusText } from '@/utils/statusTranslators';
@@ -37,6 +38,7 @@ export default function TournamentDetailsClient() {
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
   const [roomInfo, setRoomInfo] = useState<{ name: string, number: string, pass: string }>({ name: '', number: '', pass: '' });
   const [roomDetails, setRoomDetails] = useState<{ room_name: string, room_number: string, room_password: string } | null>(null);
+  const [registeredPlayers, setRegisteredPlayers] = useState<any[]>([]); // New state for registered players when no matches
 
   useEffect(() => {
     const token = getToken();
@@ -69,6 +71,15 @@ export default function TournamentDetailsClient() {
             };
           });
           setMatchSelections(initialSelections);
+
+          // If no matches are generated, fetch all registered players
+          if (matchesData.length === 0) {
+            const registeredPlayersRes = await fetch(`/api/tournaments/${tournamentId}/registered-players-avatars`);
+            if (registeredPlayersRes.ok) {
+              const playersData = await registeredPlayersRes.json();
+              setRegisteredPlayers(playersData);
+            }
+          }
 
         } catch (err) {
           setError('Failed to fetch tournament details.');
@@ -361,49 +372,84 @@ export default function TournamentDetailsClient() {
       <div className="w-full max-w-4xl">
         {matches.length > 0 ? (
           matches.map(match => (
-            <div key={match.id} className="bg-gray-700 p-4 rounded-lg mb-2 flex justify-between items-center">
-              <div>
-                <p><b>第 {match.round_number} 轮</b>
-                  <span> ({getMatchStage(matches.filter(m => m.round_number === match.round_number).length)})</span></p> {/* Display round number */}
-                <span>{match.player1_character_name || 'Player 1'}{match.player1_registration_status === 'forfeited' ? ' (弃权)' : ''}</span>
-                <span className="mx-4">VS</span>
-                <span>{match.player2_character_name || (match.player2_id === null ? '(轮空)' : 'Player 2')}{match.player2_registration_status === 'forfeited' ? ' (弃权)' : ''}</span>
-                {match.finished_at && ( // Display finished_at if available
+            <div key={match.id} className="bg-gray-800 p-6 rounded-lg shadow-lg mb-4 border border-gray-700">
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-lg font-semibold text-gray-300">
+                  第 {match.round_number} 轮
+                  <span className="ml-2 text-sm text-gray-400"> ({getMatchStage(matches.filter(m => m.round_number === match.round_number).length)})</span>
+                </p>
+                {match.finished_at && (
                   <p className="text-sm text-gray-400">结束时间: {new Date(match.finished_at).toLocaleString()}</p>
                 )}
               </div>
-              <div>
+
+              <div className="flex items-center justify-center space-x-6 mb-4">
+                <div className="flex flex-col items-center">
+                  <Image
+                    src={match.player1_avatar ? `/avatars/${match.player1_avatar}` : '/avatars/000.webp'}
+                    alt={match.player1_character_name || 'Player 1'}
+                    width={64}
+                    height={64}
+                    className="rounded-full border-2 border-blue-500"
+                  />
+                  <span className="mt-2 text-lg font-medium">
+                    {match.player1_character_name || 'Player 1'}
+                    {match.player1_registration_status === 'forfeited' ? ' (弃权)' : ''}
+                  </span>
+                </div>
+
+                <span className="text-3xl font-bold text-amber-400">VS</span>
+
+                <div className="flex flex-col items-center">
+                  <Image
+                    src={match.player2_avatar ? `/avatars/${match.player2_avatar}` : '/avatars/000.webp'}
+                    alt={match.player2_character_name || 'Player 2'}
+                    width={64}
+                    height={64}
+                    className="rounded-full border-2 border-red-500"
+                  />
+                  <span className="mt-2 text-lg font-medium">
+                    {match.player2_character_name || (match.player2_id === null ? '(轮空)' : 'Player 2')}
+                    {match.player2_registration_status === 'forfeited' ? ' (弃权)' : ''}
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-center">
                 {match.winner_id ? (
-                  <span>胜者: {match.winner_character_name} (赛制: {match.match_format})</span> // Display match format
+                  <p className="text-xl font-bold text-green-400">
+                    胜者: {match.winner_character_name} (赛制: {match.match_format})
+                  </p>
                 ) : (
                   isOrganizer && match.status === 'pending' ? (
-                    <div className="flex items-center gap-2">
-                      <select
-                        className="p-2 border rounded bg-gray-700 text-white"
-                        onChange={(e) => handleWinnerSelectionChange(match.id, e.target.value)} // Use new handler
-                        value={matchSelections[match.id]?.winnerSelection || ""} // Control the select component
-                      >
-                        <option value="">选择胜者或弃权</option>
-                        {match.player1_id && <option value={match.player1_id}>{match.player1_character_name}</option>}
-                        {match.player2_id && <option value={match.player2_id}>{match.player2_character_name}</option>}
-                        {match.player1_id && <option value="forfeit_player1">{match.player1_character_name} 弃权</option>}
-                        {match.player2_id && <option value="forfeit_player2">{match.player2_character_name} 弃权</option>}
-                        <option value="forfeit_both">双方弃权</option>
-                      </select>
-                      <select
-                        className="p-2 border rounded bg-gray-700 text-white"
-                        value={matchSelections[match.id]?.matchFormat || "1局1胜"} // Control the select component
-                        onChange={(e) => handleMatchFormatChange(match.id, e.target.value)} // Use new handler
-                      >
-                        <option value="1局1胜">1局1胜</option>
-                        <option value="3局2胜">3局2胜</option>
-                        <option value="5局3胜">5局3胜</option>
-                      </select>
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <select
+                          className="p-2 border rounded bg-gray-700 text-white"
+                          onChange={(e) => handleWinnerSelectionChange(match.id, e.target.value)}
+                          value={matchSelections[match.id]?.winnerSelection || ""}
+                        >
+                          <option value="">选择胜者或弃权</option>
+                          {match.player1_id && <option value={match.player1_id}>{match.player1_character_name}</option>}
+                          {match.player2_id && <option value={match.player2_id}>{match.player2_character_name}</option>}
+                          {match.player1_id && <option value="forfeit_player1">{match.player1_character_name} 弃权</option>}
+                          {match.player2_id && <option value="forfeit_player2">{match.player2_character_name} 弃权</option>}
+                          <option value="forfeit_both">双方弃权</option>
+                        </select>
+                        <select
+                          className="p-2 border rounded bg-gray-700 text-white"
+                          value={matchSelections[match.id]?.matchFormat || "1局1胜"}
+                          onChange={(e) => handleMatchFormatChange(match.id, e.target.value)}
+                        >
+                          <option value="1局1胜">1局1胜</option>
+                          <option value="3局2胜">3局2胜</option>
+                          <option value="5局3胜">5局3胜</option>
+                        </select>
+                      </div>
                       <button
-                        onClick={() => handleMarkWinner(match)} // Pass only match object
-                        className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                        onClick={() => handleMarkWinner(match)}
+                        className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-bold"
                       >
-                        {/* Dynamic button text based on selection */}
                         {(() => {
                           const selection = matchSelections[match.id]?.winnerSelection;
                           if (typeof selection === 'number') return '确认胜者';
@@ -414,15 +460,35 @@ export default function TournamentDetailsClient() {
                       </button>
                     </div>
                   ) : (
-                    // Display "双方弃权" if status is 'forfeited', otherwise "未开始"
-                    <span>{match.status === 'forfeited' ? '双方弃权' : '未开始'}</span>
+                    <p className="text-lg text-gray-400">{match.status === 'forfeited' ? '双方弃权' : '未开始'}</p>
                   )
                 )}
               </div>
             </div>
           ))
         ) : (
-          <p>对阵尚未生成。</p>
+          <div className="text-center">
+            <p className="text-xl mb-4">对阵尚未生成。</p>
+            {registeredPlayers.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-xl font-bold mb-2">已报名玩家:</h3>
+                <div className="flex flex-wrap justify-center gap-4">
+                  {registeredPlayers.map((player: any, idx: number) => (
+                    <div key={idx} className="flex flex-col items-center">
+                      <Image
+                        src={player.avatar ? `/avatars/${player.avatar}` : '/avatars/000.webp'}
+                        alt={player.character_name}
+                        width={64}
+                        height={64}
+                        className="inline-block h-16 w-16 rounded-full ring-2 ring-blue-400"
+                      />
+                      <p className="text-sm mt-1">{player.character_name}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </main>

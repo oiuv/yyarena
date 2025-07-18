@@ -13,7 +13,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
       if (limit && !isNaN(parseInt(limit))) {
         query += ` LIMIT ?`;
-        queryParams.push(parseInt(limit));
+        queryParams.push(String(parseInt(limit))); // Convert to string
       }
 
       db.all(
