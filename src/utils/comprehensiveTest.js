@@ -54,7 +54,10 @@ const PLAYER_POOL = [
   { game_id: '1000000048', character_name: '郭昕将军' },
   { game_id: '1000000049', character_name: '煞地神' },
   { game_id: '1000000050', character_name: '黎蓁蓁' },
-];
+].map((player, index) => ({
+  ...player,
+  avatar: `${(index + 1).toString().padStart(3, '0')}.png`,
+}));
 
 // 辅助函数：解析命令行参数
 function getArgs() {
@@ -149,7 +152,7 @@ async function ensurePlayerExists(player) {
         const response = await fetch('http://localhost:3000/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...player, role: 'player' }),
+            body: JSON.stringify({ ...player, role: 'player', avatar: player.avatar }),
         });
         const data = await response.json();
         if (!response.ok && !data.message.includes('已存在')) {

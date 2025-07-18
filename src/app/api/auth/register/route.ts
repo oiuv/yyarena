@@ -7,7 +7,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-default-secret-key'; // Ensur
 
 export async function POST(request: Request) {
   try {
-    const { username, password, game_id, character_name, phone_number, role, stream_url } = await request.json();
+    const { username, password, game_id, character_name, phone_number, role, stream_url, avatar } = await request.json();
 
     if (!role || !['organizer', 'player'].includes(role)) {
       return NextResponse.json({ message: 'Invalid or missing role' }, { status: 400 });
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
       user = await new Promise((resolve, reject) => {
         db.run(
           'INSERT INTO Users (username, password, game_id, character_name, phone_number, role, stream_url, avatar) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-          [username, hashedPassword, game_id, character_name, phone_number, role, stream_url, '000.webp'],
+          [username, hashedPassword, game_id, character_name, phone_number, role, stream_url, avatar || '000.webp'],
           function (err) {
             if (err) {
               if (err.message.includes('UNIQUE constraint failed')) {
@@ -76,7 +76,20 @@ export async function POST(request: Request) {
             );
           });
         }
-        user = { ...existingPlayer, character_name: existingPlayer.character_name || character_name, phone_number: existingPlayer.phone_number || phone_number };
+        // Update avatar if provided
+        if (avatar) {
+          await new Promise((resolve, reject) => {
+            db.run(
+              'UPDATE Users SET avatar = ? WHERE id = ?',
+              [avatar, existingPlayer.id],
+              function (err) {
+                if (err) reject(err);
+                resolve(this);
+              }
+            );
+          });
+        }
+        user = { ...existingPlayer, character_name: existingPlayer.character_name || character_name, phone_number: existingPlayer.phone_number || phone_number, avatar: existingPlayer.avatar || avatar };
       } else {
         // New player, insert new record
         if (!character_name) {
@@ -85,10 +98,10 @@ export async function POST(request: Request) {
         user = await new Promise((resolve, reject) => {
           db.run(
             'INSERT INTO Users (game_id, character_name, phone_number, role, avatar) VALUES (?, ?, ?, ?, ?)',
-            [game_id, character_name, phone_number, role, '000.webp'],
+            [game_id, character_name, phone_number, role, avatar || '000.webp'],
             function (err) {
               if (err) reject(err);
-              resolve({ id: this.lastID, game_id, character_name, phone_number, role, avatar: '000.webp' });
+              resolve({ id: this.lastID, game_id, character_name, phone_number, role, avatar: avatar || '000.webp' });
             }
           );
         });
