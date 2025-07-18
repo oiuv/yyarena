@@ -22,8 +22,8 @@ export async function POST(request: Request) {
       const hashedPassword = await bcrypt.hash(password, 10);
       user = await new Promise((resolve, reject) => {
         db.run(
-          'INSERT INTO Users (username, password, game_id, character_name, phone_number, role, stream_url) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [username, hashedPassword, game_id, character_name, phone_number, role, stream_url],
+          'INSERT INTO Users (username, password, game_id, character_name, phone_number, role, stream_url, avatar) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          [username, hashedPassword, game_id, character_name, phone_number, role, stream_url, '000.webp'],
           function (err) {
             if (err) {
               if (err.message.includes('UNIQUE constraint failed')) {
@@ -84,11 +84,11 @@ export async function POST(request: Request) {
         }
         user = await new Promise((resolve, reject) => {
           db.run(
-            'INSERT INTO Users (game_id, character_name, phone_number, role) VALUES (?, ?, ?, ?)',
-            [game_id, character_name, phone_number, role],
+            'INSERT INTO Users (game_id, character_name, phone_number, role, avatar) VALUES (?, ?, ?, ?, ?)',
+            [game_id, character_name, phone_number, role, '000.webp'],
             function (err) {
               if (err) reject(err);
-              resolve({ id: this.lastID, game_id, character_name, phone_number, role });
+              resolve({ id: this.lastID, game_id, character_name, phone_number, role, avatar: '000.webp' });
             }
           );
         });
@@ -97,7 +97,7 @@ export async function POST(request: Request) {
 
     // Generate JWT token and set as cookie
     const token = jwt.sign(
-      { id: user.id, username: user.username, game_id: user.game_id, character_name: user.character_name, role: user.role, stream_url: user.stream_url },
+      { id: user.id, username: user.username, game_id: user.game_id, character_name: user.character_name, role: user.role, stream_url: user.stream_url, avatar: user.avatar },
       JWT_SECRET,
       { expiresIn: '1h' }
     );

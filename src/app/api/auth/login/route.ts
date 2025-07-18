@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     }
 
     const token = jwt.sign(
-      { id: user.id, username: user.username, game_id: user.game_id, character_name: user.character_name, role: user.role, stream_url: user.stream_url },
+      { id: user.id, username: user.username, game_id: user.game_id, character_name: user.character_name, role: user.role, stream_url: user.stream_url, avatar: user.avatar },
       JWT_SECRET,
       { expiresIn: '1h' }
     );

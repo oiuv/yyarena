@@ -59,6 +59,7 @@ export default function RootLayout({
                 <span className="text-gray-300">欢迎, {characterName}</span>
                 <button onClick={handleLogout} className="text-blue-400 hover:underline">退出登录</button>
                 <Link href="/tournamentRegister" className="text-blue-400 hover:underline">报名比赛</Link>
+                <Link href="/profile" className="text-blue-400 hover:underline">我的资料</Link>
               </>
             ) : (
               <>

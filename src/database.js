@@ -11,7 +11,8 @@ db.serialize(() => {
       character_name TEXT UNIQUE, -- For players
       phone_number TEXT, -- Optional for players
       role TEXT NOT NULL CHECK(role IN ('organizer', 'player')),
-      stream_url TEXT -- 主播直播间/主页地址，可选
+      stream_url TEXT, -- 主播直播间/主页地址，可选
+      avatar TEXT DEFAULT '000.webp' -- Add avatar column with default value
     )
   `);
 
