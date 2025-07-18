@@ -43,6 +43,32 @@ export async function POST(request: Request, { params }: { params: { id: string 
       return NextResponse.json({ message: '比赛已开始或已结束' }, { status: 400 });
     }
 
+    const { room_name, room_number, room_password } = await request.json();
+
+    // Update room information in the database
+    await new Promise<void>((resolve, reject) => {
+      db.run(
+        'UPDATE Tournaments SET room_name = ?, room_number = ?, room_password = ? WHERE id = ?',
+        [room_name, room_number, room_password, tournamentId],
+        function (err) {
+          if (err) reject(err);
+          else resolve();
+        }
+      );
+    });
+
+    // Check if enough players have registered
+    const registeredPlayersCount: number = await new Promise((resolve, reject) => {
+      db.get('SELECT COUNT(*) as count FROM Registrations WHERE tournament_id = ? AND status = ?', [tournamentId, 'active'], (err, row: any) => {
+        if (err) reject(err);
+        resolve(row.count);
+      });
+    });
+
+    if (registeredPlayersCount < tournament.min_players) {
+      return NextResponse.json({ message: `报名人数不足，至少需要 ${tournament.min_players} 人才能开始比赛。当前报名人数：${registeredPlayersCount}` }, { status: 400 });
+    }
+
     // New: Check if tournament start time is in the future
     const now = new Date();
     const tournamentStartTime = new Date(tournament.start_time);

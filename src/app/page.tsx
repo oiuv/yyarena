@@ -17,11 +17,9 @@ export default function Home() {
   const [userRegisteredTournamentIds, setUserRegisteredTournamentIds] = useState<Set<number>>(new Set());
   const [registeredPlayersAvatars, setRegisteredPlayersAvatars] = useState<{ [key: number]: any[] }>({});
 
-  const fetchRegisteredPlayersAvatars = useCallback(async (tournamentId: number, token: string) => {
+  const fetchRegisteredPlayersAvatars = useCallback(async (tournamentId: number) => {
     try {
-      const res = await fetch(`/api/tournaments/${tournamentId}/registered-players-avatars`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const res = await fetch(`/api/tournaments/${tournamentId}/registered-players-avatars`);
       if (res.ok) {
         const avatars = await res.json();
         setRegisteredPlayersAvatars(prev => ({ ...prev, [tournamentId]: avatars }));
@@ -52,7 +50,7 @@ export default function Home() {
       if (res.ok) {
         alert(`成功报名比赛: ${tournamentName}！`);
         setUserRegisteredTournamentIds(prev => new Set(prev).add(tournamentId));
-        fetchRegisteredPlayersAvatars(tournamentId, token);
+        fetchRegisteredPlayersAvatars(tournamentId);
       } else {
         alert(`报名失败: ${data.message || '未知错误'}`);
       }
@@ -124,11 +122,9 @@ export default function Home() {
 
         setTournaments(tournamentsData);
 
-        if (token) {
-          openForRegistration.forEach(tournament => {
-            fetchRegisteredPlayersAvatars(tournament.id, token);
-          });
-        }
+        openForRegistration.forEach(tournament => {
+          fetchRegisteredPlayersAvatars(tournament.id);
+        });
 
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -249,23 +245,35 @@ export default function Home() {
                         </div>
                       )}
 
-                      {currentUserId && tournament.organizer_id !== currentUserId && (
+                      {currentUserId === null ? (
                         <div className="mt-4">
-                          {userRegisteredTournamentIds.has(tournament.id) ? (
-                            <span className="text-green-400 font-bold">您已报名</span>
-                          ) : (
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleRegister(tournament.id, tournament.name);
-                              }}
-                              className="bg-lime-600 hover:bg-lime-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-200"
-                            >
-                              报名参赛
-                            </button>
-                          )}
+                            <Link href="/login">
+                                <button
+                                    className="bg-lime-600 hover:bg-lime-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-200"
+                                >
+                                    登录后报名
+                                </button>
+                            </Link>
                         </div>
-                      )}
+                        ) : (
+                        currentUserId && tournament.organizer_id !== currentUserId && (
+                            <div className="mt-4">
+                            {userRegisteredTournamentIds.has(tournament.id) ? (
+                                <span className="text-green-400 font-bold">您已报名</span>
+                            ) : (
+                                <button
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    handleRegister(tournament.id, tournament.name);
+                                }}
+                                className="bg-lime-600 hover:bg-lime-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-200"
+                                >
+                                报名参赛
+                                </button>
+                            )}
+                            </div>
+                        )
+                        )}
                     </div>
                   </div>
                 </Link>
@@ -327,14 +335,23 @@ export default function Home() {
         )}
 
         {failedTournaments.length > 0 && (
-          <section className="mb-12 p-6 bg-gradient-to-br from-red-900 to-red-950 rounded-xl shadow-2xl border-4 border-red-600 transform hover:scale-105 transition-transform duration-300">
-            <h2 className="text-4xl font-bold mb-6 text-red-300 border-b-2 border-red-500 pb-3">💔 活动组织失败 💔</h2>
-            <div className="grid grid-cols-1 gap-6">
+          <section className="mb-12 p-6 bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl shadow-2xl border-4 border-gray-600 transform hover:scale-105 transition-transform duration-300">
+            <h2 className="text-4xl font-bold mb-6 text-gray-300 border-b-2 border-gray-500 pb-3">💔 活动组织失败 💔</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {failedTournaments.map((tournament: any) => (
-                <Link key={tournament.id} href={`/tournaments/details?id=${tournament.id}`} className="block p-6 bg-red-800/70 rounded-lg shadow-xl border border-red-600 hover:bg-red-700/80 transition-all duration-300 transform hover:-translate-y-1 hover:scale-102 group">
-                  <h3 className="text-2xl font-bold mb-2 text-red-200 group-hover:text-red-400 transition-colors duration-300">{tournament.name}</h3>
-                  <p className="text-red-100 text-base mb-1">开始时间: {new Date(tournament.start_time).toLocaleString()}</p>
-                  <p className="text-red-100 text-base mb-1">状态: 活动组织失败</p>
+                <Link key={tournament.id} href={`/tournaments/details?id=${tournament.id}`} className="block p-6 bg-gray-700/70 rounded-lg shadow-xl border border-gray-600 hover:bg-gray-600/80 transition-all duration-300 transform hover:-translate-y-1 hover:scale-102 group">
+                    <div className="relative w-full h-40 mb-4 rounded-lg overflow-hidden border border-gray-500">
+                        <Image
+                            src={tournament.cover_image_url || '/images/default_cover.jpg'}
+                            alt={tournament.name}
+                            layout="fill"
+                            objectFit="cover"
+                            className="transition-transform duration-300 group-hover:scale-110"
+                        />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2 text-gray-200 group-hover:text-gray-400 transition-colors duration-300">{tournament.name}</h3>
+                    <p className="text-gray-100 text-sm mb-1">开始时间: {new Date(tournament.start_time).toLocaleString()}</p>
+                    <p className="text-red-400 text-sm font-bold">状态: 活动组织失败</p>
                 </Link>
               ))}
             </div>

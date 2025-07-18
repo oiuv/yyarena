@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
+import Link from 'next/link';
 
 import { getToken } from '@/utils/clientAuth';
 import { getTournamentStatusText } from '@/utils/statusTranslators';
@@ -33,6 +34,9 @@ export default function TournamentDetailsClient() {
   const [error, setError] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [matchSelections, setMatchSelections] = useState<{[matchId: number]: { winnerSelection: number | 'forfeit_player1' | 'forfeit_player2' | 'forfeit_both' | null, matchFormat: string }}>({}); // New state for individual match selections
+  const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
+  const [roomInfo, setRoomInfo] = useState<{ name: string, number: string, pass: string }>({ name: '', number: '', pass: '' });
+  const [roomDetails, setRoomDetails] = useState<{ room_name: string, room_number: string, room_password: string } | null>(null);
 
   useEffect(() => {
     const token = getToken();
@@ -71,10 +75,35 @@ export default function TournamentDetailsClient() {
         }
       };
       fetchDetails();
+
+      // Fetch room info if user is logged in
+      if (token) {
+        const fetchRoomInfo = async () => {
+          try {
+            const res = await fetch(`/api/tournaments/${tournamentId}/room-info`, {
+              headers: { 'Authorization': `Bearer ${token}` },
+            });
+            if (res.ok) {
+              const data = await res.json();
+              setRoomDetails(data);
+            } else {
+              console.error('Failed to fetch room info', res.status);
+            }
+          } catch (err) {
+            console.error('Error fetching room info:', err);
+          }
+        };
+        fetchRoomInfo();
+      }
     }
   }, [tournamentId]);
 
   const handleStartTournament = async () => {
+    setIsRoomModalOpen(true);
+  };
+
+  const handleSubmitRoomInfoAndStart = async (e: React.FormEvent) => {
+    e.preventDefault();
     const token = getToken();
     if (!token) {
         alert('请先登录');
@@ -95,8 +124,10 @@ export default function TournamentDetailsClient() {
         const res = await fetch(`/api/tournaments/${tournamentId}/start`, {
             method: 'POST',
             headers: {
+                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
             },
+            body: JSON.stringify({ room_name: roomInfo.name, room_number: roomInfo.number, room_password: roomInfo.pass }),
         });
 
         const data = await res.json();
@@ -213,6 +244,7 @@ export default function TournamentDetailsClient() {
   }
 
   const isOrganizer = currentUser && currentUser.role === 'organizer' && currentUser.id === tournament.organizer_id;
+  const isPlayer = currentUser && currentUser.role === 'player';
   const isTournamentUpcoming = new Date(tournament.start_time) > new Date();
 
   return (
@@ -222,6 +254,15 @@ export default function TournamentDetailsClient() {
         <p><span className="font-bold">开始时间:</span> {new Date(tournament.start_time).toLocaleString()}</p>
         <p><span className="font-bold">状态:</span> {getTournamentStatusText(tournament.status)}</p>
         <p><span className="font-bold">说明:</span> {tournament.event_description}</p>
+
+        {roomDetails && (
+          <div className="mt-4 p-4 bg-gray-700 rounded-lg">
+            <h3 className="text-xl font-bold mb-2">砺兵台房间信息</h3>
+            <p>房间名: {roomDetails.room_name}</p>
+            <p>房间ID: {roomDetails.room_number}</p>
+            {roomDetails.room_password && <p>房间密码: {roomDetails.room_password}</p>}
+          </div>
+        )}
       </div>
 
       {isOrganizer && tournament.status === 'pending' && (
@@ -230,6 +271,76 @@ export default function TournamentDetailsClient() {
           className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded mb-8"
         >
           {isTournamentUpcoming ? '提前开始比赛' : '开始比赛'}
+        </button>
+      )}
+
+      {isRoomModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-gray-800 p-8 rounded-lg shadow-xl">
+            <h2 className="text-2xl font-bold mb-4">完善砺兵台房间信息</h2>
+            <form onSubmit={handleSubmitRoomInfoAndStart}>
+              <div className="mb-4">
+                <label htmlFor="roomName" className="block mb-2">房间名</label>
+                <input
+                  id="roomName"
+                  type="text"
+                  value={roomInfo.name}
+                  onChange={(e) => setRoomInfo({ ...roomInfo, name: e.target.value })}
+                  className="w-full p-2 border rounded bg-gray-700 text-white"
+                  maxLength={9}
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label htmlFor="roomNumber" className="block mb-2">房间ID</label>
+                <input
+                  id="roomNumber"
+                  type="text"
+                  value={roomInfo.number}
+                  onChange={(e) => setRoomInfo({ ...roomInfo, number: e.target.value })}
+                  className="w-full p-2 border rounded bg-gray-700 text-white"
+                  maxLength={10}
+                  pattern="\d{10}"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label htmlFor="roomPassword" className="block mb-2">密码 (可选)</label>
+                <input
+                  id="roomPassword"
+                  type="text"
+                  value={roomInfo.pass}
+                  onChange={(e) => setRoomInfo({ ...roomInfo, pass: e.target.value })}
+                  className="w-full p-2 border rounded bg-gray-700 text-white"
+                  maxLength={4}
+                  pattern="\d{4}"
+                />
+              </div>
+              <p className="text-sm text-gray-400 mb-4">提示：创建房间的玩法类型必须是1V1，挑战模式必须是管理模式。</p>
+              <div className="flex justify-end gap-4">
+                <button type="button" onClick={() => setIsRoomModalOpen(false)} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                  取消
+                </button>
+                <button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                  确认并开始比赛
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {!currentUser && tournament.status === 'pending' && (
+        <Link href="/login">
+          <button className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mb-8">
+            登录后报名
+          </button>
+        </Link>
+      )}
+
+      {isPlayer && tournament.status === 'pending' && (
+        <button className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mb-8">
+          报名参赛
         </button>
       )}
 
