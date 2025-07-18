@@ -49,32 +49,32 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <nav className="w-full flex justify-between items-center mb-8 p-4 bg-gray-800 text-white">
-          <Link href="/" className="text-2xl font-bold text-blue-400 hover:text-blue-300">
+        <nav className="w-full flex justify-between items-center mb-8 p-4 bg-gray-900 text-white border-b-2 border-amber-600 shadow-lg">
+          <Link href="/" className="text-3xl font-extrabold text-amber-400 hover:text-amber-300 transition-colors duration-200">
             燕云砺兵台
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             {isLoggedIn ? (
               <>
-                <span className="text-gray-300">欢迎, {characterName}</span>
-                <button onClick={handleLogout} className="text-blue-400 hover:underline">退出登录</button>
-                <Link href="/tournamentRegister" className="text-blue-400 hover:underline">报名比赛</Link>
-                <Link href="/profile" className="text-blue-400 hover:underline">我的资料</Link>
+                <span className="text-amber-200">欢迎, {characterName}</span>
+                <button onClick={handleLogout} className="text-amber-400 hover:underline transition-colors duration-200">退出登录</button>
+                <Link href="/tournamentRegister" className="text-amber-400 hover:underline transition-colors duration-200">报名比赛</Link>
+                <Link href="/profile" className="text-amber-400 hover:underline transition-colors duration-200">我的资料</Link>
               </>
             ) : (
               <>
-                <Link href="/register" className="text-blue-400 hover:underline">注册</Link>
-                <Link href="/login" className="text-blue-400 hover:underline">登录</Link>
+                <Link href="/register" className="text-amber-400 hover:underline transition-colors duration-200">注册</Link>
+                <Link href="/login" className="text-amber-400 hover:underline transition-colors duration-200">登录</Link>
               </>
             )}
             {isLoggedIn && (
-              <Link href="/my-registrations" className="text-blue-400 hover:underline">我的报名</Link>
+              <Link href="/my-registrations" className="text-amber-400 hover:underline transition-colors duration-200">我的报名</Link>
             )}
             {userRole === 'organizer' && (
               <>
-                <Link href="/my-tournaments" className="text-blue-400 hover:underline">我的比赛</Link>
-                <Link href="/prizes/manage" className="text-blue-400 hover:underline">管理奖品</Link>
-                <Link href="/tournaments/create" className="text-blue-400 hover:underline">创建比赛</Link>
+                <Link href="/my-tournaments" className="text-amber-400 hover:underline transition-colors duration-200">我的比赛</Link>
+                <Link href="/prizes/manage" className="text-amber-400 hover:underline transition-colors duration-200">管理奖品</Link>
+                <Link href="/tournaments/create" className="text-amber-400 hover:underline transition-colors duration-200">创建比赛</Link>
               </>
             )}
           </div>
