@@ -32,6 +32,8 @@ db.serialize(() => {
       room_name TEXT,
       room_number TEXT,
       room_password TEXT,
+      livestream_url TEXT, -- 直播间地址，可选
+      registration_code TEXT, -- 参赛验证码，可选
       winner_id INTEGER,
       default_match_format TEXT,
       final_rankings TEXT, -- Add this line for final rankings

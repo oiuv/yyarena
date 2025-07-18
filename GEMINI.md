@@ -50,6 +50,7 @@
         *   提供自定义奖项的奖品和数量设置，自定义奖不限制数量，可由主办者自己设置以取代固定奖项（例如：三到五名的奖品，五到十名的奖品，10到20名的奖品等）。
     *   **报名截止时间:** 必填项，如果不填默认为比赛开始时间。**如果填写，则不得大于比赛开始时间。**
     *   **砺兵台房间信息:** 在比赛开始前，主办者需补充填写自己创建的砺兵台房间名（限制9个字符）、房间号（10位数字）和房间密码（4位数字，如果没有密码为开放式房间）。**提示：创建房间的玩法类型必须是1V1，挑战模式必须是管理模式。**
+    *   **参赛验证码:** 可选设置一个参赛验证码，方便创建非公开比赛（如内部赛），玩家需填写验证码才能报名参赛。
 *   **管理比赛:**
     *   比赛开始后，可以查看对阵图。
     *   为每一组对局手动选择获胜者，以推进比赛进入下一轮。
@@ -124,17 +125,24 @@
     *   双方弃权的比赛结果显示为“双方弃权”。
     *   **未生成对阵图时，详细列表所有已报名玩家的图像（不包括已退出报名的玩家）。**
     *   **已生成对阵图时，美化对阵图样式，除了玩家的名称，还显示玩家的图像。**
-*   **砺兵台房间信息:** 砺兵台房间信息（房间名、房间号、房间密码）仅限主办者和已报名玩家可见。
+    *   **比赛结束后，显示玩家名次的同时根据名次显示玩家获得的奖品。**
+*   **奖品介绍:** 比赛详情页增加奖品介绍，包括奖品名称和数量。
+*   **主播信息:** 比赛详情页增加主播（比赛组织者）的主页地址（对应用户表中的 `stream_url`）和直播间地址（保存在比赛表中，在组织者点开始比赛时填写砺兵台房间信息时填写）。直播间地址为可选，如果填写直播地址，在详情页显示“正在直播中”的按钮方便用户进入直播间观看比赛。
+*   **砺兵台房间信息:** 砺兵台房间信息（房间名、房间号、房间密码）仅限主办者和已报名玩家可见.
 
 ### 4.6. 奖品管理
 
 *   **奖品列表:** 包括系统默认设置的奖品，也可以由主办者自己定义奖品。
 *   **自定义奖品:** 主办者自定义的奖品仅主办者自己可选，系统设置奖品为所有比赛公用。
 
+### 4.7. 个人主页
+
+*   玩家和主播（比赛组织者）都将拥有公开的个人主页，用于显示个人信息和比赛相关数据。
+
 ## 5. 数据库设计草案
 
 *   **Users (用户表):** `id`, `username` (主办者账号), `password` (主办者密码), `game_id` (燕云十六声角色编号，唯一), `character_name` (燕云十六声角色名称，唯一), `phone_number` (可选), `role` (organizer, player), `stream_url` (TEXT, 主播直播间/主页地址，可选), `avatar` (TEXT, 默认 '000.webp'), `total_participations` (INTEGER, 默认 0), `first_place_count` (INTEGER, 默认 0), `second_place_count` (INTEGER, 默认 0), `third_place_count` (INTEGER, 默认 0), `forfeit_count` (INTEGER, 默认 0)
-*   **Tournaments (比赛表):** `id`, `name`, `organizer_id`, `start_time`, `registration_deadline` (报名截止时间), `min_players`, `max_players` (最大48), `status` (pending, registration_closed, ongoing, finished, failed, extended_registration), `event_description` (TEXT), `wechat_qr_code_url` (TEXT，存储图片URL，可选), `cover_image_url` (TEXT, 默认 'default_cover.jpg'), `room_name` (TEXT), `room_number` (TEXT，10位数字), `room_password` (TEXT，4位数字，可选), `winner_id`, `default_match_format` (TEXT), **`final_rankings` (TEXT)**
+*   **Tournaments (比赛表):** `id`, `name`, `organizer_id`, `start_time`, `registration_deadline` (报名截止时间), `min_players`, `max_players` (最大48), `status` (pending, registration_closed, ongoing, finished, failed, extended_registration), `event_description` (TEXT), `wechat_qr_code_url` (TEXT，存储图片URL，可选), `cover_image_url` (TEXT, 默认 'default_cover.jpg'), `room_name` (TEXT), `room_number` (TEXT，10位数字), `room_password` (TEXT，4位数字，可选), `livestream_url` (TEXT, 直播间地址，可选), `registration_code` (TEXT, 参赛验证码，可选), `winner_id`, `default_match_format` (TEXT), **`final_rankings` (TEXT)**
 *   **Prizes (奖品表):** `id`, `name`, `description`, `image_url`
     *   默认奖品列表：八音窍、2680长鸣珠时装、1280长鸣珠时装/武学特效/坐骑、980长鸣珠奇术特效、680长鸣珠时装/武器外观/坐骑、60长鸣珠时装/武器外观/坐骑、128元典藏战令、68元精英战令、30元月卡。
 *   **TournamentPrizes (比赛奖品表):** `id`, `tournament_id` (外键), `prize_id` (外键, 可为空), `rank_start` (名次开始), `rank_end` (名次结束), `custom_prize_name` (自定义奖品名), `quantity` (数量)。
@@ -152,6 +160,10 @@
 5.  **测试与部署:** 进行功能测试并部署上线。
 
 ## 7. 开发流程/规范
+
+### 7.1. 通用开发规范
+
+1.  本项目是中文项目，所有文档和更新日志使用中文。
 
 *   **版本控制:** 项目使用Git进行管理。
     *   **提交规范:** 每开发完成一个功能模块并由用户测试确认无误后，我会与用户确认是否提交git commit。如果用户认可，将使用 `git commit -F` 的方式把当前开发完成的代码提交。

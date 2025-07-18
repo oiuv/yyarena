@@ -14,6 +14,7 @@ export default function CreateTournamentPage() {
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null); // New state for cover image file
   const [registrationDeadline, setRegistrationDeadline] = useState('');
   const [defaultMatchFormat, setDefaultMatchFormat] = useState<string>('1局1胜'); // New state for default match format
+  const [registrationCode, setRegistrationCode] = useState(''); // New state for registration code
 
   const [rankedPrizes, setRankedPrizes] = useState<{ rank: number; prizeId: string; quantity: number }[]>([
     { rank: 1, prizeId: '', quantity: 1 },

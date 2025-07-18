@@ -26,6 +26,31 @@ const getMatchStage = (matchesInRound: number): string => {
   }
 };
 
+const getPrizeForRank = (rank: number, prizes: any[]) => {
+  if (!prizes || prizes.length === 0) return null;
+
+  // Sort prizes by rank_start to ensure correct matching
+  const sortedPrizes = [...prizes].sort((a, b) => (a.rank_start || 0) - (b.rank_start || 0));
+
+  for (const prize of sortedPrizes) {
+    if (prize.rank_start && prize.rank_end) {
+      if (rank >= prize.rank_start && rank <= prize.rank_end) {
+        return prize;
+      }
+    } else if (prize.rank_start === rank) { // For single rank prizes
+      return prize;
+    }
+  }
+
+  // Check for participation prize if no specific rank prize is found
+  const participationPrize = prizes.find((p: any) => p.rank_start === null && p.rank_end === null && p.custom_prize_name === '参与奖');
+  if (participationPrize) {
+    return participationPrize;
+  }
+
+  return null;
+};
+
 export default function TournamentDetailsClient() {
   const searchParams = useSearchParams();
   const tournamentId = searchParams.get('id');
@@ -36,7 +61,7 @@ export default function TournamentDetailsClient() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [matchSelections, setMatchSelections] = useState<{[matchId: number]: { winnerSelection: number | 'forfeit_player1' | 'forfeit_player2' | 'forfeit_both' | null, matchFormat: string }}>({}); // New state for individual match selections
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
-  const [roomInfo, setRoomInfo] = useState<{ name: string, number: string, pass: string }>({ name: '', number: '', pass: '' });
+  const [roomInfo, setRoomInfo] = useState<{ name: string, number: string, pass: string, livestreamUrl: string }>({ name: '', number: '', pass: '', livestreamUrl: '' });
   const [roomDetails, setRoomDetails] = useState<{ room_name: string, room_number: string, room_password: string } | null>(null);
   const [registeredPlayers, setRegisteredPlayers] = useState<any[]>([]); // New state for registered players when no matches
 
@@ -138,7 +163,7 @@ export default function TournamentDetailsClient() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
             },
-            body: JSON.stringify({ room_name: roomInfo.name, room_number: roomInfo.number, room_password: roomInfo.pass }),
+            body: JSON.stringify({ room_name: roomInfo.name, room_number: roomInfo.number, room_password: roomInfo.pass, livestream_url: roomInfo.livestreamUrl }),
         });
 
         const data = await res.json();
@@ -262,16 +287,79 @@ export default function TournamentDetailsClient() {
     <main className="flex min-h-screen flex-col items-center p-12 bg-gray-900 text-white">
       <h1 className="text-4xl font-bold mb-4">{tournament.name}</h1>
       <div className="w-full max-w-4xl bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+        <div className="mb-4 text-center">
+          <Image
+            src={tournament.cover_image_url ? `/images/${tournament.cover_image_url.replace(/^\/images\//, '').replace(/^\//, '')}` : '/images/default_cover.jpg'}
+            alt="Tournament Cover"
+            width={800}
+            height={450}
+            className="rounded-lg object-cover mx-auto"
+          />
+        </div>
         <p><span className="font-bold">开始时间:</span> {new Date(tournament.start_time).toLocaleString()}</p>
         <p><span className="font-bold">状态:</span> {getTournamentStatusText(tournament.status)}</p>
+        <p><span className="font-bold">最少参赛人数:</span> {tournament.min_players}</p>
+        <p><span className="font-bold">最大参赛人数:</span> {tournament.max_players}</p>
         <p><span className="font-bold">说明:</span> {tournament.event_description}</p>
 
-        {roomDetails && (
+        <div className="mt-4 p-4 bg-gray-700 rounded-lg">
+          <h3 className="text-xl font-bold mb-2">主办方信息</h3>
+          <div className="flex items-center space-x-4">
+            <Image
+              src={tournament.organizer_avatar ? `/avatars/${tournament.organizer_avatar}` : '/avatars/000.webp'}
+              alt={tournament.organizer_character_name || '主办方'}
+              width={64}
+              height={64}
+              className="rounded-full border-2 border-purple-500"
+            />
+            <div>
+              <p className="text-lg font-medium">{tournament.organizer_character_name || '未知主办方'}</p>
+              {tournament.organizer_stream_url && (
+                <p className="text-sm">
+                  <Link href={tournament.organizer_stream_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
+                    主办方主页
+                  </Link>
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {tournament.prizes && tournament.prizes.length > 0 && (
+          <div className="mt-4 p-4 bg-gray-700 rounded-lg">
+            <h3 className="text-xl font-bold mb-2">奖品设置</h3>
+            <ul>
+              {tournament.prizes.map((prize: any, index: number) => (
+                <li key={index}>
+                  {prize.rank_start && prize.rank_end ? `第 ${prize.rank_start} 到 ${prize.rank_end} 名: ` : ''}
+                  {prize.custom_prize_name || prize.prize_name} (数量: {prize.quantity})
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {tournament.livestream_url && tournament.status === 'ongoing' && (
+          <div className="mt-4 p-4 bg-gray-700 rounded-lg">
+            <h3 className="text-xl font-bold mb-2">比赛直播</h3>
+            <a href={tournament.livestream_url} target="_blank" rel="noopener noreferrer">
+              <button className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                正在直播中
+              </button>
+            </a>
+          </div>
+        )}
+
+        {roomDetails && (roomDetails.room_name || roomDetails.room_number) ? (
           <div className="mt-4 p-4 bg-gray-700 rounded-lg">
             <h3 className="text-xl font-bold mb-2">砺兵台房间信息</h3>
             <p>房间名: {roomDetails.room_name}</p>
             <p>房间ID: {roomDetails.room_number}</p>
             {roomDetails.room_password && <p>房间密码: {roomDetails.room_password}</p>}
+          </div>
+        ) : (
+          <div className="mt-4 p-4 bg-gray-700 rounded-lg text-center text-gray-400">
+            <p>⚔️ 砺兵台房间信息尚未填写 ⚔️</p>
           </div>
         )}
       </div>
@@ -299,6 +387,7 @@ export default function TournamentDetailsClient() {
                   onChange={(e) => setRoomInfo({ ...roomInfo, name: e.target.value })}
                   className="w-full p-2 border rounded bg-gray-700 text-white"
                   maxLength={9}
+                  placeholder="请填写在游戏中创建的砺兵台房间名称 (限制9个字符)"
                   required
                 />
               </div>
@@ -312,11 +401,12 @@ export default function TournamentDetailsClient() {
                   className="w-full p-2 border rounded bg-gray-700 text-white"
                   maxLength={10}
                   pattern="\d{10}"
+                  placeholder="请填写在游戏中创建的砺兵台房间ID (10位数字)"
                   required
                 />
               </div>
               <div className="mb-4">
-                <label htmlFor="roomPassword" className="block mb-2">密码 (可选)</label>
+                <label htmlFor="roomPassword" className="block mb-2">房间密码 (可选)</label>
                 <input
                   id="roomPassword"
                   type="text"
@@ -325,6 +415,18 @@ export default function TournamentDetailsClient() {
                   className="w-full p-2 border rounded bg-gray-700 text-white"
                   maxLength={4}
                   pattern="\d{4}"
+                  placeholder="请填写房间密码 (4位数字，无密码则留空)"
+                />
+              </div>
+              <div className="mb-4">
+                <label htmlFor="livestreamUrl" className="block mb-2">直播网址 (可选)</label>
+                <input
+                  id="livestreamUrl"
+                  type="url"
+                  value={roomInfo.livestreamUrl}
+                  onChange={(e) => setRoomInfo({ ...roomInfo, livestreamUrl: e.target.value })}
+                  className="w-full p-2 border rounded bg-gray-700 text-white"
+                  placeholder="例如: https://live.douyin.com/xxxx"
                 />
               </div>
               <p className="text-sm text-gray-400 mb-4">提示：创建房间的玩法类型必须是1V1，挑战模式必须是管理模式。</p>
@@ -359,11 +461,17 @@ export default function TournamentDetailsClient() {
         <div className="w-full max-w-4xl bg-gray-800 rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-3xl font-bold mb-4">最终排名</h2>
           <ul>
-            {tournament.final_rankings.map((player: any) => (
-              <li key={player.player_id} className="mb-2">
-                <b>第 {player.rank} 名:</b> {player.character_name}
-              </li>
-            ))}
+            {tournament.final_rankings.map((player: any) => {
+              const prizeWon = getPrizeForRank(player.rank, tournament.prizes);
+              return (
+                <li key={player.player_id} className="mb-2">
+                  <b>第 {player.rank} 名:</b> {player.character_name}
+                  {prizeWon && (
+                    <span className="ml-2 text-amber-400"> (获得奖品: {prizeWon.custom_prize_name || prizeWon.prize_name})</span>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
@@ -468,10 +576,10 @@ export default function TournamentDetailsClient() {
           ))
         ) : (
           <div className="text-center">
-            <p className="text-xl mb-4">对阵尚未生成。</p>
+            <p className="text-xl mb-4">⏳ 对阵尚未生成 ⏳</p>
             {registeredPlayers.length > 0 && (
               <div className="mt-4">
-                <h3 className="text-xl font-bold mb-2">已报名玩家:</h3>
+                <h3 className="text-xl font-bold mb-2">✨ 已报名玩家 ✨</h3>
                 <div className="flex flex-wrap justify-center gap-4">
                   {registeredPlayers.map((player: any, idx: number) => (
                     <div key={idx} className="flex flex-col items-center">

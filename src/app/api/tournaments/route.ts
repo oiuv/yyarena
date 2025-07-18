@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
   const wechatQrCodeFile = formData.get('wechat_qr_code_image') as File | null;
   const coverImageFile = formData.get('cover_image') as File | null; // Get cover image file
   const defaultMatchFormat = formData.get('default_match_format') as string; // Get default match format
+  const registrationCode = formData.get('registration_code') as string; // Get registration code
 
   if (minPlayers < 10) {
     return NextResponse.json({ message: '最少参赛人数不得少于10人。' }, { status: 400 });
@@ -107,8 +108,8 @@ export async function POST(request: NextRequest) {
   try {
     const result: any = await new Promise((resolve, reject) => {
       db.run(
-        'INSERT INTO Tournaments (name, organizer_id, start_time, registration_deadline, min_players, max_players, prize_settings, event_description, wechat_qr_code_url, status, default_match_format, cover_image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [name, organizerId, startTime, registrationDeadline, minPlayers, maxPlayers, prizeSettings, eventDescription, wechatQrCodeUrl, 'pending', defaultMatchFormat, coverImageUrl],
+        'INSERT INTO Tournaments (name, organizer_id, start_time, registration_deadline, min_players, max_players, prize_settings, event_description, wechat_qr_code_url, status, default_match_format, cover_image_url, registration_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [name, organizerId, startTime, registrationDeadline, minPlayers, maxPlayers, prizeSettings, eventDescription, wechatQrCodeUrl, 'pending', defaultMatchFormat, coverImageUrl, registrationCode],
         function (err) {
           if (err) reject(err);
           else resolve({ id: this.lastID });
