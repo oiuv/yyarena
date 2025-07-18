@@ -35,6 +35,7 @@ db.serialize(() => {
       winner_id INTEGER,
       default_match_format TEXT,
       final_rankings TEXT, -- Add this line for final rankings
+      cover_image_url TEXT, -- Add this line for tournament cover image
       FOREIGN KEY (organizer_id) REFERENCES Users(id),
       FOREIGN KEY (winner_id) REFERENCES Users(id)
     )

@@ -11,6 +11,7 @@ export default function CreateTournamentPage() {
   const [maxPlayers, setMaxPlayers] = useState(48);
   const [eventDescription, setEventDescription] = useState('');
   const [wechatQrCodeFile, setWechatQrCodeFile] = useState<File | null>(null);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null); // New state for cover image file
   const [registrationDeadline, setRegistrationDeadline] = useState('');
   const [defaultMatchFormat, setDefaultMatchFormat] = useState<string>('1局1胜'); // New state for default match format
 
@@ -80,6 +81,9 @@ export default function CreateTournamentPage() {
     formData.append('event_description', eventDescription);
     if (wechatQrCodeFile) {
       formData.append('wechat_qr_code_image', wechatQrCodeFile);
+    }
+    if (coverImageFile) {
+      formData.append('cover_image', coverImageFile);
     }
     formData.append('default_match_format', defaultMatchFormat); // Add default match format
 
@@ -165,7 +169,25 @@ export default function CreateTournamentPage() {
             微信群二维码 (可选):
           </label>
           <input type="file" accept="image/*" onChange={(e) => setWechatQrCodeFile(e.target.files ? e.target.files[0] : null)} className="p-2 border rounded bg-gray-700 text-white" />
+
+          <label className="block text-white text-sm font-bold mb-2">
+            比赛封面图 (可选):
+          </label>
+          <input type="file" accept="image/*" onChange={(e) => setCoverImageFile(e.target.files ? e.target.files[0] : null)} className="p-2 border rounded bg-gray-700 text-white" />
           
+          <label className="block text-white text-sm font-bold mb-2">
+            默认比赛赛制:
+          </label>
+          <select
+            className="p-2 border rounded bg-gray-700 text-white"
+            value={defaultMatchFormat}
+            onChange={(e) => setDefaultMatchFormat(e.target.value)}
+          >
+            <option value="1局1胜">1局1胜</option>
+            <option value="3局2胜">3局2胜</option>
+            <option value="5局3胜">5局3胜</option>
+          </select>
+
           <h3 className="text-xl font-bold mb-2 mt-4">奖品设置</h3>
           {rankedPrizes.map((rp, index) => (
             <div key={index} className="flex gap-2 items-center">
