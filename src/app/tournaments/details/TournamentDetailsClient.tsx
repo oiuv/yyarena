@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
 import Link from 'next/link';
@@ -65,6 +65,42 @@ export default function TournamentDetailsClient() {
   const [roomDetails, setRoomDetails] = useState<{ room_name: string, room_number: string, room_password: string, livestreamUrl: string } | null>(null);
   const [registeredPlayers, setRegisteredPlayers] = useState<any[]>([]); // New state for registered players when no matches
 
+  const fetchDetails = useCallback(async () => {
+    if (!tournamentId) return;
+    try {
+      const [tournamentRes, matchesRes] = await Promise.all([
+        fetch(`/api/tournaments/${tournamentId}`),
+        fetch(`/api/tournaments/${tournamentId}/matches`)
+      ]);
+      const tournamentData = await tournamentRes.json();
+      const matchesData = await matchesRes.json();
+      setTournament(tournamentData);
+      setMatches(matchesData);
+
+      // Initialize matchSelections based on fetched matches
+      const initialSelections: {[matchId: number]: { winnerSelection: number | 'forfeit_player1' | 'forfeit_player2' | 'forfeit_both' | null, matchFormat: string }} = {};
+      matchesData.forEach((match: any) => {
+        initialSelections[match.id] = {
+          winnerSelection: match.winner_id || null, // Use existing winner if any
+          matchFormat: match.match_format || '1局1胜', // Use existing format or default
+        };
+      });
+      setMatchSelections(initialSelections);
+
+      // If no matches are generated, fetch all registered players
+      if (matchesData.length === 0) {
+        const registeredPlayersRes = await fetch(`/api/tournaments/${tournamentId}/registered-players-avatars`);
+        if (registeredPlayersRes.ok) {
+          const playersData = await registeredPlayersRes.json();
+          setRegisteredPlayers(playersData);
+        }
+      }
+
+    } catch (err) {
+      setError('Failed to fetch tournament details.');
+    }
+  }, [tournamentId]);
+
   useEffect(() => {
     const token = getToken();
     if (token) {
@@ -76,40 +112,6 @@ export default function TournamentDetailsClient() {
     }
 
     if (tournamentId) {
-      const fetchDetails = async () => {
-        try {
-          const [tournamentRes, matchesRes] = await Promise.all([
-            fetch(`/api/tournaments/${tournamentId}`),
-            fetch(`/api/tournaments/${tournamentId}/matches`)
-          ]);
-          const tournamentData = await tournamentRes.json();
-          const matchesData = await matchesRes.json();
-          setTournament(tournamentData);
-          setMatches(matchesData);
-
-          // Initialize matchSelections based on fetched matches
-          const initialSelections: {[matchId: number]: { winnerSelection: number | 'forfeit_player1' | 'forfeit_player2' | 'forfeit_both' | null, matchFormat: string }} = {};
-          matchesData.forEach((match: any) => {
-            initialSelections[match.id] = {
-              winnerSelection: match.winner_id || null, // Use existing winner if any
-              matchFormat: match.match_format || '1局1胜', // Use existing format or default
-            };
-          });
-          setMatchSelections(initialSelections);
-
-          // If no matches are generated, fetch all registered players
-          if (matchesData.length === 0) {
-            const registeredPlayersRes = await fetch(`/api/tournaments/${tournamentId}/registered-players-avatars`);
-            if (registeredPlayersRes.ok) {
-              const playersData = await registeredPlayersRes.json();
-              setRegisteredPlayers(playersData);
-            }
-          }
-
-        } catch (err) {
-          setError('Failed to fetch tournament details.');
-        }
-      };
       fetchDetails();
 
       // Fetch room info if user is logged in
@@ -132,7 +134,7 @@ export default function TournamentDetailsClient() {
         fetchRoomInfo();
       }
     }
-  }, [tournamentId]);
+  }, [tournamentId, fetchDetails]);
 
   const handleStartTournament = async () => {
     setIsRoomModalOpen(true);
@@ -225,7 +227,12 @@ export default function TournamentDetailsClient() {
       const data = await res.json();
       if (res.ok) {
         console.log('获胜者已标记！响应数据:', data);
-        window.location.reload();
+        await fetchDetails(); // Re-fetch data instead of full reload
+        // Scroll to the updated match
+        const updatedMatchElement = document.getElementById(`match-${match.id}`);
+        if (updatedMatchElement) {
+          updatedMatchElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       } else {
         console.error(`错误: ${data.error || data.message}`);
       }
