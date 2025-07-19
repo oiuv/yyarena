@@ -64,6 +64,7 @@ export default function TournamentDetailsClient() {
   const [roomInfo, setRoomInfo] = useState<{ name: string, number: string, pass: string, livestreamUrl: string }>({ name: '', number: '', pass: '', livestreamUrl: '' });
   const [roomDetails, setRoomDetails] = useState<{ room_name: string, room_number: string, room_password: string, livestreamUrl: string } | null>(null);
   const [registeredPlayers, setRegisteredPlayers] = useState<any[]>([]); // New state for registered players when no matches
+  const [playerAvatars, setPlayerAvatars] = useState<{ [key: string]: string }>({});
 
   const fetchDetails = useCallback(async () => {
     if (!tournamentId) return;
@@ -76,6 +77,20 @@ export default function TournamentDetailsClient() {
       const matchesData = await matchesRes.json();
       setTournament(tournamentData);
       setMatches(matchesData);
+
+      // Create a map of player IDs to avatars from the matches data
+      if (matchesData.length > 0) {
+        const avatarMap: { [key: string]: string } = {};
+        matchesData.forEach((match: any) => {
+          if (match.player1_id && match.player1_avatar) {
+            avatarMap[match.player1_id] = match.player1_avatar;
+          }
+          if (match.player2_id && match.player2_avatar) {
+            avatarMap[match.player2_id] = match.player2_avatar;
+          }
+        });
+        setPlayerAvatars(avatarMap);
+      }
 
       // Initialize matchSelections based on fetched matches
       const initialSelections: {[matchId: number]: { winnerSelection: number | 'forfeit_player1' | 'forfeit_player2' | 'forfeit_both' | null, matchFormat: string }} = {};
@@ -465,20 +480,55 @@ export default function TournamentDetailsClient() {
 
       {tournament.status === 'finished' && tournament.final_rankings && (
         <div className="w-full max-w-4xl bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-3xl font-bold mb-4">最终排名</h2>
-          <ul>
-            {tournament.final_rankings.map((player: any) => {
-              const prizeWon = getPrizeForRank(player.rank, tournament.prizes);
-              return (
-                <li key={player.player_id} className="mb-2">
-                  <b>第 {player.rank} 名:</b> {player.character_name}
-                  {prizeWon && (
-                    <span className="ml-2 text-amber-400"> (获得奖品: {prizeWon.custom_prize_name || prizeWon.prize_name})</span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+          <h2 className="text-3xl font-bold mb-4 text-center text-amber-400">🏆 最终排名 🏆</h2>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-700">
+              <thead className="bg-gray-700">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">排名</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">玩家</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">奖品</th>
+                </tr>
+              </thead>
+              <tbody className="bg-gray-800 divide-y divide-gray-700">
+                {tournament.final_rankings.map((player: any) => {
+                  const prizeWon = getPrizeForRank(player.rank, tournament.prizes);
+                  return (
+                    <tr key={player.player_id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-lg font-bold">
+                        <span className={`inline-block text-center ${
+                          player.rank === 1 ? 'text-yellow-400' :
+                          player.rank === 2 ? 'text-gray-300' :
+                          player.rank === 3 ? 'text-yellow-600' : ''
+                        }`}>
+                          第 {player.rank} 名
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            <Image
+                              src={player.avatar ? `/avatars/${player.avatar}` : (playerAvatars[player.player_id] ? `/avatars/${playerAvatars[player.player_id]}` : '/avatars/000.webp')}
+                              alt={player.character_name}
+                              width={40}
+                              height={40}
+                              className="rounded-full"
+                            />
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-white">{player.character_name}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-amber-400">
+                        {prizeWon ? (prizeWon.custom_prize_name || prizeWon.prize_name) : '无'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

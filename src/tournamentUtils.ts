@@ -167,7 +167,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
       });
 
       const allRegistrations: any[] = await new Promise((resolve, reject) => {
-        db.all(`SELECT player_id, character_name, status as registration_status FROM Registrations WHERE tournament_id = ? AND (status = 'active' OR status = 'forfeited')`, [tournamentId], (err, rows) => {
+        db.all(`SELECT r.player_id, u.character_name, u.avatar, r.status as registration_status FROM Registrations r JOIN Users u ON r.player_id = u.id WHERE r.tournament_id = ? AND (r.status = 'active' OR r.status = 'forfeited')`, [tournamentId], (err, rows) => {
           if (err) reject(err);
           resolve(rows);
         });
@@ -177,6 +177,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
       for (const reg of allRegistrations) {
         playerStats.set(reg.player_id, {
           character_name: reg.character_name,
+          avatar: reg.avatar, // Include avatar
           elimination_round: 0, // Default for players with no matches played or no losses
           lost_to_player_id: null, // ID of the player they lost to
           is_forfeited_registration: reg.registration_status === 'forfeited', // New flag
@@ -246,6 +247,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
           rank: currentRank,
           player_id: playerId,
           character_name: stats.character_name + (stats.is_forfeited_registration ? ' (弃权)' : ''),
+          avatar: stats.avatar, // Include avatar
         });
 
         lastEliminationRound = stats.elimination_round;
