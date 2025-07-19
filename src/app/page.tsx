@@ -190,6 +190,11 @@ export default function Home() {
                     
                     {tournament.stream_url && <p className="text-red-100 text-sm md:text-base mb-1">直播间/主页: <a href={tournament.stream_url} target="_blank" rel="noopener noreferrer" className="text-amber-300 hover:underline">{tournament.stream_url}</a></p>}
                   </div>
+                  <div className="flex-shrink-0 mt-4 sm:mt-0 sm:ml-auto">
+                    <button className="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors duration-300">
+                      观看比赛
+                    </button>
+                  </div>
                 </Link>
               ))}
             </div>
