@@ -55,7 +55,7 @@ export default function Register() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-24">
+    <div className="flex min-h-screen flex-col items-center justify-start pt-12">
       <h1 className="text-4xl font-bold mb-8">注册</h1>
       <p className="text-center text-sm text-gray-600 mb-4">
         请务必如实填写您在燕云十六声游戏中的角色ID和角色名称。报名成功后，您必须使用报名的角色参加比赛，所有奖品也将只发放至对应ID的角色。

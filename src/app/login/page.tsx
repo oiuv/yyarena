@@ -52,7 +52,7 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-24">
+    <div className="flex min-h-screen flex-col items-center justify-start pt-12">
       <h1 className="text-4xl font-bold mb-8">登录</h1>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-md">
         {error && <p className="text-red-500 text-center">{error}</p>}
