@@ -15,16 +15,36 @@ export async function GET() {
         LEFT JOIN Users u ON t.organizer_id = u.id
         GROUP BY t.id
         ORDER BY t.start_time DESC
-      `, [], (err, rows) => {
+      `, [], async (err, rows) => {
         if (err) reject(err);
         else {
+          const allPrizes: any[] = await new Promise((prizeResolve, prizeReject) => {
+            db.all('SELECT id, name FROM Prizes', [], (prizeErr, prizeRows) => {
+              if (prizeErr) prizeReject(prizeErr);
+              prizeResolve(prizeRows);
+            });
+          });
+          const prizeMap = new Map(allPrizes.map(p => [p.id, p.name]));
+
           const tournamentsWithParsedPrizes = rows.map((row: any) => {
             if (typeof row !== 'object' || row === null) {
               return row; // Return as is if not a valid object
             }
+            const parsedPrizeSettings = row.prize_settings ? JSON.parse(row.prize_settings) : null;
+
+            if (parsedPrizeSettings && parsedPrizeSettings.ranked) {
+              parsedPrizeSettings.ranked = parsedPrizeSettings.ranked.map((rp: any) => ({
+                ...rp,
+                prize_name: prizeMap.get(Number(rp.prizeId)) || null,
+              }));
+            }
+            if (parsedPrizeSettings && parsedPrizeSettings.participation && parsedPrizeSettings.participation.prizeId) {
+              parsedPrizeSettings.participation.prize_name = prizeMap.get(Number(parsedPrizeSettings.participation.prizeId)) || null;
+            }
+
             return {
               ...row,
-              prize_settings: row.prize_settings ? JSON.parse(row.prize_settings) : null,
+              prize_settings: parsedPrizeSettings,
             };
           });
           resolve(tournamentsWithParsedPrizes);
