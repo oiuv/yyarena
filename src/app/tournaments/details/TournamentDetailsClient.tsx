@@ -365,9 +365,9 @@ export default function TournamentDetailsClient() {
   const isTournamentUpcoming = new Date(tournament.start_time) > new Date();
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-12 bg-gray-900 text-white">
+    <main className="flex min-h-screen flex-col items-center p-4 md:p-6 lg:p-12 bg-gray-900 text-white">
       <h1 className="text-4xl font-bold mb-4">{tournament.name}</h1>
-      <div className="w-full max-w-4xl bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+      <div className="w-full max-w-full md:max-w-4xl bg-gray-800 rounded-lg shadow-md p-4 md:p-6 mb-8">
         <div className="mb-4 text-center">
           <Image
             src={tournament.cover_image_url ? `/${tournament.cover_image_url.startsWith('/') ? tournament.cover_image_url.substring(1) : tournament.cover_image_url}` : '/images/default_cover.jpg'}
@@ -383,7 +383,7 @@ export default function TournamentDetailsClient() {
         <p><span className="font-bold">最大参赛人数:</span> {tournament.max_players}</p>
         <p><span className="font-bold">说明:</span> {tournament.event_description}</p>
 
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* 主办方信息 */}
           <div className="p-4 bg-gray-700 rounded-lg flex items-center space-x-4">
             <Image
@@ -624,12 +624,12 @@ export default function TournamentDetailsClient() {
       )}
 
       <h2 className="text-3xl font-bold mb-4">对阵图</h2>
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-full md:max-w-4xl px-2 md:px-0">
         {matches.length > 0 ? (
           matches.map(match => (
-            <div key={match.id} className="bg-gray-800 p-6 rounded-lg shadow-lg mb-4 border border-gray-700">
-              <div className="flex justify-between items-center mb-4">
-                <p className="text-lg font-semibold text-gray-300">
+            <div key={match.id} className="bg-gray-800 p-4 rounded-lg shadow-lg mb-4 border border-gray-700">
+              <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
+                <p className="text-lg font-semibold text-gray-300 mb-2 sm:mb-0">
                   第 {match.round_number} 轮
                   <span className="ml-2 text-sm text-gray-400"> ({getMatchStage(matches.filter(m => m.round_number === match.round_number).length)})</span>
                 </p>
@@ -647,7 +647,7 @@ export default function TournamentDetailsClient() {
                     height={64}
                     className="rounded-full border-2 border-blue-500"
                   />
-                  <span className="mt-2 text-lg font-medium">
+                  <span className="mt-2 text-lg font-medium text-center">
                     {match.player1_character_name || 'Player 1'}
                     {match.player1_registration_status === 'forfeited' ? ' (弃权)' : ''}
                   </span>
@@ -663,7 +663,7 @@ export default function TournamentDetailsClient() {
                     height={64}
                     className="rounded-full border-2 border-red-500"
                   />
-                  <span className="mt-2 text-lg font-medium">
+                  <span className="mt-2 text-lg font-medium text-center">
                     {match.player2_character_name || (match.player2_id === null ? '(轮空)' : 'Player 2')}
                     {match.player2_registration_status === 'forfeited' ? ' (弃权)' : ''}
                   </span>
@@ -678,9 +678,9 @@ export default function TournamentDetailsClient() {
                 ) : (
                   isOrganizer && match.status === 'pending' ? (
                     <div className="flex flex-col items-center gap-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
                         <select
-                          className="p-2 border rounded bg-gray-700 text-white"
+                          className="p-2 border rounded bg-gray-700 text-white w-full sm:w-auto"
                           onChange={(e) => handleWinnerSelectionChange(match.id, e.target.value)}
                           value={matchSelections[match.id]?.winnerSelection || ""}
                         >
@@ -692,7 +692,7 @@ export default function TournamentDetailsClient() {
                           <option value="forfeit_both">双方弃权</option>
                         </select>
                         <select
-                          className="p-2 border rounded bg-gray-700 text-white"
+                          className="p-2 border rounded bg-gray-700 text-white w-full sm:w-auto"
                           value={matchSelections[match.id]?.matchFormat || "1局1胜"}
                           onChange={(e) => handleMatchFormatChange(match.id, e.target.value)}
                         >
@@ -703,7 +703,7 @@ export default function TournamentDetailsClient() {
                       </div>
                       <button
                         onClick={() => handleMarkWinner(match)}
-                        className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-bold"
+                        className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-bold w-full"
                       >
                         {(() => {
                           const selection = matchSelections[match.id]?.winnerSelection;

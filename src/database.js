@@ -60,15 +60,15 @@ db.serialize(() => {
   `);
 
   const defaultPrizes = [
-    { name: '八音窍', description: '' },
-    { name: '2680长鸣珠时装', description: '' },
-    { name: '1280长鸣珠时装/武学特效/坐骑', description: '' },
-    { name: '980长鸣珠奇术特效', description: '' },
-    { name: '680长鸣珠时装/武器外观/坐骑', description: '' },
-    { name: '60长鸣珠时装/武器外观/坐骑', description: '' },
-    { name: '128元典藏战令', description: '' },
-    { name: '68元精英战令', description: '' },
-    { name: '30元月卡', description: '' },
+    { name: '八音窍', description: '价值1580元人民币' },
+    { name: '2580长鸣珠时装', description: '价值258元人民币' },
+    { name: '1280长鸣珠时装/武学特效/坐骑', description: '价值128元人民币' },
+    { name: '980长鸣珠奇术特效', description: '价值98元人民币' },
+    { name: '680长鸣珠时装/武器外观/坐骑', description: '价值68元人民币' },
+    { name: '60长鸣珠时装/武器外观/坐骑', description: '价值6元人民币' },
+    { name: '128元典藏战令', description: '价值128元人民币' },
+    { name: '68元精英战令', description: '价值68元人民币' },
+    { name: '30元月卡', description: '价值30元人民币' },
   ];
 
   defaultPrizes.forEach(prize => {
