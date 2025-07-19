@@ -237,14 +237,14 @@ export default function Home() {
                         <div className="mt-3">
                           <p className="text-green-200 text-sm md:text-base font-bold">主要奖品:</p>
                           {tournament.prize_settings.ranked && tournament.prize_settings.ranked.length > 0 && (
-                            <ul className="list-disc list-inside text-green-100 text-sm">
+                            <ul className="list-disc list-inside text-green-100 text-sm text-left">
                               {tournament.prize_settings.ranked.map((prize: any, idx: number) => (
                                 <li key={idx}>{prize.custom_prize_name || prize.prize_name || `第${prize.rank}名奖品`}</li>
                               ))}
                             </ul>
                           )}
                           {tournament.prize_settings.participation && tournament.prize_settings.participation.prize_id && (
-                            <p className="text-green-100 text-sm">参与奖: {tournament.prize_settings.participation.custom_prize_name || tournament.prize_settings.participation.prize_name || '系统默认参与奖'}</p>
+                            <p className="text-green-100 text-sm text-left">参与奖: {tournament.prize_settings.participation.custom_prize_name || tournament.prize_settings.participation.prize_name || '系统默认参与奖'}</p>
                           )}
                         </div>
                       )}

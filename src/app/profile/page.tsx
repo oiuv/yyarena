@@ -98,7 +98,7 @@ export default function ProfilePage() {
     <main className="flex min-h-screen flex-col items-center p-6 md:p-12 lg:p-24 bg-gray-900 text-white">
       <h1 className="text-4xl font-bold mb-8">我的资料</h1>
 
-      <div className="bg-gray-800 p-6 md:p-8 rounded-lg shadow-md w-full md:max-w-md">
+      <div className="bg-gray-800 p-6 md:p-8 rounded-lg shadow-md w-full md:max-w-md lg:max-w-4xl">
         <div className="mb-4">
           <p className="text-lg"><strong>角色名称:</strong> {user.character_name}</p>
           <p className="text-lg"><strong>角色编号:</strong> {user.game_id}</p>
@@ -109,25 +109,33 @@ export default function ProfilePage() {
 
         <div className="mb-4">
           <h2 className="text-2xl font-bold mb-4">角色图像</h2>
-          <div className="flex items-center mb-4">
+          <div className="flex flex-col items-center mb-4">
             <Image
               src={`/avatars/${selectedAvatar}`}
               alt="Current Avatar"
               width={96}
               height={96}
-              className="w-24 h-24 rounded-lg object-cover mr-4 border-2 border-blue-500"
+              className="w-24 h-24 rounded-lg object-cover mb-4 border-2 border-blue-500"
             />
-            <select
-              value={selectedAvatar}
-              onChange={(e) => setSelectedAvatar(e.target.value)}
-              className="p-2 rounded bg-gray-700 text-white border border-gray-600"
-            >
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 w-full">
               {availableAvatars.map((avatar) => (
-                <option key={avatar} value={avatar}>
-                  {avatar}
-                </option>
+                <div
+                  key={avatar}
+                  className={`relative cursor-pointer rounded-lg overflow-hidden transition-all duration-200 ${
+                    selectedAvatar === avatar ? 'ring-4 ring-green-500 scale-105' : 'ring-2 ring-gray-600 hover:ring-blue-400'
+                  }`}
+                  onClick={() => setSelectedAvatar(avatar)}
+                >
+                  <Image
+                    src={`/avatars/${avatar}`}
+                    alt={avatar}
+                    width={64}
+                    height={64}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               ))}
-            </select>
+            </div>
           </div>
           <button
             onClick={handleAvatarChange}
