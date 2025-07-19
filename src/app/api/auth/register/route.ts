@@ -26,8 +26,12 @@ export async function POST(request: Request) {
           [username, hashedPassword, game_id, character_name, phone_number, role, stream_url, avatar || '000.webp'],
           function (err) {
             if (err) {
-              if (err.message.includes('UNIQUE constraint failed')) {
-                reject(new Error('Username or Game ID or Character Name already exists'));
+              if (err.message.includes('UNIQUE constraint failed: Users.character_name')) {
+                reject(new Error('角色名称已被占用'));
+              } else if (err.message.includes('UNIQUE constraint failed: Users.username')) {
+                reject(new Error('用户名已被占用'));
+              } else if (err.message.includes('UNIQUE constraint failed: Users.game_id')) {
+                reject(new Error('游戏ID已被占用'));
               } else {
                 reject(err);
               }
@@ -100,8 +104,15 @@ export async function POST(request: Request) {
             'INSERT INTO Users (game_id, character_name, phone_number, role, avatar) VALUES (?, ?, ?, ?, ?)',
             [game_id, character_name, phone_number, role, avatar || '000.webp'],
             function (err) {
-              if (err) reject(err);
-              resolve({ id: this.lastID, game_id, character_name, phone_number, role, avatar: avatar || '000.webp' });
+              if (err) {
+                if (err.message.includes('UNIQUE constraint failed: Users.character_name')) {
+                  reject(new Error('角色名称已被占用'));
+                } else {
+                  reject(err);
+                }
+              } else {
+                resolve({ id: this.lastID, game_id, character_name, phone_number, role, avatar: avatar || '000.webp' });
+              }
             }
           );
         });

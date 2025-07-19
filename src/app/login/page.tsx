@@ -8,7 +8,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [gameId, setGameId] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [loginType, setLoginType] = useState('organizer'); // 'organizer' or 'player'
+  const [loginType, setLoginType] = useState('player'); // 'organizer' or 'player'
   const [error, setError] = useState('');
   const router = useRouter();
 
