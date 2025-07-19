@@ -90,11 +90,11 @@ export async function generateMatchesAndStartTournament(tournamentId: number) {
       });
     });
 
-    // 5. Update tournament status to 'ongoing'
+    // 5. Update tournament status to 'ongoing' and set the start time to now
     await new Promise((resolve, reject) => {
       db.run(
-        'UPDATE Tournaments SET status = ? WHERE id = ?',
-        ['ongoing', tournamentId],
+        'UPDATE Tournaments SET status = ?, start_time = ? WHERE id = ?',
+        ['ongoing', new Date().toISOString(), tournamentId],
         function (err) {
           if (err) {
             reject(err);
