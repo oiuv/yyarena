@@ -34,7 +34,7 @@ export async function PUT(request: NextRequest) {
       }
 
       // Check if username already exists for another organizer
-      const existingUser = await new Promise((resolve, reject) => {
+      const existingUser: any = await new Promise((resolve, reject) => {
         db.get(`SELECT id FROM Users WHERE username = ? AND role = 'organizer'`, [username], (err, row) => {
           if (err) reject(err);
           resolve(row);
