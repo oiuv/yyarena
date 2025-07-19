@@ -121,38 +121,38 @@ export default function TournamentRegisterPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-24 bg-gray-900 text-white">
-      <h1 className="text-4xl font-bold mb-8">报名比赛</h1>
-      {message && <p className="mt-4 text-lg text-center text-red-500">{message}</p>}
+    <main className="flex min-h-screen flex-col items-center p-4 md:p-6 lg:p-12 bg-gray-900 text-white">
+      <h1 className="text-3xl md:text-4xl font-bold mb-6 md:mb-8 text-center">报名比赛</h1>
+      {message && <p className="mt-4 text-base md:text-lg text-red-500 text-center">{message}</p>}
 
       {!currentUser || (currentUser.role !== 'player' && currentUser.role !== 'organizer') ? (
-        <p className="text-xl">请先<a href="/login" className="text-blue-500 hover:underline">登录</a>以玩家或主办方身份报名比赛。</p>
+        <p className="text-base md:text-xl text-center">请先<a href="/login" className="text-blue-500 hover:underline">登录</a>以玩家或主办方身份报名比赛。</p>
       ) : (
-        <div className="w-full max-w-2xl">
-          <h2 className="text-2xl font-bold mb-4">可报名的比赛</h2>
+        <div className="w-full max-w-full md:max-w-2xl px-2 md:px-0">
+          <h2 className="text-xl md:text-2xl font-bold mb-4">可报名的比赛</h2>
           {tournaments.filter(filterAvailableTournaments).length > 0 ? (
             <ul>
               {tournaments.filter(filterAvailableTournaments).map((tournament: any) => (
-                <li key={tournament.id} className="p-4 bg-gray-800 rounded-lg shadow-md mb-2 flex justify-between items-center">
-                  <div>
-                    <h3 className="text-xl font-bold">{tournament.name}</h3>
-                    <p>开始时间: {new Date(tournament.start_time).toLocaleString()}</p>
-                    <p>报名截止: {new Date(tournament.registration_deadline).toLocaleString()}</p>
-                    <p>当前状态: {getTournamentStatus(tournament)}</p>
-                    <p>已报名: {tournament.registeredPlayersCount || 0} / {tournament.max_players}</p>
+                <li key={tournament.id} className="p-4 bg-gray-800 rounded-lg shadow-md mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                  <div className="mb-3 sm:mb-0 text-left">
+                    <h3 className="text-lg md:text-xl font-bold">{tournament.name}</h3>
+                    <p className="text-sm md:text-base">开始时间: {new Date(tournament.start_time).toLocaleString()}</p>
+                    <p className="text-sm md:text-base">报名截止: {new Date(tournament.registration_deadline).toLocaleString()}</p>
+                    <p className="text-sm md:text-base">当前状态: {getTournamentStatus(tournament)}</p>
+                    <p className="text-sm md:text-base">已报名: {tournament.registeredPlayersCount || 0} / {tournament.max_players}</p>
                   </div>
                   {tournament.registration_code ? (
-                    <div className="flex flex-col items-end gap-2">
+                    <div className="flex flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
                       <input
                         type="text"
                         placeholder="请输入验证码"
                         value={registrationCodeInput[tournament.id] || ''}
                         onChange={(e) => setRegistrationCodeInput(prev => ({ ...prev, [tournament.id]: e.target.value }))}
-                        className="p-2 border rounded bg-gray-700 text-white w-40"
+                        className="p-2 border rounded bg-gray-700 text-white w-full sm:w-40 text-sm md:text-base"
                       />
                       <button
                         onClick={() => handleRegister(tournament.id, true)}
-                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded w-full sm:w-auto text-sm md:text-base"
                       >
                         报名参赛
                       </button>
@@ -160,7 +160,7 @@ export default function TournamentRegisterPage() {
                   ) : (
                     <button
                       onClick={() => handleRegister(tournament.id, false)}
-                      className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                      className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded w-full sm:w-auto text-sm md:text-base"
                     >
                       一键报名
                     </button>
@@ -169,7 +169,7 @@ export default function TournamentRegisterPage() {
               ))}
             </ul>
           ) : (
-            <p>暂无开放报名的比赛。</p>
+            <p className="text-base md:text-lg text-center">暂无开放报名的比赛。</p>
           )}
         </div>
       )}

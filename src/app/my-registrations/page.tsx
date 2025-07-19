@@ -132,51 +132,53 @@ export default function MyRegistrationsPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-12 bg-gray-900 text-white">
-      <h1 className="text-4xl font-bold mb-8">我的报名</h1>
-      <div className="w-full max-w-4xl">
+    <main className="flex min-h-screen flex-col items-center p-4 md:p-6 lg:p-12 bg-gray-900 text-white">
+      <h1 className="text-3xl md:text-4xl font-bold mb-6 md:mb-8 text-center">我的报名</h1>
+      <div className="w-full max-w-full md:max-w-4xl px-2 md:px-0">
         {registrations.length > 0 ? (
           <ul>
             {registrations.map((reg: any) => (
-              <li key={reg.registration_id} className="p-4 bg-gray-800 rounded-lg shadow-md mb-2 flex justify-between items-center">
-                <div>
+              <li key={reg.registration_id} className="p-4 bg-gray-800 rounded-lg shadow-md mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                <div className="mb-3 sm:mb-0 text-left">
                   <Link href={`/tournaments/details?id=${reg.tournament_id}`} className="block hover:bg-gray-700 p-2 rounded">
-                    <h3 className="text-xl font-bold">{reg.tournament_name}</h3>
-                    <p>主办方: {reg.organizer_name}</p>
-                    <p>报名时间: {new Date(reg.registration_time).toLocaleString()}</p>
-                    <p>比赛开始: {new Date(reg.start_time).toLocaleString()}</p>
-                    <p>报名截止: {new Date(reg.registration_deadline).toLocaleString()}</p>
-                    <p>报名状态: {getRegistrationStatusText(reg.registration_status)}</p>
-                    <p>比赛状态: {getTournamentStatusText(reg.tournament_status)}</p>
+                    <h3 className="text-lg md:text-xl font-bold">{reg.tournament_name}</h3>
+                    <p className="text-sm md:text-base">主办方: {reg.organizer_name}</p>
+                    <p className="text-sm md:text-base">报名时间: {new Date(reg.registration_time).toLocaleString()}</p>
+                    <p className="text-sm md:text-base">比赛开始: {new Date(reg.start_time).toLocaleString()}</p>
+                    <p className="text-sm md:text-base">报名截止: {new Date(reg.registration_deadline).toLocaleString()}</p>
+                    <p className="text-sm md:text-base">报名状态: {getRegistrationStatusText(reg.registration_status)}</p>
+                    <p className="text-sm md:text-base">比赛状态: {getTournamentStatusText(reg.tournament_status)}</p>
                   </Link>
                 </div>
-                {reg.registration_status === 'active' && 
-                 reg.tournament_status !== 'ongoing' && 
-                 reg.tournament_status !== 'finished' && 
-                 new Date() < new Date(reg.registration_deadline) && (
-                  <button
-                    onClick={() => handleWithdraw(reg.registration_id)}
-                    className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
-                  >
-                    退出报名
-                  </button>
-                )}
-                {reg.registration_status === 'withdrawn' && 
-                 reg.tournament_status !== 'ongoing' && 
-                 reg.tournament_status !== 'finished' && 
-                 new Date() < new Date(reg.registration_deadline) && (
-                  <button
-                    onClick={() => handleReRegister(reg.tournament_id)}
-                    className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded ml-2"
-                  >
-                    重新报名
-                  </button>
-                )}
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  {reg.registration_status === 'active' && 
+                   reg.tournament_status !== 'ongoing' && 
+                   reg.tournament_status !== 'finished' && 
+                   new Date() < new Date(reg.registration_deadline) && (
+                    <button
+                      onClick={() => handleWithdraw(reg.registration_id)}
+                      className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded w-full sm:w-auto text-sm md:text-base"
+                    >
+                      退出报名
+                    </button>
+                  )}
+                  {reg.registration_status === 'withdrawn' && 
+                   reg.tournament_status !== 'ongoing' && 
+                   reg.tournament_status !== 'finished' && 
+                   new Date() < new Date(reg.registration_deadline) && (
+                    <button
+                      onClick={() => handleReRegister(reg.tournament_id)}
+                      className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded w-full sm:w-auto text-sm md:text-base"
+                    >
+                      重新报名
+                    </button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-center text-xl">您还没有报名任何比赛。</p>
+          <p className="text-center text-base md:text-xl">您还没有报名任何比赛。</p>
         )}
       </div>
     </main>

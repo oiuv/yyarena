@@ -121,39 +121,39 @@ import { useRouter } from 'next/navigation';
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-24 bg-gray-900 text-white">
-      <div className="w-full max-w-2xl p-6 bg-gray-800 rounded-lg shadow-md mb-8">
-        <h2 className="text-2xl font-bold mb-4">创建比赛</h2>
+    <main className="flex min-h-screen flex-col items-center p-4 md:p-6 lg:p-12 bg-gray-900 text-white">
+      <div className="w-full max-w-full md:max-w-2xl p-4 md:p-6 bg-gray-800 rounded-lg shadow-md mb-8">
+        <h2 className="text-2xl font-bold mb-4 text-center">创建比赛</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <label htmlFor="name" className="block text-white text-sm font-bold mb-2">
             比赛名称:
           </label>
-          <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} className="p-2 border rounded bg-gray-700 text-white" placeholder="例如：燕云十六声第一届比武大会" required />
+          <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} className="p-2 border rounded bg-gray-700 text-white w-full" placeholder="例如：燕云十六声第一届比武大会" required />
 
           <label htmlFor="startTime" className="block text-white text-sm font-bold mb-2">
             比赛开始时间:
           </label>
-          <input type="datetime-local" id="startTime" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="p-2 border rounded bg-gray-700 text-white" required />
+          <input type="datetime-local" id="startTime" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="p-2 border rounded bg-gray-700 text-white w-full" required />
 
           <label htmlFor="registrationDeadline" className="block text-white text-sm font-bold mb-2">
             报名截止时间 (可选):
           </label>
-          <input type="datetime-local" id="registrationDeadline" value={registrationDeadline} onChange={(e) => setRegistrationDeadline(e.target.value)} className="p-2 border rounded bg-gray-700 text-white" />
+          <input type="datetime-local" id="registrationDeadline" value={registrationDeadline} onChange={(e) => setRegistrationDeadline(e.target.value)} className="p-2 border rounded bg-gray-700 text-white w-full" />
 
           <label htmlFor="minPlayers" className="block text-white text-sm font-bold mb-2">
             最少参赛人数:
           </label>
-          <input type="number" id="minPlayers" value={minPlayers} onChange={(e) => setMinPlayers(parseInt(e.target.value))} className="p-2 border rounded bg-gray-700 text-white" required />
+          <input type="number" id="minPlayers" value={minPlayers} onChange={(e) => setMinPlayers(parseInt(e.target.value))} className="p-2 border rounded bg-gray-700 text-white w-full" required />
 
           <label htmlFor="maxPlayers" className="block text-white text-sm font-bold mb-2">
             最多参赛人数:
           </label>
-          <input type="number" id="maxPlayers" value={maxPlayers} onChange={(e) => setMaxPlayers(parseInt(e.target.value))} className="p-2 border rounded bg-gray-700 text-white" required />
+          <input type="number" id="maxPlayers" value={maxPlayers} onChange={(e) => setMaxPlayers(parseInt(e.target.value))} className="p-2 border rounded bg-gray-700 text-white w-full" required />
 
           <label htmlFor="eventDescription" className="block text-white text-sm font-bold mb-2">
             赛事说明:
           </label>
-          <textarea id="eventDescription" value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} className="p-2 border rounded bg-gray-700 text-white" rows={5} placeholder="例如:
+          <textarea id="eventDescription" value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} className="p-2 border rounded bg-gray-700 text-white w-full" rows={5} placeholder="例如:
 
 1. 请提前5分钟进入比赛房间，房间ID在比赛开始时在本页面公示。
 2. 对阵图在比赛开始时由系统自动生成，请关注本页了解自己对阵信息。
@@ -161,23 +161,23 @@ import { useRouter } from 'next/navigation';
           <label className="block text-white text-sm font-bold mb-2">
             微信群二维码 (可选):
           </label>
-          <input type="file" accept="image/*" onChange={(e) => setWechatQrCodeFile(e.target.files ? e.target.files[0] : null)} className="p-2 border rounded bg-gray-700 text-white" />
+          <input type="file" accept="image/*" onChange={(e) => setWechatQrCodeFile(e.target.files ? e.target.files[0] : null)} className="p-2 border rounded bg-gray-700 text-white w-full" />
 
           <label className="block text-white text-sm font-bold mb-2">
             比赛封面图 (可选):
           </label>
-          <input type="file" accept="image/*" onChange={(e) => setCoverImageFile(e.target.files ? e.target.files[0] : null)} className="p-2 border rounded bg-gray-700 text-white" />
+          <input type="file" accept="image/*" onChange={(e) => setCoverImageFile(e.target.files ? e.target.files[0] : null)} className="p-2 border rounded bg-gray-700 text-white w-full" />
 
           <label htmlFor="registrationCode" className="block text-white text-sm font-bold mb-2">
             参赛验证码 (可选):
           </label>
-          <input type="text" id="registrationCode" value={registrationCode} onChange={(e) => setRegistrationCode(e.target.value)} className="p-2 border rounded bg-gray-700 text-white" placeholder="用于非公开比赛，如内部赛" />
+          <input type="text" id="registrationCode" value={registrationCode} onChange={(e) => setRegistrationCode(e.target.value)} className="p-2 border rounded bg-gray-700 text-white w-full" placeholder="用于非公开比赛，如内部赛" />
           
           <label className="block text-white text-sm font-bold mb-2">
             默认比赛赛制:
           </label>
           <select
-            className="p-2 border rounded bg-gray-700 text-white"
+            className="p-2 border rounded bg-gray-700 text-white w-full"
             value={defaultMatchFormat}
             onChange={(e) => setDefaultMatchFormat(e.target.value)}
           >
@@ -186,29 +186,29 @@ import { useRouter } from 'next/navigation';
             <option value="5局3胜">5局3胜</option>
           </select>
 
-          <h3 className="text-xl font-bold mb-2 mt-4">奖品设置</h3>
+          <h3 className="text-xl font-bold mb-2 mt-4 text-center">奖品设置</h3>
           {rankedPrizes.map((rp, index) => (
-            <div key={index} className="flex gap-2 items-center">
-              <span>第 {rp.rank} 名:</span>
-              <select value={rp.prizeId} onChange={(e) => setRankedPrizes(rankedPrizes.map((p, i) => i === index ? { ...p, prizeId: e.target.value } : p))} className="p-2 border rounded bg-gray-700 text-white flex-grow">
+            <div key={index} className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+              <span className="w-full sm:w-auto">第 {rp.rank} 名:</span>
+              <select value={rp.prizeId} onChange={(e) => setRankedPrizes(rankedPrizes.map((p, i) => i === index ? { ...p, prizeId: e.target.value } : p))} className="p-2 border rounded bg-gray-700 text-white flex-grow w-full">
                 <option value="">无奖品</option>
                 {prizes.map(prize => <option key={prize.id} value={prize.id}>{prize.name}</option>)}
               </select>
-              <input type="number" min="1" value={rp.quantity} onChange={(e) => setRankedPrizes(rankedPrizes.map((p, i) => i === index ? { ...p, quantity: parseInt(e.target.value) } : p))} className="p-2 w-20 border rounded bg-gray-700 text-white" />
+              <input type="number" min="1" value={rp.quantity} onChange={(e) => setRankedPrizes(rankedPrizes.map((p, i) => i === index ? { ...p, quantity: parseInt(e.target.value) } : p))} className="p-2 w-full sm:w-20 border rounded bg-gray-700 text-white" />
             </div>
           ))}
-          <div className="flex gap-2 items-center mt-2">
-            <span>参与奖:</span>
-            <select value={participationPrize.prizeId} onChange={(e) => setParticipationPrize({ ...participationPrize, prizeId: e.target.value })} className="p-2 border rounded bg-gray-700 text-white flex-grow">
+          <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center mt-2">
+            <span className="w-full sm:w-auto">参与奖:</span>
+            <select value={participationPrize.prizeId} onChange={(e) => setParticipationPrize({ ...participationPrize, prizeId: e.target.value })} className="p-2 border rounded bg-gray-700 text-white flex-grow w-full">
               <option value="">无奖品</option>
               {prizes.map(prize => <option key={prize.id} value={prize.id}>{prize.name}</option>)}
             </select>
-            <input type="number" min="1" value={participationPrize.quantity} onChange={(e) => setParticipationPrize({ ...participationPrize, quantity: parseInt(e.target.value) })} className="p-2 w-20 border rounded bg-gray-700 text-white" />
+            <input type="number" min="1" value={participationPrize.quantity} onChange={(e) => setParticipationPrize({ ...participationPrize, quantity: parseInt(e.target.value) })} className="p-2 w-full sm:w-20 border rounded bg-gray-700 text-white" />
           </div>
           {customPrizes.map((cp, index) => (
-            <div key={index} className="p-2 border rounded mt-2 bg-gray-700">
+            <div key={index} className="p-4 border rounded mt-2 bg-gray-700 flex flex-col gap-2">
               <input type="text" placeholder="奖项名称" value={cp.customName} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, customName: e.target.value } : p))} className="p-2 w-full border rounded bg-gray-600" required/>
-              <div className="flex gap-2 mt-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input type="number" placeholder="起始名次" value={cp.rangeStart} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, rangeStart: parseInt(e.target.value) } : p))} className="p-2 w-full border rounded bg-gray-600" required/>
                 <input type="number" placeholder="结束名次" value={cp.rangeEnd} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, rangeEnd: parseInt(e.target.value) } : p))} className="p-2 w-full border rounded bg-gray-600" required/>
               </div>
@@ -220,8 +220,8 @@ import { useRouter } from 'next/navigation';
               <button type="button" onClick={() => handleRemoveCustomPrize(index)} className="p-2 bg-red-500 text-white rounded mt-2 w-full">移除自定义奖项</button>
             </div>
           ))}
-          <button type="button" onClick={handleAddCustomPrize} className="p-2 bg-green-500 text-white rounded mt-2">添加自定义奖项</button>
-          <button type="submit" className="p-2 bg-blue-500 text-white rounded mt-4">创建比赛</button>
+          <button type="button" onClick={handleAddCustomPrize} className="p-2 bg-green-500 text-white rounded mt-2 w-full">添加自定义奖项</button>
+          <button type="submit" className="p-2 bg-blue-500 text-white rounded mt-4 w-full">创建比赛</button>
         </form>
       </div>
     </main>

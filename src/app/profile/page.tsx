@@ -95,16 +95,16 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-24 bg-gray-900 text-white">
+    <main className="flex min-h-screen flex-col items-center p-6 md:p-12 lg:p-24 bg-gray-900 text-white">
       <h1 className="text-4xl font-bold mb-8">我的资料</h1>
 
-      <div className="bg-gray-800 p-8 rounded-lg shadow-md w-full max-w-md">
+      <div className="bg-gray-800 p-6 md:p-8 rounded-lg shadow-md w-full md:max-w-md">
         <div className="mb-4">
           <p className="text-lg"><strong>角色名称:</strong> {user.character_name}</p>
           <p className="text-lg"><strong>角色编号:</strong> {user.game_id}</p>
           {user.username && <p className="text-lg"><strong>用户名:</strong> {user.username}</p>}
           {user.role && <p className="text-lg"><strong>角色身份:</strong> {user.role === 'organizer' ? '比赛主办者' : '玩家'}</p>}
-          {user.stream_url && <p className="text-lg"><strong>直播间/主页:</strong> <a href={user.stream_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">{user.stream_url}</a></p>}
+          {user.stream_url && <p className="text-lg"><strong>直播间/主页:</strong> <a href={user.stream_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">点击访问</a></p>}
         </div>
 
         <div className="mb-4">
