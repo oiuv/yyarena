@@ -133,8 +133,12 @@ export default function Home() {
             failed.push(tournament);
           } else if (now < registrationDeadline) {
             openForRegistration.push(tournament);
-          } else if (now >= registrationDeadline && registeredPlayersCount >= tournament.min_players) {
+          } else if (now >= registrationDeadline && now < startTime) {
             registrationClosed.push(tournament);
+          } else if (now >= startTime && registeredPlayersCount >= tournament.min_players) {
+            // This case should ideally be handled by 'ongoing' status from backend
+            // but as a fallback, if it's past start time and enough players, consider it ongoing
+            ongoing.push(tournament);
           } else {
             failed.push(tournament);
           }
@@ -351,7 +355,7 @@ export default function Home() {
 
         {registrationClosedTournaments.length > 0 && (
           <section className="mb-8 md:mb-12 p-4 md:p-6 bg-gradient-to-br from-indigo-900 to-indigo-950 rounded-xl shadow-2xl border-4 border-indigo-500 transform hover:scale-105 transition-transform duration-300">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 md:mb-6 text-indigo-300 border-b-2 border-indigo-600 pb-2 md:pb-3">⚔️ 报名已截止 ⚔️</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 md:mb-6 text-indigo-300 border-b-2 border-indigo-600 pb-2 md:pb-3">⏳ 报名已截止 ⏳</h2>
             <div className="grid grid-cols-1 gap-4 md:gap-6">
               {registrationClosedTournaments.map((tournament: any) => (
                 <Link key={tournament.id} href={`/tournaments/details?id=${tournament.id}`} className="flex flex-col sm:flex-row items-center p-4 md:p-6 bg-indigo-800/70 rounded-lg shadow-xl border border-indigo-600 hover:bg-indigo-700/80 transition-all duration-300 transform hover:-translate-y-1 hover:scale-102 group">
@@ -367,7 +371,7 @@ export default function Home() {
                   <div className="flex-grow text-center sm:text-left">
                     <h3 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-indigo-200 group-hover:text-indigo-500 transition-colors duration-300">{tournament.name}</h3>
                     <p className="text-indigo-100 text-sm md:text-base mb-1">开始时间: {new Date(tournament.start_time).toLocaleString()}</p>
-                    <p className="text-indigo-100 text-sm md:text-base mb-1">状态: 已结束</p>
+                    <p className="text-indigo-100 text-sm md:text-base mb-1">状态: 即将开始</p>
                   </div>
                 </Link>
               ))}

@@ -7,7 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 import { getToken } from '@/utils/clientAuth';
-import { getTournamentStatusText } from '@/utils/statusTranslators';
+import { getTournamentStatusText, getDynamicTournamentStatusText } from '@/utils/statusTranslators';
 
 // Helper function to determine match stage
 const getMatchStage = (matchesInRound: number): string => {
@@ -378,7 +378,7 @@ export default function TournamentDetailsClient() {
           />
         </div>
         <p><span className="font-bold">开始时间:</span> {new Date(tournament.start_time).toLocaleString()}</p>
-        <p><span className="font-bold">状态:</span> {getTournamentStatusText(tournament.status)}</p>
+        <p><span className="font-bold">状态:</span> {getDynamicTournamentStatusText(tournament)}</p>
         <p><span className="font-bold">最少参赛人数:</span> {tournament.min_players}</p>
         <p><span className="font-bold">最大参赛人数:</span> {tournament.max_players}</p>
         <p><span className="font-bold">说明:</span> <span dangerouslySetInnerHTML={{ __html: tournament.event_description.replace(/\n/g, '<br />') }} /></p>
