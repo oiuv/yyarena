@@ -36,13 +36,25 @@ export async function POST(request: Request, { params }: { params: { id: string 
     let finalWinnerId: number | null = null;
     let finalStatus: string = 'finished';
 
+    // Increment total_participations for both players
+    await new Promise((resolve, reject) => {
+      db.run(
+        'UPDATE Users SET total_participations = total_participations + 1 WHERE id = ? OR id = ?',
+        [match.player1_id, match.player2_id],
+        function (err) {
+          if (err) reject(err);
+          else resolve(this);
+        }
+      );
+    });
+
     if (forfeit_type === 'both') {
       finalWinnerId = null;
       finalStatus = 'forfeited';
     } else if (forfeit_type === 'player1') {
       finalWinnerId = match.player2_id;
       finalStatus = 'finished';
-      // Update player1's registration status to forfeited
+      // Update player1's registration status to forfeited and increment forfeit_count
       await new Promise((resolve, reject) => {
         db.run(
           'UPDATE Registrations SET status = ? WHERE tournament_id = ? AND player_id = ?',
@@ -53,14 +65,34 @@ export async function POST(request: Request, { params }: { params: { id: string 
           }
         );
       });
+      await new Promise((resolve, reject) => {
+        db.run(
+          'UPDATE Users SET forfeit_count = forfeit_count + 1 WHERE id = ?',
+          [match.player1_id],
+          function (err) {
+            if (err) reject(err);
+            else resolve(this);
+          }
+        );
+      });
     } else if (forfeit_type === 'player2') {
       finalWinnerId = match.player1_id;
       finalStatus = 'finished';
-      // Update player2's registration status to forfeited
+      // Update player2's registration status to forfeited and increment forfeit_count
       await new Promise((resolve, reject) => {
         db.run(
           'UPDATE Registrations SET status = ? WHERE tournament_id = ? AND player_id = ?',
           ['forfeited', match.tournament_id, match.player2_id],
+          function (err) {
+            if (err) reject(err);
+            else resolve(this);
+          }
+        );
+      });
+      await new Promise((resolve, reject) => {
+        db.run(
+          'UPDATE Users SET forfeit_count = forfeit_count + 1 WHERE id = ?',
+          [match.player2_id],
           function (err) {
             if (err) reject(err);
             else resolve(this);

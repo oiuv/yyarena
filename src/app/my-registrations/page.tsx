@@ -32,7 +32,7 @@ export default function MyRegistrationsPage() {
 
     const fetchRegistrations = async () => {
       try {
-        const res = await fetch('/api/users/me/registrations', {
+        const res = await fetch('/api/users/me/match-history', {
           headers: {
             'Authorization': `Bearer ${token}`,
           },

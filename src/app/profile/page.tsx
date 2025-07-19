@@ -16,8 +16,17 @@ interface User {
   avatar?: string;
 }
 
+interface UserStats {
+  total_participations: number;
+  first_place_count: number;
+  second_place_count: number;
+  third_place_count: number;
+  forfeit_count: number;
+}
+
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [availableAvatars, setAvailableAvatars] = useState<string[]>([]);
   const [selectedAvatar, setSelectedAvatar] = useState<string>('');
   const [editedStreamUrl, setEditedStreamUrl] = useState<string>('');
@@ -60,7 +69,24 @@ export default function ProfilePage() {
       }
     };
 
+    const fetchUserStats = async () => {
+      try {
+        const res = await fetch('/api/users/me/stats', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const stats = await res.json();
+          setUserStats(stats);
+        } else {
+          console.error('Failed to fetch user stats.');
+        }
+      } catch (error) {
+        console.error('Error fetching user stats:', error);
+      }
+    };
+
     fetchAvatars();
+    fetchUserStats();
   }, [router]);
 
   const handleAvatarChange = async () => {
@@ -174,6 +200,34 @@ export default function ProfilePage() {
           <p className="text-lg"><strong>角色编号:</strong> {user.game_id}</p>
           {user.username && user.role === 'organizer' && <p className="text-lg"><strong>用户名:</strong> {user.username}</p>}
           {user.role && <p className="text-lg"><strong>角色身份:</strong> {user.role === 'organizer' ? '比赛主办方' : '玩家'}</p>}
+
+          {userStats && (
+            <div className="mt-4 p-4 bg-gray-700 rounded-lg">
+              <h2 className="text-2xl font-bold mb-4 text-center">比赛统计</h2>
+              <div className="grid grid-cols-2 gap-4 text-center">
+                <div className="bg-blue-600 p-3 rounded-lg">
+                  <p className="text-xl font-bold">{userStats.total_participations}</p>
+                  <p className="text-sm text-gray-300">参赛次数</p>
+                </div>
+                <div className="bg-amber-400 p-3 rounded-lg">
+                  <p className="text-xl font-bold">{userStats.first_place_count}</p>
+                  <p className="text-sm text-gray-800">第一名</p>
+                </div>
+                <div className="bg-gray-400 p-3 rounded-lg">
+                  <p className="text-xl font-bold">{userStats.second_place_count}</p>
+                  <p className="text-sm text-gray-800">第二名</p>
+                </div>
+                <div className="bg-orange-700 p-3 rounded-lg">
+                  <p className="text-xl font-bold">{userStats.third_place_count}</p>
+                  <p className="text-sm text-gray-300">第三名</p>
+                </div>
+                <div className="bg-red-700 p-3 rounded-lg col-span-2">
+                  <p className="text-xl font-bold">{userStats.forfeit_count}</p>
+                  <p className="text-sm text-gray-300">弃权次数</p>
+                </div>
+              </div>
+            </div>
+          )}
           
           {user.role === 'organizer' && (
             <div className="mt-4">

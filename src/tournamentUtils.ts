@@ -156,6 +156,17 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
           }
         );
       });
+      // Increment champion's first_place_count
+      await new Promise((resolve, reject) => {
+        db.run(
+          'UPDATE Users SET first_place_count = first_place_count + 1 WHERE id = ?',
+          [championId],
+          function (err) {
+            if (err) reject(err);
+            else resolve(this);
+          }
+        );
+      });
       console.log(`[advanceTournamentRound] Tournament ${tournamentId} finished. Champion: ${championId}`);
 
       // Calculate and store final rankings with tie-breaking based on opponent strength
@@ -249,6 +260,31 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
           character_name: stats.character_name + (stats.is_forfeited_registration ? ' (弃权)' : ''),
           avatar: stats.avatar, // Include avatar
         });
+
+        // Update second_place_count and third_place_count
+        if (currentRank === 2) {
+          await new Promise((resolve, reject) => {
+            db.run(
+              'UPDATE Users SET second_place_count = second_place_count + 1 WHERE id = ?',
+              [playerId],
+              function (err) {
+                if (err) reject(err);
+                else resolve(this);
+              }
+            );
+          });
+        } else if (currentRank === 3) {
+          await new Promise((resolve, reject) => {
+            db.run(
+              'UPDATE Users SET third_place_count = third_place_count + 1 WHERE id = ?',
+              [playerId],
+              function (err) {
+                if (err) reject(err);
+                else resolve(this);
+              }
+            );
+          });
+        }
 
         lastEliminationRound = stats.elimination_round;
         lastOpponentRound = opponentRound;
