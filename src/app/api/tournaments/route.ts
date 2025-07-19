@@ -3,6 +3,7 @@ import db from '@/database.js';
 import { verifyToken } from '../../../utils/auth';
 import fs from 'fs/promises';
 import path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 
 // GET all tournaments
 export async function GET() {
@@ -99,7 +100,8 @@ export async function POST(request: NextRequest) {
       const fileBuffer = Buffer.from(await wechatQrCodeFile.arrayBuffer());
       const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'qrcodes');
       await fs.mkdir(uploadDir, { recursive: true });
-      const filename = `${Date.now()}-${wechatQrCodeFile.name}`;
+      const fileExtension = path.extname(wechatQrCodeFile.name);
+      const filename = `${uuidv4()}${fileExtension}`;
       const filePath = path.join(uploadDir, filename);
       await fs.writeFile(filePath, fileBuffer);
       wechatQrCodeUrl = `/uploads/qrcodes/${filename}`;
@@ -115,7 +117,8 @@ export async function POST(request: NextRequest) {
       const fileBuffer = Buffer.from(await coverImageFile.arrayBuffer());
       const uploadDir = path.join(process.cwd(), 'public', 'tournament_covers');
       await fs.mkdir(uploadDir, { recursive: true });
-      const filename = `${Date.now()}-${coverImageFile.name}`;
+      const fileExtension = path.extname(coverImageFile.name);
+      const filename = `${uuidv4()}${fileExtension}`;
       const filePath = path.join(uploadDir, filename);
       await fs.writeFile(filePath, fileBuffer);
       coverImageUrl = `/tournament_covers/${filename}`;
