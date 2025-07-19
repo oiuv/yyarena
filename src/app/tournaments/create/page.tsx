@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { getToken } from '@/utils/clientAuth';
+import { useRouter } from 'next/navigation';
 
-export default function CreateTournamentPage() {
+  export default function CreateTournamentPage() {
+  const router = useRouter();
   const [prizes, setPrizes] = useState<any[]>([]);
   const [name, setName] = useState('');
   const [startTime, setStartTime] = useState('');
@@ -106,26 +108,8 @@ export default function CreateTournamentPage() {
       });
 
       if (res.ok) {
-        alert('比赛创建成功！');
-        // Optionally redirect or clear form
-        setName('');
-        setStartTime('');
-        setMinPlayers(10);
-        setMaxPlayers(48);
-        setEventDescription('');
-        setWechatQrCodeFile(null);
-        setRegistrationDeadline('');
-        setDefaultMatchFormat('1局1胜'); // Reset default match format
-        setRankedPrizes([
-          { rank: 1, prizeId: '', quantity: 1 },
-          { rank: 2, prizeId: '', quantity: 1 },
-          { rank: 3, prizeId: '', quantity: 1 },
-          { rank: 4, prizeId: '', quantity: 1 },
-          { rank: 5, prizeId: '', quantity: 1 },
-        ]);
-        setParticipationPrize({ prizeId: '', quantity: 1 });
-        setCustomPrizes([]);
-        setRegistrationCode(''); // Reset registration code
+        const newTournament = await res.json();
+        router.push(`/tournaments/details?id=${newTournament.id}`);
       } else {
         const errorData = await res.json();
         alert(`创建比赛失败: ${errorData.message || '未知错误'}`);
@@ -144,7 +128,7 @@ export default function CreateTournamentPage() {
           <label htmlFor="name" className="block text-white text-sm font-bold mb-2">
             比赛名称:
           </label>
-          <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} className="p-2 border rounded bg-gray-700 text-white" required />
+          <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} className="p-2 border rounded bg-gray-700 text-white" placeholder="例如：燕云十六声第一届比武大会" required />
 
           <label htmlFor="startTime" className="block text-white text-sm font-bold mb-2">
             比赛开始时间:
@@ -169,7 +153,11 @@ export default function CreateTournamentPage() {
           <label htmlFor="eventDescription" className="block text-white text-sm font-bold mb-2">
             赛事说明:
           </label>
-          <textarea id="eventDescription" value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} className="p-2 border rounded bg-gray-700 text-white" rows={5} required />
+          <textarea id="eventDescription" value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} className="p-2 border rounded bg-gray-700 text-white" rows={5} placeholder="例如:
+
+1. 请提前5分钟进入比赛房间，房间ID在比赛开始时在本页面公示。
+2. 对阵图在比赛开始时由系统自动生成，请关注本页了解自己对阵信息。
+3. 本次比赛解释权归主办方所有." required />
           <label className="block text-white text-sm font-bold mb-2">
             微信群二维码 (可选):
           </label>

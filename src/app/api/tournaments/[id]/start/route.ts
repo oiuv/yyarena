@@ -43,13 +43,13 @@ export async function POST(request: Request, { params }: { params: { id: string 
       return NextResponse.json({ message: '比赛已开始或已结束' }, { status: 400 });
     }
 
-    const { room_name, room_number, room_password } = await request.json();
+    const { room_name, room_number, room_password, livestream_url } = await request.json();
 
     // Update room information in the database
     await new Promise<void>((resolve, reject) => {
       db.run(
-        'UPDATE Tournaments SET room_name = ?, room_number = ?, room_password = ? WHERE id = ?',
-        [room_name, room_number, room_password, tournamentId],
+        'UPDATE Tournaments SET room_name = ?, room_number = ?, room_password = ?, livestream_url = ? WHERE id = ?',
+        [room_name, room_number, room_password, livestream_url, tournamentId],
         function (err) {
           if (err) reject(err);
           else resolve();

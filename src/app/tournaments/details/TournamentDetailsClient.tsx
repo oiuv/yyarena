@@ -62,7 +62,7 @@ export default function TournamentDetailsClient() {
   const [matchSelections, setMatchSelections] = useState<{[matchId: number]: { winnerSelection: number | 'forfeit_player1' | 'forfeit_player2' | 'forfeit_both' | null, matchFormat: string }}>({}); // New state for individual match selections
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
   const [roomInfo, setRoomInfo] = useState<{ name: string, number: string, pass: string, livestreamUrl: string }>({ name: '', number: '', pass: '', livestreamUrl: '' });
-  const [roomDetails, setRoomDetails] = useState<{ room_name: string, room_number: string, room_password: string } | null>(null);
+  const [roomDetails, setRoomDetails] = useState<{ room_name: string, room_number: string, room_password: string, livestreamUrl: string } | null>(null);
   const [registeredPlayers, setRegisteredPlayers] = useState<any[]>([]); // New state for registered players when no matches
 
   useEffect(() => {
@@ -302,9 +302,9 @@ export default function TournamentDetailsClient() {
         <p><span className="font-bold">最大参赛人数:</span> {tournament.max_players}</p>
         <p><span className="font-bold">说明:</span> {tournament.event_description}</p>
 
-        <div className="mt-4 p-4 bg-gray-700 rounded-lg">
-          <h3 className="text-xl font-bold mb-2">主办方信息</h3>
-          <div className="flex items-center space-x-4">
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* 主办方信息 */}
+          <div className="p-4 bg-gray-700 rounded-lg flex items-center space-x-4">
             <Image
               src={tournament.organizer_avatar ? `/avatars/${tournament.organizer_avatar}` : '/avatars/000.webp'}
               alt={tournament.organizer_character_name || '主办方'}
@@ -323,7 +323,34 @@ export default function TournamentDetailsClient() {
               )}
             </div>
           </div>
+
+          {/* 直播信息 */}
+          <div className="p-4 bg-gray-700 rounded-lg flex flex-col items-center justify-center text-center">
+            <h3 className="text-xl font-bold mb-2">直播信息</h3>
+            {roomDetails && roomDetails.livestreamUrl && tournament.status === 'ongoing' ? (
+              <a href={roomDetails.livestreamUrl} target="_blank" rel="noopener noreferrer">
+                <button className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                  正在直播中
+                </button>
+              </a>
+            ) : (
+              <p className="text-gray-400">暂无直播</p>
+            )}
+          </div>
         </div>
+
+        {/* 砺兵台房间信息 */}
+        {roomDetails && (roomDetails.room_name || roomDetails.room_number) ? (
+          <div className="mt-4 p-4 bg-gray-700 rounded-lg flex flex-col items-center text-center">
+            <h3 className="text-xl font-bold mb-2">🛡️ 砺兵台房间信息 🛡️</h3>
+            <p>房间名: {roomDetails.room_name}  |  房间ID: {roomDetails.room_number}{roomDetails.room_password && `  |  房间密码: ${roomDetails.room_password}`}</p>
+          </div>
+        ) : (
+          <div className="mt-4 p-4 bg-gray-700 rounded-lg flex flex-col items-center text-center text-gray-400">
+            <h3 className="text-xl font-bold mb-2">🛡️ 砺兵台房间信息 🛡️</h3>
+            <p>📝 尚未填写 📝</p>
+          </div>
+        )}
 
         {tournament.prizes && tournament.prizes.length > 0 && (
           <div className="mt-4 p-4 bg-gray-700 rounded-lg">
@@ -336,30 +363,6 @@ export default function TournamentDetailsClient() {
                 </li>
               ))}
             </ul>
-          </div>
-        )}
-
-        {tournament.livestream_url && tournament.status === 'ongoing' && (
-          <div className="mt-4 p-4 bg-gray-700 rounded-lg">
-            <h3 className="text-xl font-bold mb-2">比赛直播</h3>
-            <a href={tournament.livestream_url} target="_blank" rel="noopener noreferrer">
-              <button className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-                正在直播中
-              </button>
-            </a>
-          </div>
-        )}
-
-        {roomDetails && (roomDetails.room_name || roomDetails.room_number) ? (
-          <div className="mt-4 p-4 bg-gray-700 rounded-lg">
-            <h3 className="text-xl font-bold mb-2">砺兵台房间信息</h3>
-            <p>房间名: {roomDetails.room_name}</p>
-            <p>房间ID: {roomDetails.room_number}</p>
-            {roomDetails.room_password && <p>房间密码: {roomDetails.room_password}</p>}
-          </div>
-        ) : (
-          <div className="mt-4 p-4 bg-gray-700 rounded-lg text-center text-gray-400">
-            <p>⚔️ 砺兵台房间信息尚未填写 ⚔️</p>
           </div>
         )}
       </div>
@@ -426,7 +429,7 @@ export default function TournamentDetailsClient() {
                   value={roomInfo.livestreamUrl}
                   onChange={(e) => setRoomInfo({ ...roomInfo, livestreamUrl: e.target.value })}
                   className="w-full p-2 border rounded bg-gray-700 text-white"
-                  placeholder="例如: https://live.douyin.com/xxxx"
+                  placeholder="例如: https://live.douyin.com/244993118346"
                 />
               </div>
               <p className="text-sm text-gray-400 mb-4">提示：创建房间的玩法类型必须是1V1，挑战模式必须是管理模式。</p>

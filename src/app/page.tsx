@@ -187,7 +187,7 @@ export default function Home() {
                     <p className="text-red-100 text-base mb-1">已报名: {tournament.registeredPlayersCount || 0} / {tournament.max_players}</p>
                     {tournament.room_name && <p className="text-red-100 text-base mb-1">房间名: {tournament.room_name}</p>}
                     {tournament.room_number && <p className="text-red-100 text-base mb-1">房间号: {tournament.room_number}</p>}
-                    {tournament.room_password && <p className="text-red-100 text-base mb-1">房间密码: {tournament.room_password}</p>}
+                    
                     {tournament.stream_url && <p className="text-red-100 text-base mb-1">直播间/主页: <a href={tournament.stream_url} target="_blank" rel="noopener noreferrer" className="text-amber-300 hover:underline">{tournament.stream_url}</a></p>}
                   </div>
                 </Link>
@@ -202,7 +202,7 @@ export default function Home() {
             <div className="grid grid-cols-1 gap-6">
               {openForRegistrationTournaments.map((tournament: any) => (
                 <Link key={tournament.id} href={`/tournaments/details?id=${tournament.id}`} className="flex flex-col lg:flex-row items-center p-6 bg-green-800/70 rounded-lg shadow-xl border border-green-600 hover:bg-green-700/80 transition-all duration-300 transform hover:-translate-y-1 hover:scale-102 group">
-                  <div className="relative w-full lg:w-1/3 h-48 flex-shrink-0 mb-4 lg:mb-0 lg:mr-6 rounded-lg overflow-hidden border border-green-500">
+                  <div className="relative w-full lg:w-1/4 h-48 flex-shrink-0 mb-4 lg:mb-0 lg:mr-6 rounded-lg overflow-hidden border border-green-500">
                     <Image
                       src={tournament.cover_image_url || '/images/default_cover.jpg'}
                       alt={tournament.name}

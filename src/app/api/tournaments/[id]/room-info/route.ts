@@ -23,7 +23,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
   try {
     const tournament: any = await new Promise((resolve, reject) => {
-      db.get('SELECT organizer_id, room_name, room_number, room_password FROM Tournaments WHERE id = ?', [tournamentId], (err, row) => {
+      db.get('SELECT organizer_id, room_name, room_number, room_password, livestream_url FROM Tournaments WHERE id = ?', [tournamentId], (err, row) => {
         if (err) reject(err);
         resolve(row);
       });
@@ -35,7 +35,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
     // Check if the user is the organizer
     if (decodedToken.id === tournament.organizer_id) {
-      return NextResponse.json({ room_name: tournament.room_name, room_number: tournament.room_number, room_password: tournament.room_password });
+      return NextResponse.json({ room_name: tournament.room_name, room_number: tournament.room_number, room_password: tournament.room_password, livestream_url: tournament.livestream_url });
     }
 
     // Check if the user is a registered player in this tournament
@@ -47,7 +47,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
     });
 
     if (isRegisteredPlayer) {
-      return NextResponse.json({ room_name: tournament.room_name, room_number: tournament.room_number, room_password: tournament.room_password });
+      return NextResponse.json({ room_name: tournament.room_name, room_number: tournament.room_number, room_password: tournament.room_password, livestream_url: tournament.livestream_url });
     }
 
     return NextResponse.json({ message: '无权查看房间信息' }, { status: 403 });
