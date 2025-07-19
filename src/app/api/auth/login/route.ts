@@ -19,33 +19,51 @@ export async function POST(request: Request) {
         });
       });
 
-      if (user && !(await bcrypt.compare(password, user.password))) {
-        user = null; // Invalid password
+      if (!user) {
+        return NextResponse.json({ message: '账号不存在' }, { status: 401 });
+      }
+
+      if (!(await bcrypt.compare(password, user.password))) {
+        return NextResponse.json({ message: '密码不正确' }, { status: 401 });
       }
     } else if (game_id) {
       // Attempt to log in as player using game_id
       user = await new Promise((resolve, reject) => {
-        db.get(`SELECT * FROM Users WHERE game_id = ? AND role = 'player'`, [game_id], (err, row) => {
+        db.get(`SELECT * FROM Users WHERE game_id = ?`, [game_id], (err, row) => {
           if (err) reject(err);
           resolve(row);
         });
       });
+      if (!user) {
+        return NextResponse.json({ message: '玩家角色编号不存在' }, { status: 401 });
+      }
+      if (user && user.role === 'organizer') {
+        return NextResponse.json({ message: '主办方请使用账号密码登录' }, { status: 403 });
+      }
     } else if (phone_number) {
       // Attempt to log in as player using phone_number
       user = await new Promise((resolve, reject) => {
-        db.get(`SELECT * FROM Users WHERE phone_number = ? AND role = 'player'`, [phone_number], (err, row) => {
+        db.get(`SELECT * FROM Users WHERE phone_number = ?`, [phone_number], (err, row) => {
           if (err) reject(err);
           resolve(row);
         });
       });
+      if (!user) {
+        return NextResponse.json({ message: '手机号不存在' }, { status: 401 });
+      }
+      if (user && user.role === 'organizer') {
+        return NextResponse.json({ message: '主办方请使用账号密码登录' }, { status: 403 });
+      }
     }
 
-    if (!user) {
-      return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
+    let tokenRole = user.role;
+    // If logging in via game_id or phone_number, the token role should always be 'player'
+    if (game_id || phone_number) {
+      tokenRole = 'player';
     }
 
     const token = jwt.sign(
-      { id: user.id, username: user.username, game_id: user.game_id, character_name: user.character_name, role: user.role, stream_url: user.stream_url, avatar: user.avatar },
+      { id: user.id, username: user.username, game_id: user.game_id, character_name: user.character_name, role: tokenRole, stream_url: user.stream_url, avatar: user.avatar },
       JWT_SECRET,
       { expiresIn: '1h' }
     );

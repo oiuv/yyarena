@@ -103,7 +103,7 @@ export default function Login() {
           <>
             <input
               type="text"
-              placeholder="游戏ID (10位数字)"
+              placeholder="游戏角色编号 (10位数字)"
               value={gameId}
               onChange={(e) => setGameId(e.target.value)}
               className="p-2 border rounded text-black"

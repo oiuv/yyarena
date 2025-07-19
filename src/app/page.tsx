@@ -232,7 +232,7 @@ export default function Home() {
                             height={32}
                             className="rounded-full mr-2 border border-lime-400"
                           />
-                          <p className="text-green-200 text-sm md:text-base">主办者: {tournament.organizerCharacterName}</p>
+                          <p className="text-green-200 text-sm md:text-base">主办方: {tournament.organizerCharacterName}</p>
                         </div>
                       )}
                     </div>

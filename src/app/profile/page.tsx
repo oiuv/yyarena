@@ -20,7 +20,11 @@ export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [availableAvatars, setAvailableAvatars] = useState<string[]>([]);
   const [selectedAvatar, setSelectedAvatar] = useState<string>('');
+  const [editedStreamUrl, setEditedStreamUrl] = useState<string>('');
   const [message, setMessage] = useState<string>('');
+  const [upgradeUsername, setUpgradeUsername] = useState<string>('');
+  const [upgradePassword, setUpgradePassword] = useState<string>('');
+  const [upgradeMessage, setUpgradeMessage] = useState<string>('');
   const router = useRouter();
 
   useEffect(() => {
@@ -34,6 +38,7 @@ export default function ProfilePage() {
       const decodedUser = jwtDecode<User>(token);
       setUser(decodedUser);
       setSelectedAvatar(decodedUser.avatar || '000.webp');
+      setEditedStreamUrl(decodedUser.stream_url || '');
     } catch (error) {
       console.error('Failed to decode token:', error);
       router.push('/login');
@@ -75,23 +80,88 @@ export default function ProfilePage() {
 
       const data = await res.json();
       if (res.ok) {
-        setMessage('Avatar updated successfully!');
+        setMessage('头像更新成功！');
         // Update the user object in state and local storage
         const updatedUser = { ...user, avatar: selectedAvatar };
         setUser(updatedUser);
         document.cookie = `token=${data.token}; path=/; max-age=${60 * 60};`; // Store updated token in cookie
 
       } else {
-        setMessage(data.message || 'Failed to update avatar.');
+        setMessage(data.message || '更新头像失败。');
       }
     } catch (error) {
       console.error('Error updating avatar:', error);
-      setMessage('Error updating avatar.');
+      setMessage('更新头像时发生错误。');
+    }
+  };
+
+  const handleStreamUrlUpdate = async () => {
+    if (!user) return;
+
+    setMessage('');
+    try {
+      const token = getToken();
+      const res = await fetch('/api/users/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ stream_url: editedStreamUrl }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setMessage('主页地址更新成功！');
+        const updatedUser = { ...user, stream_url: editedStreamUrl };
+        setUser(updatedUser);
+        document.cookie = `token=${data.token}; path=/; max-age=${60 * 60};`;
+      } else {
+        setMessage(data.message || '更新主页地址失败。');
+      }
+    } catch (error) {
+      console.error('Error updating stream URL:', error);
+      setMessage('更新主页地址时发生错误。');
+    }
+  };
+
+  const handleUpgradeToOrganizer = async () => {
+    if (!user || !upgradeUsername || !upgradePassword) {
+      setUpgradeMessage('请填写用户名和密码。');
+      return;
+    }
+
+    setUpgradeMessage('');
+    try {
+      const token = getToken();
+      const res = await fetch('/api/users/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ username: upgradeUsername, password: upgradePassword, role: 'organizer' }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setUpgradeMessage('恭喜您，已成功升级为主办方！');
+        // Update user state and token
+        const updatedUser = { ...user, username: upgradeUsername, role: 'organizer' };
+        setUser(updatedUser);
+        document.cookie = `token=${data.token}; path=/; max-age=${60 * 60};`;
+        router.push('/my-tournaments'); // Redirect to organizer dashboard
+      } else {
+        setUpgradeMessage(data.message || '升级失败。');
+      }
+    } catch (error) {
+      console.error('Error upgrading to organizer:', error);
+      setUpgradeMessage('升级时发生错误。');
     }
   };
 
   if (!user) {
-    return <div className="flex min-h-screen flex-col items-center justify-center p-24 bg-gray-900 text-white">Loading profile...</div>;
+    return <div className="flex min-h-screen flex-col items-center justify-center p-24 bg-gray-900 text-white">加载资料中...</div>;
   }
 
   return (
@@ -102,9 +172,67 @@ export default function ProfilePage() {
         <div className="mb-4">
           <p className="text-lg"><strong>角色名称:</strong> {user.character_name}</p>
           <p className="text-lg"><strong>角色编号:</strong> {user.game_id}</p>
-          {user.username && <p className="text-lg"><strong>用户名:</strong> {user.username}</p>}
-          {user.role && <p className="text-lg"><strong>角色身份:</strong> {user.role === 'organizer' ? '比赛主办者' : '玩家'}</p>}
-          {user.stream_url && <p className="text-lg"><strong>直播间/主页:</strong> <a href={user.stream_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">点击访问</a></p>}
+          {user.username && user.role === 'organizer' && <p className="text-lg"><strong>用户名:</strong> {user.username}</p>}
+          {user.role && <p className="text-lg"><strong>角色身份:</strong> {user.role === 'organizer' ? '比赛主办方' : '玩家'}</p>}
+          
+          {user.role === 'organizer' && (
+            <div className="mt-4">
+              <label htmlFor="streamUrl" className="block text-lg font-bold mb-2">直播间/主页地址:</label>
+              <input
+                type="url"
+                id="streamUrl"
+                value={editedStreamUrl}
+                onChange={(e) => setEditedStreamUrl(e.target.value)}
+                className="w-full p-2 border rounded bg-gray-700 text-white mb-2"
+                placeholder="请输入直播间或主页地址 (可选)"
+              />
+              <button
+                onClick={handleStreamUrlUpdate}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              >
+                更新主页地址
+              </button>
+              {message && <p className="mt-4 text-center text-green-500">{message}</p>}
+            </div>
+          )}
+
+          {user.role === 'player' && (
+            <div className="mt-8 p-4 bg-gray-700 rounded-lg">
+              <h2 className="text-2xl font-bold mb-4">升级为主办方</h2>
+              <p className="mb-4">如果您想组织比赛，可以补充账号密码，将当前玩家身份升级为主办方。</p>
+              <div className="mb-4">
+                <label htmlFor="upgradeUsername" className="block text-lg font-bold mb-2">设置用户名:</label>
+                <input
+                  type="text"
+                  id="upgradeUsername"
+                  value={upgradeUsername}
+                  onChange={(e) => setUpgradeUsername(e.target.value)}
+                  className="w-full p-2 border rounded bg-gray-800 text-white"
+                  placeholder="请输入用户名"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label htmlFor="upgradePassword" className="block text-lg font-bold mb-2">设置密码:</label>
+                <input
+                  type="password"
+                  id="upgradePassword"
+                  value={upgradePassword}
+                  onChange={(e) => setUpgradePassword(e.target.value)}
+                  className="w-full p-2 border rounded bg-gray-800 text-white"
+                  placeholder="请输入密码"
+                  required
+                />
+              </div>
+              <button
+                onClick={handleUpgradeToOrganizer}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              >
+                升级为主办方
+              </button>
+              {upgradeMessage && <p className="mt-4 text-center text-green-500">{upgradeMessage}</p>}
+            </div>
+          )}
         </div>
 
         <div className="mb-4">
