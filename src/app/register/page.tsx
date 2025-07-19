@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image'; // Import Image component
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -59,6 +60,9 @@ export default function Register() {
       <p className="text-center text-sm text-gray-600 mb-4">
         请务必如实填写您在燕云十六声游戏中的角色ID和角色名称。报名成功后，您必须使用报名的角色参加比赛，所有奖品也将只发放至对应ID的角色。
       </p>
+      <div className="mb-4">
+        <Image src="/images/tips.png" alt="角色名称和角色编号填写提示" width={400} height={200} />
+      </div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-md">
         {error && <p className="text-red-500 text-center">{error}</p>}
         <select
