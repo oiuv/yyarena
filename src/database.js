@@ -16,6 +16,13 @@ db.serialize(() => {
     )
   `);
 
+  // Add new columns to Users table if they don't exist
+  db.run("ALTER TABLE Users ADD COLUMN total_participations INTEGER DEFAULT 0", () => {});
+  db.run("ALTER TABLE Users ADD COLUMN first_place_count INTEGER DEFAULT 0", () => {});
+  db.run("ALTER TABLE Users ADD COLUMN second_place_count INTEGER DEFAULT 0", () => {});
+  db.run("ALTER TABLE Users ADD COLUMN third_place_count INTEGER DEFAULT 0", () => {});
+  db.run("ALTER TABLE Users ADD COLUMN forfeit_count INTEGER DEFAULT 0", () => {});
+
   db.run(`
     CREATE TABLE IF NOT EXISTS Tournaments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -75,6 +82,34 @@ db.serialize(() => {
       }
     );
   });
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS TournamentPrizes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tournament_id INTEGER NOT NULL,
+      prize_id INTEGER,
+      rank_start INTEGER,
+      rank_end INTEGER,
+      custom_prize_name TEXT,
+      quantity INTEGER,
+      FOREIGN KEY (tournament_id) REFERENCES Tournaments(id),
+      FOREIGN KEY (prize_id) REFERENCES Prizes(id)
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS PlayerAwards (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tournament_id INTEGER NOT NULL,
+      player_id INTEGER NOT NULL,
+      prize_id INTEGER NOT NULL,
+      awarded_at TEXT NOT NULL,
+      FOREIGN KEY (tournament_id) REFERENCES Tournaments(id),
+      FOREIGN KEY (player_id) REFERENCES Users(id),
+      FOREIGN KEY (prize_id) REFERENCES Prizes(id),
+      UNIQUE(tournament_id, player_id)
+    )
+  `);
 
   db.run(`
     CREATE TABLE IF NOT EXISTS Registrations (

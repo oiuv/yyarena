@@ -65,18 +65,29 @@ export default function TournamentDetailsClient() {
   const [roomDetails, setRoomDetails] = useState<{ room_name: string, room_number: string, room_password: string, livestreamUrl: string } | null>(null);
   const [registeredPlayers, setRegisteredPlayers] = useState<any[]>([]); // New state for registered players when no matches
   const [playerAvatars, setPlayerAvatars] = useState<{ [key: string]: string }>({});
+  const [prizes, setPrizes] = useState<any[]>([]);
+  const [awardedPrizes, setAwardedPrizes] = useState<any[]>([]);
+  const [selectedPrizes, setSelectedPrizes] = useState<{ [playerId: string]: string }>({});
+  const [awarding, setAwarding] = useState<string | null>(null);
 
   const fetchDetails = useCallback(async () => {
     if (!tournamentId) return;
     try {
-      const [tournamentRes, matchesRes] = await Promise.all([
+      const [tournamentRes, matchesRes, prizesRes, awardedPrizesRes] = await Promise.all([
         fetch(`/api/tournaments/${tournamentId}`),
-        fetch(`/api/tournaments/${tournamentId}/matches`)
+        fetch(`/api/tournaments/${tournamentId}/matches`),
+        fetch(`/api/prizes`),
+        fetch(`/api/tournaments/${tournamentId}/awards`)
       ]);
       const tournamentData = await tournamentRes.json();
       const matchesData = await matchesRes.json();
+      const prizesData = await prizesRes.json();
+      const awardedPrizesData = await awardedPrizesRes.json();
+
       setTournament(tournamentData);
       setMatches(matchesData);
+      setPrizes(prizesData);
+      setAwardedPrizes(awardedPrizesData);
 
       // Create a map of player IDs to avatars from the matches data
       if (matchesData.length > 0) {
@@ -292,6 +303,54 @@ export default function TournamentDetailsClient() {
     }));
   };
 
+  const handlePrizeSelectionChange = (playerId: string, prizeId: string) => {
+    setSelectedPrizes(prev => ({
+      ...prev,
+      [playerId]: prizeId,
+    }));
+  };
+
+  const handleAwardPrize = async (playerId: string) => {
+    const prizeId = selectedPrizes[playerId];
+    if (!prizeId) {
+      alert('请为玩家选择一个奖品。');
+      return;
+    }
+
+    const token = getToken();
+    if (!token) {
+      alert('认证失败，请重新登录。');
+      return;
+    }
+
+    setAwarding(playerId);
+
+    try {
+      const res = await fetch(`/api/tournaments/${tournamentId}/award`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ player_id: playerId, prize_id: prizeId }),
+        }
+      );
+
+      if (res.ok) {
+        fetchDetails(); // Re-fetch details to update the UI
+      } else {
+        const data = await res.json();
+        alert(`奖品发放失败: ${data.message}`);
+      }
+    } catch (err) {
+      console.error('Error awarding prize:', err);
+      alert('发放奖品时发生网络错误。');
+    } finally {
+      setAwarding(null);
+    }
+  };
+
 
   if (error) {
     return <div className="text-red-500 text-center p-8">{error}</div>;
@@ -492,7 +551,9 @@ export default function TournamentDetailsClient() {
               </thead>
               <tbody className="bg-gray-800 divide-y divide-gray-700">
                 {tournament.final_rankings.map((player: any) => {
-                  const prizeWon = getPrizeForRank(player.rank, tournament.prizes);
+                  const awardedPrize = awardedPrizes.find(ap => ap.player_id === player.player_id);
+                  const prizeWonByRank = getPrizeForRank(player.rank, tournament.prizes);
+
                   return (
                     <tr key={player.player_id}>
                       <td className="px-6 py-4 whitespace-nowrap text-lg font-bold">
@@ -520,8 +581,38 @@ export default function TournamentDetailsClient() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-amber-400">
-                        {prizeWon ? (prizeWon.custom_prize_name || prizeWon.prize_name) : '无'}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {isOrganizer ? (
+                          awardedPrize ? (
+                            <span className="text-green-400">已发放: {awardedPrize.prize_name}</span>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <select
+                                className="p-2 border rounded bg-gray-700 text-white"
+                                value={selectedPrizes[player.player_id] || ''}
+                                onChange={(e) => handlePrizeSelectionChange(player.player_id, e.target.value)}
+                              >
+                                <option value="">选择奖品</option>
+                                {prizes.map(p => (
+                                  <option key={p.id} value={p.id}>{p.name}</option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={() => handleAwardPrize(player.player_id)}
+                                disabled={awarding === player.player_id}
+                                className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-bold disabled:bg-gray-500"
+                              >
+                                {awarding === player.player_id ? '发放中...' : '确认发放'}
+                              </button>
+                            </div>
+                          )
+                        ) : (
+                          awardedPrize ? (
+                            <span className="text-amber-400">{awardedPrize.prize_name}</span>
+                          ) : (
+                            <span className="text-gray-400">{prizeWonByRank ? (prizeWonByRank.custom_prize_name || prizeWonByRank.prize_name) : '无'}</span>
+                          )
+                        )}
                       </td>
                     </tr>
                   );
