@@ -1,8 +1,8 @@
 # 环境配置文件
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.development
+.env.test
+.env.production
 
 # 依赖目录
 node_modules/

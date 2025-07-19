@@ -171,7 +171,7 @@ import { useRouter } from 'next/navigation';
           <label htmlFor="registrationCode" className="block text-white text-sm font-bold mb-2">
             参赛验证码 (可选):
           </label>
-          <input type="text" id="registrationCode" value={registrationCode} onChange={(e) => setRegistrationCode(e.target.value)} className="p-2 border rounded bg-gray-700 text-white w-full" placeholder="用于非公开比赛，如内部赛" />
+          <input type="text" id="registrationCode" value={registrationCode} onChange={(e) => setRegistrationCode(e.target.value)} className="p-2 border rounded bg-gray-700 text-white w-full" placeholder="用于非公开赛报名验证，如百业内部赛" />
           
           <label className="block text-white text-sm font-bold mb-2">
             默认比赛赛制:
@@ -189,7 +189,7 @@ import { useRouter } from 'next/navigation';
           <h3 className="text-xl font-bold mb-2 mt-4 text-center">奖品设置</h3>
           {rankedPrizes.map((rp, index) => (
             <div key={index} className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
-              <span className="w-full sm:w-auto">第 {rp.rank} 名:</span>
+              <span className="w-20 flex-shrink-0 text-left">第 {rp.rank} 名:</span>
               <select value={rp.prizeId} onChange={(e) => setRankedPrizes(rankedPrizes.map((p, i) => i === index ? { ...p, prizeId: e.target.value } : p))} className="p-2 border rounded bg-gray-700 text-white flex-grow w-full">
                 <option value="">无奖品</option>
                 {prizes.map(prize => <option key={prize.id} value={prize.id}>{prize.name}</option>)}
@@ -198,7 +198,7 @@ import { useRouter } from 'next/navigation';
             </div>
           ))}
           <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center mt-2">
-            <span className="w-full sm:w-auto">参与奖:</span>
+            <span className="w-20 flex-shrink-0 text-left">参与奖:</span>
             <select value={participationPrize.prizeId} onChange={(e) => setParticipationPrize({ ...participationPrize, prizeId: e.target.value })} className="p-2 border rounded bg-gray-700 text-white flex-grow w-full">
               <option value="">无奖品</option>
               {prizes.map(prize => <option key={prize.id} value={prize.id}>{prize.name}</option>)}

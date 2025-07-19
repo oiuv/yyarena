@@ -436,14 +436,93 @@ export default function TournamentDetailsClient() {
         {tournament.prizes && tournament.prizes.length > 0 && (
           <div className="mt-4 p-4 bg-gray-700 rounded-lg">
             <h3 className="text-xl font-bold mb-2">奖品设置</h3>
-            <ul>
-              {tournament.prizes.map((prize: any, index: number) => (
-                <li key={index}>
-                  {prize.rank_start && prize.rank_end ? `第 ${prize.rank_start} 到 ${prize.rank_end} 名: ` : ''}
-                  {prize.custom_prize_name || prize.prize_name} (数量: {prize.quantity})
-                </li>
-              ))}
-            </ul>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-700">
+                <thead className="bg-gray-700">
+                  <tr>
+                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">奖项</th>
+                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">排名</th>
+                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">奖品名称</th>
+                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">数量</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-gray-800 divide-y divide-gray-700">
+                  {(() => {
+                    const participationPrize = tournament.prizes.find((p: any) => p.custom_prize_name === '参与奖');
+                    const nonParticipationPrizes = tournament.prizes.filter((p: any) => p.custom_prize_name !== '参与奖');
+
+                    const sortedPrizes = nonParticipationPrizes.sort((a: any, b: any) => {
+                      // Custom unranked prizes (rank_start: 0, rank_end: 0) should come after ranked prizes
+                      const isAUnrankedCustom = a.rank_start === 0 && a.rank_end === 0;
+                      const isBUnrankedCustom = b.rank_start === 0 && b.rank_end === 0;
+
+                      if (isAUnrankedCustom && !isBUnrankedCustom) return 1; // A (unranked custom) comes after B (ranked)
+                      if (!isAUnrankedCustom && isBUnrankedCustom) return -1; // A (ranked) comes before B (unranked custom)
+                      if (isAUnrankedCustom && isBUnrankedCustom) return 0; // Both are unranked custom, maintain original order
+
+                      // For ranked prizes, sort by rank_start
+                      return (a.rank_start || Infinity) - (b.rank_start || Infinity);
+                    });
+
+                    if (participationPrize) {
+                      sortedPrizes.push(participationPrize);
+                    }
+
+                    return sortedPrizes.map((prize: any, index: number) => {
+                      let awardType = '';
+                      let rankDisplay = '';
+
+                      if (prize.custom_prize_name) {
+                        awardType = prize.custom_prize_name;
+                        if (prize.rank_start !== null && prize.rank_end !== null) {
+                          if (prize.rank_start === 0 && prize.rank_end === 0) {
+                            rankDisplay = '无';
+                          } else if (prize.rank_start === prize.rank_end) {
+                            rankDisplay = `第 ${prize.rank_start} 名`;
+                          } else {
+                            rankDisplay = `第 ${prize.rank_start} 到 ${prize.rank_end} 名`;
+                          }
+                        } else if (prize.custom_prize_name === '参与奖') {
+                          rankDisplay = '所有未获奖者';
+                        }
+                      } else if (prize.rank_start !== null && prize.rank_end !== null) {
+                        if (prize.rank_start === 1) {
+                          awardType = '冠军';
+                          rankDisplay = '第 1 名';
+                        } else if (prize.rank_start === 2) {
+                          awardType = '亚军';
+                          rankDisplay = '第 2 名';
+                        } else if (prize.rank_start === 3) {
+                          awardType = '季军';
+                          rankDisplay = '第 3 名';
+                        } else if (prize.rank_start === 4) {
+                          awardType = '第四名';
+                          rankDisplay = '第 4 名';
+                        } else if (prize.rank_start === 5) {
+                          awardType = '第五名';
+                          rankDisplay = '第 5 名';
+                        } else if (prize.rank_start === prize.rank_end) {
+                          awardType = `第 ${prize.rank_start} 名`;
+                          rankDisplay = `第 ${prize.rank_start} 名`;
+                        } else {
+                          awardType = `第 ${prize.rank_start} 到 ${prize.rank_end} 名`;
+                          rankDisplay = `第 ${prize.rank_start} 到 ${prize.rank_end} 名`;
+                        }
+                      }
+
+                      return (
+                        <tr key={index}>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-200">{awardType}</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-200">{rankDisplay}</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-200">{prize.prize_name}</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-200">{prize.quantity}</td>
+                        </tr>
+                      );
+                    });
+                  })()}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
@@ -678,7 +757,7 @@ export default function TournamentDetailsClient() {
                 ) : (
                   isOrganizer && match.status === 'pending' ? (
                     <div className="flex flex-col items-center gap-3">
-                      <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
+                      <div className="flex flex-col sm:flex-row items-center sm:justify-center gap-2 w-full">
                         <select
                           className="p-2 border rounded bg-gray-700 text-white w-full sm:w-auto"
                           onChange={(e) => handleWinnerSelectionChange(match.id, e.target.value)}

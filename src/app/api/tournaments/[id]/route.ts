@@ -32,32 +32,59 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     console.log('Tournament registration_deadline from DB:', tournament.registration_deadline);
 
     // Parse prize_settings and fetch prize details
-    let parsedPrizes = [];
+    let parsedPrizes: any[] = [];
     if (tournament.prize_settings) {
       let prizeSettings;
       try {
         prizeSettings = JSON.parse(tournament.prize_settings);
-        // Ensure prizeSettings is an array before iterating
-        if (!Array.isArray(prizeSettings)) {
-          prizeSettings = [];
-        }
       } catch (parseError) {
         console.error('Error parsing prize_settings:', parseError);
-        prizeSettings = []; // Default to empty array on parse error
+        prizeSettings = {}; // Default to empty object on parse error
       }
-      for (const setting of prizeSettings) {
-        if (setting.prize_id) {
+
+      const processPrize = async (setting: any, rankStart: number | null = null, rankEnd: number | null = null, isParticipation: boolean = false) => {
+        console.log(`Processing prize: ${JSON.stringify(setting)}, rankStart: ${rankStart}, rankEnd: ${rankEnd}, isParticipation: ${isParticipation}`);
+        let prizeData: any = {}; // Start with an empty object to build prizeData
+        prizeData.rank_start = rankStart;
+        prizeData.rank_end = rankEnd;
+
+        // Prioritize customName for custom prizes, or set "参与奖" for participation
+        if (setting.customName) {
+          prizeData.custom_prize_name = setting.customName;
+        } else if (isParticipation) {
+          prizeData.custom_prize_name = "参与奖";
+        }
+
+        // Fetch prize details if prizeId is present
+        if (setting.prizeId) {
           const prizeDetail: any = await new Promise((resolve, reject) => {
-            db.get('SELECT name, description FROM Prizes WHERE id = ?', [setting.prize_id], (err, row) => {
+            db.get('SELECT name, description FROM Prizes WHERE id = ?', [setting.prizeId], (err, row) => {
               if (err) reject(err);
               resolve(row);
             });
           });
           if (prizeDetail) {
-            parsedPrizes.push({ ...setting, prize_name: prizeDetail.name, prize_description: prizeDetail.description });
+            prizeData.prize_name = prizeDetail.name;
+            prizeData.prize_description = prizeDetail.description;
           }
-        } else if (setting.custom_prize_name) {
-          parsedPrizes.push(setting);
+        }
+        prizeData.quantity = setting.quantity; // Ensure quantity is always included
+        parsedPrizes.push(prizeData);
+      };
+
+      if (prizeSettings.ranked && Array.isArray(prizeSettings.ranked)) {
+        for (const prize of prizeSettings.ranked) {
+          await processPrize(prize, prize.rank, prize.rank);
+        }
+      }
+
+      if (prizeSettings.participation) {
+        await processPrize(prizeSettings.participation, null, null, true); // Participation prize has no specific rank range
+      }
+
+      if (prizeSettings.custom && Array.isArray(prizeSettings.custom)) {
+        for (const prize of prizeSettings.custom) {
+          await processPrize(prize, prize.rangeStart, prize.rangeEnd);
         }
       }
     }
