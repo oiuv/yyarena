@@ -381,7 +381,7 @@ export default function TournamentDetailsClient() {
         <p><span className="font-bold">状态:</span> {getTournamentStatusText(tournament.status)}</p>
         <p><span className="font-bold">最少参赛人数:</span> {tournament.min_players}</p>
         <p><span className="font-bold">最大参赛人数:</span> {tournament.max_players}</p>
-        <p><span className="font-bold">说明:</span> {tournament.event_description}</p>
+        <p><span className="font-bold">说明:</span> <span dangerouslySetInnerHTML={{ __html: tournament.event_description.replace(/\n/g, '<br />') }} /></p>
 
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* 主办方信息 */}
