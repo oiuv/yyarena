@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/database.js';
+const { db, query } = require('@/database.js');
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const tournamentId = parseInt(params.id, 10);
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         WHERE m.tournament_id = ?
         ORDER BY m.round_number, m.id
       `;
-      db.all(sql, [tournamentId], (err, rows) => {
+      db.all(sql, [tournamentId], (err: Error | null, rows: any[]) => {
         if (err) reject(err);
         else resolve(rows);
       });

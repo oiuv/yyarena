@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/database.js';
+const { db, query } = require('@/database.js');
 import { verifyToken } from '@/utils/auth';
 import { generateMatchesAndStartTournament } from '@/tournamentUtils';
 
@@ -25,7 +25,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
   try {
     const tournament: any = await new Promise((resolve, reject) => {
-      db.get('SELECT * FROM Tournaments WHERE id = ?', [tournamentId], (err, row) => {
+      db.get('SELECT * FROM Tournaments WHERE id = ?', [tournamentId], (err: Error | null, row: any) => {
         if (err) reject(err);
         resolve(row);
       });
@@ -50,7 +50,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
       db.run(
         'UPDATE Tournaments SET room_name = ?, room_number = ?, room_password = ?, livestream_url = ? WHERE id = ?',
         [room_name, room_number, room_password, livestream_url, tournamentId],
-        function (err) {
+        function (this: any, err: Error | null) {
           if (err) reject(err);
           else resolve();
         }
@@ -59,7 +59,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     // Check if enough players have registered
     const registeredPlayersCount: number = await new Promise((resolve, reject) => {
-      db.get('SELECT COUNT(*) as count FROM Registrations WHERE tournament_id = ? AND status = ?', [tournamentId, 'active'], (err, row: any) => {
+      db.get('SELECT COUNT(*) as count FROM Registrations WHERE tournament_id = ? AND status = ?', [tournamentId, 'active'], (err: Error | null, row: any) => {
         if (err) reject(err);
         resolve(row.count);
       });

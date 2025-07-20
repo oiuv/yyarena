@@ -32,3 +32,6 @@ next-env.d.ts
 
 # 用户上传的图片
 public/tournament_covers/
+
+# 提交信息临时文件
+commit_message.txt

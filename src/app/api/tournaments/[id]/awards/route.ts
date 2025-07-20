@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/database';
+const { db, query } = require('@/database');
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const tournamentId = params.id;
@@ -12,7 +12,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
          JOIN Prizes p ON pa.prize_id = p.id
          WHERE pa.tournament_id = ?`,
         [tournamentId],
-        (err, rows) => {
+        (err: Error | null, rows: any[]) => {
           if (err) {
             reject(err);
           } else {

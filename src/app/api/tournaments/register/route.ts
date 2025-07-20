@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/database.js';
+const { db, query } = require('@/database.js');
 import { generateMatchesAndStartTournament } from '@/tournamentUtils';
 import { jwtVerify } from 'jose';
 
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   try {
     // 1. Validate tournament_id and check tournament status and max_players
     const tournament: any = await new Promise((resolve, reject) => {
-      db.get('SELECT * FROM Tournaments WHERE id = ?', [tournament_id], (err, row) => {
+      db.get('SELECT * FROM Tournaments WHERE id = ?', [tournament_id], (err: Error | null, row: any) => {
         if (err) reject(err);
         resolve(row);
       });
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     }
 
     const currentRegistrations: any = await new Promise((resolve, reject) => {
-      db.get('SELECT COUNT(*) as count FROM Registrations WHERE tournament_id = ?', [tournament_id], (err, row) => {
+      db.get('SELECT COUNT(*) as count FROM Registrations WHERE tournament_id = ?', [tournament_id], (err: Error | null, row: any) => {
         if (err) reject(err);
         resolve(row);
       });
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       db.run(
         'INSERT INTO Registrations (tournament_id, player_id, character_name, character_id) VALUES (?, ?, ?, ?)',
         [tournament_id, player_id, character_name, character_id],
-        function (err) {
+        function (this: any, err: Error | null) {
           if (err) {
             reject(err);
           } else {
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
 
     // 3. Check if min_players reached and start tournament (logic to be implemented later)
     const updatedRegistrations: any = await new Promise((resolve, reject) => {
-      db.get('SELECT COUNT(*) as count FROM Registrations WHERE tournament_id = ?', [tournament_id], (err, row) => {
+      db.get('SELECT COUNT(*) as count FROM Registrations WHERE tournament_id = ?', [tournament_id], (err: Error | null, row: any) => {
         if (err) reject(err);
         resolve(row);
       });

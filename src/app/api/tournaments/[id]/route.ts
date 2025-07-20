@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/database.js';
+const { db, query } = require('@/database.js');
 import { jwtDecode } from 'jwt-decode';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
          JOIN Users U ON T.organizer_id = U.id
          WHERE T.id = ?`,
         [tournamentId],
-        (err, row) => {
+        (err: Error | null, row: any) => {
           if (err) reject(err);
           resolve(row);
         }
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         // Fetch prize details if prizeId is present
         if (setting.prizeId) {
           const prizeDetail: any = await new Promise((resolve, reject) => {
-            db.get('SELECT name, description FROM Prizes WHERE id = ?', [setting.prizeId], (err, row) => {
+            db.get('SELECT name, description FROM Prizes WHERE id = ?', [setting.prizeId], (err: Error | null, row: any) => {
               if (err) reject(err);
               resolve(row);
             });
@@ -124,7 +124,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
   try {
     const existingTournament: any = await new Promise((resolve, reject) => {
-      db.get('SELECT organizer_id FROM Tournaments WHERE id = ?', [tournamentId], (err, row) => {
+      db.get('SELECT organizer_id FROM Tournaments WHERE id = ?', [tournamentId], (err: Error | null, row: any) => {
         if (err) reject(err);
         resolve(row);
       });
@@ -151,7 +151,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
            registration_code = ?
          WHERE id = ?`,
         [name, start_time, registration_deadline, min_players, max_players, event_description, wechat_qr_code_url, room_name, room_number, room_password, livestream_url, registration_code, tournamentId],
-        function (err) {
+        function (this: any, err: Error | null) {
           if (err) reject(err);
           resolve(this.changes);
         }

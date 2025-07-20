@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/database.js';
+const { db, query } = require('@/database.js');
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   const tournamentId = params.id;
@@ -19,7 +19,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
       db.all(
         query,
         queryParams,
-        (err, rows) => {
+        (err: Error | null, rows: any[]) => {
           if (err) reject(err);
           else resolve(rows);
         }

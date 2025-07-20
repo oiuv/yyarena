@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/database.js';
+const { db, query } = require('@/database.js');
 import { verifyToken } from '../../../utils/auth';
 import fs from 'fs/promises';
 import path from 'path';
@@ -16,11 +16,11 @@ export async function GET() {
         LEFT JOIN Users u ON t.organizer_id = u.id
         GROUP BY t.id
         ORDER BY t.start_time DESC
-      `, [], async (err, rows) => {
+      `, [], async (err: Error | null, rows: any[]) => {
         if (err) reject(err);
         else {
           const allPrizes: any[] = await new Promise((prizeResolve, prizeReject) => {
-            db.all('SELECT id, name FROM Prizes', [], (prizeErr, prizeRows) => {
+            db.all('SELECT id, name FROM Prizes', [], (prizeErr: Error | null, prizeRows: any[]) => {
               if (prizeErr) prizeReject(prizeErr);
               prizeResolve(prizeRows);
             });
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
       db.run(
         'INSERT INTO Tournaments (name, organizer_id, start_time, registration_deadline, min_players, max_players, prize_settings, event_description, wechat_qr_code_url, status, default_match_format, cover_image_url, registration_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [name, organizerId, startTime, registrationDeadline, minPlayers, maxPlayers, prizeSettings, eventDescription, wechatQrCodeUrl, 'pending', defaultMatchFormat, coverImageUrl, registrationCode],
-        function (err) {
+        function (this: any, err: Error | null) {
           if (err) reject(err);
           else resolve({ id: this.lastID });
         }

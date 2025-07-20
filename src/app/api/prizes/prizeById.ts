@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/database.js';
+const { db, query } = require('@/database.js');
 import { jwtVerify } from 'jose';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-default-secret-key');
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
 
   try {
     const prize = await new Promise((resolve, reject) => {
-      db.get('SELECT * FROM Prizes WHERE id = ?', [id], (err, row) => {
+      db.get('SELECT * FROM Prizes WHERE id = ?', [id], (err: Error | null, row: any) => {
         if (err) reject(err);
         resolve(row);
       });
@@ -59,7 +59,7 @@ export async function PUT(request: Request) {
       db.run(
         'UPDATE Prizes SET name = ?, description = ?, image_url = ? WHERE id = ?',
         [name, description, image_url, id],
-        function (err) {
+        function (this: any, err: Error | null) {
           if (err) {
             reject(err);
           } else {
@@ -99,7 +99,7 @@ export async function DELETE(request: Request) {
     }
 
     await new Promise((resolve, reject) => {
-      db.run('DELETE FROM Prizes WHERE id = ?', [id], function (err) {
+      db.run('DELETE FROM Prizes WHERE id = ?', [id], function (this: any, err: Error | null) {
         if (err) {
           reject(err);
         } else {

@@ -459,6 +459,7 @@ export default function TournamentDetailsClient() {
   const isOrganizer = currentUser && currentUser.role === 'organizer' && currentUser.id === tournament.organizer_id;
   const isPlayer = currentUser && currentUser.role === 'player';
   const isRegistrationOpen = new Date(tournament.registration_deadline) > new Date();
+  const isTournamentUpcoming = new Date(tournament.start_time) > new Date();
   const canRegister = isRegistrationOpen && currentUser && !isOrganizer && !isUserRegistered;
   const canWithdraw = isRegistrationOpen && currentUser && !isOrganizer && isUserRegistered;
 

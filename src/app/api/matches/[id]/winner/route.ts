@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/database.js';
+const { db, query } = require('@/database.js');
 import { advanceTournamentRound } from '@/tournamentUtils';
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
@@ -19,7 +19,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
   try {
     // 1. Get match details
     const match: any = await new Promise((resolve, reject) => {
-      db.get('SELECT * FROM Matches WHERE id = ?', [match_id], (err, row) => {
+      db.get('SELECT * FROM Matches WHERE id = ?', [match_id], (err: Error | null, row: any) => {
         if (err) reject(err);
         resolve(row);
       });
@@ -41,7 +41,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
       db.run(
         'UPDATE Users SET total_participations = total_participations + 1 WHERE id = ? OR id = ?',
         [match.player1_id, match.player2_id],
-        function (err) {
+        function (this: any, err: Error | null) {
           if (err) reject(err);
           else resolve(this);
         }
@@ -59,7 +59,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
         db.run(
           'UPDATE Registrations SET status = ? WHERE tournament_id = ? AND player_id = ?',
           ['forfeited', match.tournament_id, match.player1_id],
-          function (err) {
+          function (this: any, err: Error | null) {
             if (err) reject(err);
             else resolve(this);
           }
@@ -69,7 +69,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
         db.run(
           'UPDATE Users SET forfeit_count = forfeit_count + 1 WHERE id = ?',
           [match.player1_id],
-          function (err) {
+          function (this: any, err: Error | null) {
             if (err) reject(err);
             else resolve(this);
           }
@@ -83,7 +83,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
         db.run(
           'UPDATE Registrations SET status = ? WHERE tournament_id = ? AND player_id = ?',
           ['forfeited', match.tournament_id, match.player2_id],
-          function (err) {
+          function (this: any, err: Error | null) {
             if (err) reject(err);
             else resolve(this);
           }
@@ -93,7 +93,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
         db.run(
           'UPDATE Users SET forfeit_count = forfeit_count + 1 WHERE id = ?',
           [match.player2_id],
-          function (err) {
+          function (this: any, err: Error | null) {
             if (err) reject(err);
             else resolve(this);
           }
@@ -117,7 +117,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
         db.run(
           'UPDATE Matches SET winner_id = ?, status = ?, finished_at = ?, match_format = ? WHERE id = ?',
           [finalWinnerId, finalStatus, now, match_format, match_id],
-          function (err) {
+          function (this: any, err: Error | null) {
             if (err) {
               reject(err);
             } else {
@@ -133,7 +133,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     // 4. Re-query the database to confirm the update and get the full updated record
     const updatedMatch: any = await new Promise((resolve, reject) => {
-      db.get('SELECT * FROM Matches WHERE id = ?', [match_id], (err, row) => {
+      db.get('SELECT * FROM Matches WHERE id = ?', [match_id], (err: Error | null, row: any) => {
         if (err) reject(err);
         resolve(row);
       });

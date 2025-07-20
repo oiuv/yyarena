@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/database.js';
+const { db, query } = require('@/database.js');
 import { verifyToken } from '@/utils/auth';
 
 export async function GET(request: NextRequest) {
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
         WHERE r.player_id = ?
         ORDER BY t.start_time DESC
       `;
-      db.all(sql, [playerId], (err, rows) => {
+      db.all(sql, [playerId], (err: Error | null, rows: any[]) => {
         if (err) reject(err);
         else resolve(rows);
       });

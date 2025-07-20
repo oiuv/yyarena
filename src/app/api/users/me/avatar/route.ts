@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/database.js';
+const { db, query } = require('@/database.js');
 import { verifyToken } from '@/utils/auth';
 import fs from 'fs';
 import path from 'path';
@@ -35,7 +35,7 @@ export async function PUT(request: Request) {
       db.run(
         'UPDATE Users SET avatar = ? WHERE id = ?',
         [avatar, decodedToken.id],
-        function (err) {
+        function (this: any, err: Error | null) {
           if (err) {
             reject(err);
           } else if (this.changes === 0) {
@@ -49,7 +49,7 @@ export async function PUT(request: Request) {
 
     // Fetch the updated user to generate a new token
     const updatedUser: any = await new Promise((resolve, reject) => {
-      db.get('SELECT * FROM Users WHERE id = ?', [decodedToken.id], (err, row) => {
+      db.get('SELECT * FROM Users WHERE id = ?', [decodedToken.id], (err: Error | null, row: any) => {
         if (err) reject(err);
         resolve(row);
       });

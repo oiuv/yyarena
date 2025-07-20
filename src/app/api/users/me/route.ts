@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/database.js';
+const { db, query } = require('@/database.js');
 import { jwtDecode } from 'jwt-decode';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -29,7 +29,7 @@ export async function PUT(request: NextRequest) {
 
     // Fetch the user from the database to get their current password hash
     const user: any = await new Promise((resolve, reject) => {
-      db.get(`SELECT * FROM Users WHERE id = ?`, [userId], (err, row) => {
+      db.get(`SELECT * FROM Users WHERE id = ?`, [userId], (err: Error | null, row: any) => {
         if (err) reject(err);
         resolve(row);
       });
@@ -63,7 +63,7 @@ export async function PUT(request: NextRequest) {
 
       // Check if username already exists for another organizer
       const existingUser: any = await new Promise((resolve, reject) => {
-        db.get(`SELECT id FROM Users WHERE username = ? AND role = 'organizer'`, [username], (err, row) => {
+        db.get(`SELECT id FROM Users WHERE username = ? AND role = 'organizer'`, [username], (err: Error | null, row: any) => {
           if (err) reject(err);
           resolve(row);
         });
@@ -97,7 +97,7 @@ export async function PUT(request: NextRequest) {
       db.run(
         `UPDATE Users SET ${updateFields.join(', ')} WHERE id = ?`,
         updateValues,
-        function (err) {
+        function (this: any, err: Error | null) {
           if (err) reject(err);
           resolve(this.changes);
         }
@@ -106,7 +106,7 @@ export async function PUT(request: NextRequest) {
 
     // Re-fetch user to get updated data and generate new token
     const updatedUser: any = await new Promise((resolve, reject) => {
-      db.get(`SELECT * FROM Users WHERE id = ?`, [userId], (err, row) => {
+      db.get(`SELECT * FROM Users WHERE id = ?`, [userId], (err: Error | null, row: any) => {
         if (err) reject(err);
         resolve(row);
       });
@@ -163,7 +163,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const user: any = await new Promise((resolve, reject) => {
-      db.get(`SELECT * FROM Users WHERE id = ?`, [userId], (err, row) => {
+      db.get(`SELECT * FROM Users WHERE id = ?`, [userId], (err: Error | null, row: any) => {
         if (err) reject(err);
         resolve(row);
       });

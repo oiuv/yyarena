@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/database.js';
+const { db, query } = require('@/database.js');
 import { verifyToken } from '@/utils/auth';
 
 export async function POST(request: NextRequest) {
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
   try {
     // 2. Check Tournament Status and Availability
     const tournament: any = await new Promise((resolve, reject) => {
-      db.get('SELECT * FROM Tournaments WHERE id = ?', [tournamentId], (err, row) => {
+      db.get('SELECT * FROM Tournaments WHERE id = ?', [tournamentId], (err: Error | null, row: any) => {
         if (err) reject(err);
         else resolve(row);
       });
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     // Check if the tournament is full
     const registrationCount: any = await new Promise((resolve, reject) => {
-      db.get('SELECT COUNT(*) as count FROM Registrations WHERE tournament_id = ? AND status = ?', [tournamentId, 'active'], (err, row) => {
+      db.get('SELECT COUNT(*) as count FROM Registrations WHERE tournament_id = ? AND status = ?', [tournamentId, 'active'], (err: Error | null, row: any) => {
         if (err) reject(err);
         else resolve(row);
       });
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     // 3. Check for existing registration and update or insert
     const existingRegistration: any = await new Promise((resolve, reject) => {
-      db.get('SELECT * FROM Registrations WHERE tournament_id = ? AND player_id = ?', [tournamentId, playerId], (err, row) => {
+      db.get('SELECT * FROM Registrations WHERE tournament_id = ? AND player_id = ?', [tournamentId, playerId], (err: Error | null, row: any) => {
         if (err) reject(err);
         else resolve(row);
       });
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
           db.run(
             'UPDATE Registrations SET status = ?, registration_time = ? WHERE id = ?',
             ['active', new Date().toISOString(), existingRegistration.id],
-            function (err) {
+            function (this: any, err: Error | null) {
               if (err) reject(err);
               else resolve({ id: existingRegistration.id });
             }
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
         db.run(
           'INSERT INTO Registrations (tournament_id, player_id, character_name, character_id, registration_time, status) VALUES (?, ?, ?, ?, ?, ?)',
           [tournamentId, playerId, characterName, characterId, new Date().toISOString(), 'active'],
-          function (err) {
+          function (this: any, err: Error | null) {
             if (err) reject(err);
             else resolve({ id: this.lastID });
           }

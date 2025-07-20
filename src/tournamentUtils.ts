@@ -1,4 +1,4 @@
-import db from '@/database.js';
+const { db, query } = require('@/database.js');
 
 interface Match {
   tournament_id: number;
@@ -13,12 +13,7 @@ interface Match {
 export async function generateMatchesAndStartTournament(tournamentId: number) {
   try {
     // 1. Fetch all active registered players
-    const registrations: any[] = await new Promise((resolve, reject) => {
-      db.all('SELECT player_id FROM Registrations WHERE tournament_id = ? AND status = ?', [tournamentId, 'active'], (err, rows) => {
-        if (err) reject(err);
-        resolve(rows);
-      });
-    });
+    const registrations: any[] = await query('SELECT player_id FROM Registrations WHERE tournament_id = ? AND status = ?', [tournamentId, 'active']);
 
     if (registrations.length < 2) {
       console.warn(`Tournament ${tournamentId} does not have enough players to start.`);
@@ -83,7 +78,7 @@ export async function generateMatchesAndStartTournament(tournamentId: number) {
           );
         });
         stmt.finalize();
-        db.run('COMMIT', (err) => {
+        db.run('COMMIT', (err: Error | null) => {
           if (err) reject(err);
           resolve(null);
         });
@@ -95,7 +90,7 @@ export async function generateMatchesAndStartTournament(tournamentId: number) {
       db.run(
         'UPDATE Tournaments SET status = ?, start_time = ? WHERE id = ?',
         ['ongoing', new Date().toISOString(), tournamentId],
-        function (err) {
+        function (this: any, err: Error | null) {
           if (err) {
             reject(err);
           } else {
@@ -114,12 +109,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
   console.log(`[advanceTournamentRound] Advancing tournament ${tournamentId}, current round: ${currentRound}`);
   try {
     // 1. Get all matches for the current round
-    const currentRoundMatches: any[] = await new Promise((resolve, reject) => {
-      db.all('SELECT * FROM Matches WHERE tournament_id = ? AND round_number = ?', [tournamentId, currentRound], (err, rows) => {
-        if (err) reject(err);
-        resolve(rows);
-      });
-    });
+    const currentRoundMatches: any[] = await query('SELECT * FROM Matches WHERE tournament_id = ? AND round_number = ?', [tournamentId, currentRound]);
     console.log(`[advanceTournamentRound] Current round matches fetched: ${currentRoundMatches.length}`);
 
     // 2. Check if all matches in the current round are finished
@@ -147,7 +137,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
         db.run(
           'UPDATE Tournaments SET status = ?, winner_id = ? WHERE id = ?',
           ['finished', championId, tournamentId],
-          function (err) {
+          function (this: any, err: Error | null) {
             if (err) {
               reject(err);
             } else {
@@ -161,7 +151,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
         db.run(
           'UPDATE Users SET first_place_count = first_place_count + 1 WHERE id = ?',
           [championId],
-          function (err) {
+          function (this: any, err: Error | null) {
             if (err) reject(err);
             else resolve(this);
           }
@@ -170,19 +160,9 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
       console.log(`[advanceTournamentRound] Tournament ${tournamentId} finished. Champion: ${championId}`);
 
       // Calculate and store final rankings with tie-breaking based on opponent strength
-      const allMatches: any[] = await new Promise((resolve, reject) => {
-        db.all('SELECT * FROM Matches WHERE tournament_id = ? ORDER BY round_number DESC', [tournamentId], (err, rows) => {
-          if (err) reject(err);
-          resolve(rows);
-        });
-      });
+      const allMatches: any[] = await query('SELECT * FROM Matches WHERE tournament_id = ? ORDER BY round_number DESC', [tournamentId]);
 
-      const allRegistrations: any[] = await new Promise((resolve, reject) => {
-        db.all(`SELECT r.player_id, u.character_name, u.avatar, r.status as registration_status FROM Registrations r JOIN Users u ON r.player_id = u.id WHERE r.tournament_id = ? AND (r.status = 'active' OR r.status = 'forfeited')`, [tournamentId], (err, rows) => {
-          if (err) reject(err);
-          resolve(rows);
-        });
-      });
+      const allRegistrations: any[] = await query(`SELECT r.player_id, u.character_name, u.avatar, r.status as registration_status FROM Registrations r JOIN Users u ON r.player_id = u.id WHERE r.tournament_id = ? AND (r.status = 'active' OR r.status = 'forfeited')`, [tournamentId]);
 
       const playerStats = new Map();
       for (const reg of allRegistrations) {
@@ -267,7 +247,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
             db.run(
               'UPDATE Users SET second_place_count = second_place_count + 1 WHERE id = ?',
               [playerId],
-              function (err) {
+              function (this: any, err: Error | null) {
                 if (err) reject(err);
                 else resolve(this);
               }
@@ -278,7 +258,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
             db.run(
               'UPDATE Users SET third_place_count = third_place_count + 1 WHERE id = ?',
               [playerId],
-              function (err) {
+              function (this: any, err: Error | null) {
                 if (err) reject(err);
                 else resolve(this);
               }
@@ -295,7 +275,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
         db.run(
           'UPDATE Tournaments SET final_rankings = ? WHERE id = ?',
           [JSON.stringify(finalRankings), tournamentId],
-          function (err) {
+          function (this: any, err: Error | null) {
             if (err) reject(err);
             else resolve(this);
           }
@@ -312,7 +292,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
             db.run(
                 'UPDATE Tournaments SET status = ? WHERE id = ?',
                 ['finished', tournamentId], // Mark as finished without a winner
-                function (err) {
+                function (this: any, err: Error | null) {
                     if (err) reject(err);
                     else resolve(this);
                 }
@@ -380,7 +360,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
           );
         });
         stmt.finalize();
-        db.run('COMMIT', (err) => {
+        db.run('COMMIT', (err: Error | null) => {
           if (err) reject(err);
           resolve(null);
         });
@@ -393,7 +373,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
             db.run(
                 'INSERT INTO Matches (tournament_id, round_number, player1_id, player2_id, winner_id, status, finished_at, match_format) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
                 [tournamentId, nextRound, byePlayer, null, byePlayer, 'finished', new Date().toISOString(), nextRoundMatchFormat],
-                function (err) {
+                function (this: any, err: Error | null) {
                     if (err) reject(err);
                     else resolve(this);
                 }

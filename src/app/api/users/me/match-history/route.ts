@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/database.js';
+const { db, query } = require('@/database.js');
 import { jwtDecode } from 'jwt-decode';
 
 export async function GET(request: NextRequest) {
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
          WHERE R.player_id = ?
          ORDER BY R.registration_time DESC, M.round_number ASC, M.id ASC`,
         [userId],
-        (err, rows) => {
+        (err: Error | null, rows: any[]) => {
           if (err) reject(err);
           resolve(rows);
         }

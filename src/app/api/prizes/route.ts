@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/database';
+const { db, query } = require('@/database');
 
 export async function GET(req: NextRequest) {
   try {
     const prizes = await new Promise((resolve, reject) => {
-      db.all('SELECT * FROM Prizes', [], (err, rows) => {
+      db.all('SELECT * FROM Prizes', [], (err: Error | null, rows: any[]) => {
         if (err) {
           reject(err);
         } else {

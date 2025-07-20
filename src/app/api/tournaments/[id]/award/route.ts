@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/database';
+const { db, query } = require('@/database');
 import { verifyToken } from '@/utils/auth';
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   try {
     // First, check if the user is the organizer of this tournament
     const tournament: any = await new Promise((resolve, reject) => {
-      db.get('SELECT organizer_id FROM Tournaments WHERE id = ?', [tournamentId], (err, row) => {
+      db.get('SELECT organizer_id FROM Tournaments WHERE id = ?', [tournamentId], (err: Error | null, row: any) => {
         if (err) reject(err);
         resolve(row);
       });
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       db.run(
         'INSERT INTO PlayerAwards (tournament_id, player_id, prize_id, awarded_at) VALUES (?, ?, ?, ?)',
         [tournamentId, player_id, prize_id, new Date().toISOString()],
-        function (err) {
+        function (this: any, err: Error | null) {
           if (err) {
             reject(err);
           } else {

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/database.js';
+const { db, query } = require('@/database.js');
 import { verifyToken } from '@/utils/auth';
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
@@ -23,7 +23,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
   try {
     const tournament: any = await new Promise((resolve, reject) => {
-      db.get('SELECT organizer_id, room_name, room_number, room_password, livestream_url FROM Tournaments WHERE id = ?', [tournamentId], (err, row) => {
+      db.get('SELECT organizer_id, room_name, room_number, room_password, livestream_url FROM Tournaments WHERE id = ?', [tournamentId], (err: Error | null, row: any) => {
         if (err) reject(err);
         resolve(row);
       });
@@ -40,7 +40,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
     // Check if the user is a registered player in this tournament
     const isRegisteredPlayer: any = await new Promise((resolve, reject) => {
-      db.get('SELECT 1 FROM Registrations WHERE tournament_id = ? AND player_id = ? AND status = ?', [tournamentId, decodedToken.id, 'active'], (err, row) => {
+      db.get('SELECT 1 FROM Registrations WHERE tournament_id = ? AND player_id = ? AND status = ?', [tournamentId, decodedToken.id, 'active'], (err: Error | null, row: any) => {
         if (err) reject(err);
         resolve(row);
       });

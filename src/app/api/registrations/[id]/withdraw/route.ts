@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/database.js';
+const { db, query } = require('@/database.js');
 import { verifyToken } from '@/utils/auth';
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   try {
     // 2. Get Registration and Tournament Info
     const registration: any = await new Promise((resolve, reject) => {
-      db.get('SELECT r.*, t.registration_deadline, t.status as tournament_status FROM Registrations r JOIN Tournaments t ON r.tournament_id = t.id WHERE r.id = ? AND r.player_id = ?', [registrationId, playerId], (err, row) => {
+      db.get('SELECT r.*, t.registration_deadline, t.status as tournament_status FROM Registrations r JOIN Tournaments t ON r.tournament_id = t.id WHERE r.id = ? AND r.player_id = ?', [registrationId, playerId], (err: Error | null, row: any) => {
         if (err) reject(err);
         else resolve(row);
       });
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     // If deadline not passed, allow withdrawal
     await new Promise<void>((resolve, reject) => {
-      db.run('UPDATE Registrations SET status = ? WHERE id = ?', ['withdrawn', registrationId], function (err) {
+      db.run('UPDATE Registrations SET status = ? WHERE id = ?', ['withdrawn', registrationId], function (this: any, err: Error | null) {
         if (err) reject(err);
         else resolve();
       });

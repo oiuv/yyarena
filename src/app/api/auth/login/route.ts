@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/database.js';
+const { db, query } = require('@/database.js');
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     if (username && password) {
       // Attempt to log in as organizer
       user = await new Promise((resolve, reject) => {
-        db.get(`SELECT * FROM Users WHERE username = ? AND role = 'organizer'`, [username], (err, row) => {
+        db.get(`SELECT * FROM Users WHERE username = ? AND role = 'organizer'`, [username], (err: Error | null, row: any) => {
           if (err) reject(err);
           resolve(row);
         });
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     } else if (game_id) {
       // Attempt to log in as player using game_id
       user = await new Promise((resolve, reject) => {
-        db.get(`SELECT * FROM Users WHERE game_id = ?`, [game_id], (err, row) => {
+        db.get(`SELECT * FROM Users WHERE game_id = ?`, [game_id], (err: Error | null, row: any) => {
           if (err) reject(err);
           resolve(row);
         });
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     } else if (phone_number) {
       // Attempt to log in as player using phone_number
       user = await new Promise((resolve, reject) => {
-        db.get(`SELECT * FROM Users WHERE phone_number = ?`, [phone_number], (err, row) => {
+        db.get(`SELECT * FROM Users WHERE phone_number = ?`, [phone_number], (err: Error | null, row: any) => {
           if (err) reject(err);
           resolve(row);
         });

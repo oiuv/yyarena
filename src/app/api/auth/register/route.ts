@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/database.js';
+const { db, query } = require('@/database.js');
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken'; // Import jsonwebtoken
 
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
         db.run(
           'INSERT INTO Users (username, password, game_id, character_name, phone_number, role, stream_url, avatar) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
           [username, hashedPassword, game_id, character_name, phone_number, role, stream_url, avatar || '000.webp'],
-          function (err) {
+          function (this: any, err: Error | null) {
             if (err) {
               if (err.message.includes('UNIQUE constraint failed: Users.character_name')) {
                 reject(new Error('角色名称已被占用'));
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       }
 
       const existingPlayer: any = await new Promise((resolve, reject) => {
-        db.get('SELECT * FROM Users WHERE game_id = ?', [game_id], (err, row) => {
+        db.get('SELECT * FROM Users WHERE game_id = ?', [game_id], (err: Error | null, row: any) => {
           if (err) reject(err);
           resolve(row);
         });
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
             db.run(
               'UPDATE Users SET character_name = ? WHERE id = ?',
               [character_name, existingPlayer.id],
-              function (err) {
+              function (this: any, err: Error | null) {
                 if (err) reject(err);
                 resolve(this);
               }
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
             db.run(
               'UPDATE Users SET phone_number = ? WHERE id = ?',
               [phone_number, existingPlayer.id],
-              function (err) {
+              function (this: any, err: Error | null) {
                 if (err) reject(err);
                 resolve(this);
               }
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
             db.run(
               'UPDATE Users SET avatar = ? WHERE id = ?',
               [avatar, existingPlayer.id],
-              function (err) {
+              function (this: any, err: Error | null) {
                 if (err) reject(err);
                 resolve(this);
               }
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
           db.run(
             'INSERT INTO Users (game_id, character_name, phone_number, role, avatar) VALUES (?, ?, ?, ?, ?)',
             [game_id, character_name, phone_number, role, avatar || '000.webp'],
-            function (err) {
+            function (this: any, err: Error | null) {
               if (err) {
                 if (err.message.includes('UNIQUE constraint failed: Users.character_name')) {
                   reject(new Error('角色名称已被占用'));

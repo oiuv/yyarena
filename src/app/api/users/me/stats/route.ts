@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/database.js';
+const { db, query } = require('@/database.js');
 import { jwtDecode } from 'jwt-decode';
 
 export async function GET(request: NextRequest) {
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         `SELECT total_participations, first_place_count, second_place_count, third_place_count, forfeit_count
          FROM Users WHERE id = ?`,
         [userId],
-        (err, row) => {
+        (err: Error | null, row: any) => {
           if (err) reject(err);
           resolve(row);
         }
