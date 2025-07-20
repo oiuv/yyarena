@@ -69,16 +69,23 @@ export default function TournamentDetailsClient() {
   const [awardedPrizes, setAwardedPrizes] = useState<any[]>([]);
   const [selectedPrizes, setSelectedPrizes] = useState<{ [playerId: string]: string }>({});
   const [awarding, setAwarding] = useState<string | null>(null);
+  const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
+  const [registrationCodeInput, setRegistrationCodeInput] = useState('');
+  const [isUserRegistered, setIsUserRegistered] = useState(false);
 
   const fetchDetails = useCallback(async () => {
     if (!tournamentId) return;
+    const token = getToken();
+
     try {
-      const [tournamentRes, matchesRes, prizesRes, awardedPrizesRes] = await Promise.all([
+      const [tournamentRes, matchesRes, prizesRes, awardedPrizesRes, registrationStatusRes] = await Promise.all([
         fetch(`/api/tournaments/${tournamentId}`),
         fetch(`/api/tournaments/${tournamentId}/matches`),
         fetch(`/api/prizes`),
-        fetch(`/api/tournaments/${tournamentId}/awards`)
+        fetch(`/api/tournaments/${tournamentId}/awards`),
+        token ? fetch(`/api/tournaments/${tournamentId}/registration-status`, { headers: { 'Authorization': `Bearer ${token}` } }) : Promise.resolve(null)
       ]);
+
       const tournamentData = await tournamentRes.json();
       const matchesData = await matchesRes.json();
       const prizesData = await prizesRes.json();
@@ -88,6 +95,11 @@ export default function TournamentDetailsClient() {
       setMatches(matchesData);
       setPrizes(prizesData);
       setAwardedPrizes(awardedPrizesData);
+
+      if (registrationStatusRes && registrationStatusRes.ok) {
+        const regData = await registrationStatusRes.json();
+        setIsUserRegistered(regData.isRegistered);
+      }
 
       // Create a map of player IDs to avatars from the matches data
       if (matchesData.length > 0) {
@@ -351,6 +363,90 @@ export default function TournamentDetailsClient() {
     }
   };
 
+  const executeRegistration = useCallback(async (code: string | null) => {
+    const token = getToken();
+    if (!token) {
+      alert('请登录后报名比赛。');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/registrations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ tournamentId, registrationCode: code }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert(`成功报名比赛: ${tournament.name}！`);
+        fetchDetails(); // Re-fetch details to update player list
+        setIsRegistrationModalOpen(false);
+        setRegistrationCodeInput('');
+      } else {
+        alert(`报名失败: ${data.message || '未知错误'}`);
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      alert('报名时发生网络错误。');
+    }
+  }, [tournamentId, tournament, fetchDetails]);
+
+  const handleRegisterClick = () => {
+    if (tournament.registration_code) {
+      setIsRegistrationModalOpen(true);
+    } else {
+      executeRegistration(null);
+    }
+  };
+
+  const handleModalSubmit = () => {
+    if (!registrationCodeInput) {
+      alert('请输入参赛验证码。');
+      return;
+    }
+    executeRegistration(registrationCodeInput);
+  };
+
+  const handleWithdrawal = async () => {
+    if (!window.confirm('您确定要退出本次比赛吗？退出后在报名截止前仍可重新报名。')) {
+      return;
+    }
+
+    const token = getToken();
+    if (!token) {
+      alert('认证失败，请重新登录。');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/registrations`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ tournament_id: tournamentId }),
+        }
+      );
+
+      if (res.ok) {
+        alert('您已成功退出比赛。');
+        fetchDetails(); // Re-fetch details to update UI
+      } else {
+        const data = await res.json();
+        alert(`退出失败: ${data.message}`);
+      }
+    } catch (err) {
+      console.error('Error withdrawing from tournament:', err);
+      alert('退出比赛时发生网络错误。');
+    }
+  };
+
 
   if (error) {
     return <div className="text-red-500 text-center p-8">{error}</div>;
@@ -362,7 +458,9 @@ export default function TournamentDetailsClient() {
 
   const isOrganizer = currentUser && currentUser.role === 'organizer' && currentUser.id === tournament.organizer_id;
   const isPlayer = currentUser && currentUser.role === 'player';
-  const isTournamentUpcoming = new Date(tournament.start_time) > new Date();
+  const isRegistrationOpen = new Date(tournament.registration_deadline) > new Date();
+  const canRegister = isRegistrationOpen && currentUser && !isOrganizer && !isUserRegistered;
+  const canWithdraw = isRegistrationOpen && currentUser && !isOrganizer && isUserRegistered;
 
   return (
     <main className="flex min-h-screen flex-col items-center p-4 md:p-6 lg:p-12 bg-gray-900 text-white">
@@ -382,6 +480,61 @@ export default function TournamentDetailsClient() {
         <p><span className="font-bold">最少参赛人数:</span> {tournament.min_players}</p>
         <p><span className="font-bold">最大参赛人数:</span> {tournament.max_players}</p>
         <p><span className="font-bold">说明:</span> <span dangerouslySetInnerHTML={{ __html: tournament.event_description.replace(/\n/g, '<br />') }} /></p>
+
+        <div className="mt-6 text-center">
+          {canRegister && (
+            <button 
+              onClick={handleRegisterClick}
+              className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-lg transform hover:scale-105 transition-transform duration-300"
+            >
+              立即报名
+            </button>
+          )}
+          {canWithdraw && (
+            <button 
+              onClick={handleWithdrawal}
+              className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-lg transform hover:scale-105 transition-transform duration-300"
+            >
+              退出报名
+            </button>
+          )}
+          {isUserRegistered && !isRegistrationOpen && (
+            <span className="text-lg font-semibold text-green-400">您已报名</span>
+          )}
+        </div>
+
+        {isRegistrationModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
+            <div className="bg-gray-800 p-8 rounded-lg shadow-xl w-11/12 max-w-md border border-yellow-500">
+              <h2 className="text-2xl font-bold mb-4 text-yellow-400">需要验证码</h2>
+              <p className="mb-6 text-gray-300">此比赛为私密比赛，请输入参赛验证码。</p>
+              <input
+                type="text"
+                placeholder="请输入验证码"
+                value={registrationCodeInput}
+                onChange={(e) => setRegistrationCodeInput(e.target.value)}
+                className="w-full p-3 border border-gray-600 rounded bg-gray-700 text-white mb-6 focus:ring-2 focus:ring-yellow-500 focus:outline-none"
+                required
+              />
+              <div className="flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={() => setIsRegistrationModalOpen(false)}
+                  className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors duration-300"
+                >
+                  取消
+                </button>
+                <button
+                  type="button"
+                  onClick={handleModalSubmit}
+                  className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded transition-colors duration-300"
+                >
+                  确认报名
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* 主办方信息 */}
@@ -429,7 +582,7 @@ export default function TournamentDetailsClient() {
         ) : (
           <div className="mt-4 p-4 bg-gray-700 rounded-lg flex flex-col items-center text-center text-gray-400">
             <h3 className="text-xl font-bold mb-2">🛡️ 砺兵台房间信息 🛡️</h3>
-            <p>📝 尚未填写 📝</p>
+            <p>（由主办方在正式开赛前填写）</p>
           </div>
         )}
 
@@ -802,7 +955,10 @@ export default function TournamentDetailsClient() {
           ))
         ) : (
           <div className="text-center">
-            <p className="text-xl mb-4">⏳ 对阵尚未生成 ⏳</p>
+            <div className="bg-yellow-900/50 border border-yellow-700 text-yellow-300 p-4 rounded-lg text-center my-6">
+                <p className="text-xl font-bold">⏳ 对阵尚未生成 ⏳</p>
+                <p className="mt-2">正式开赛时将自动生成对阵，请及时关注本页更新。</p>
+            </div>
             {registeredPlayers.length > 0 && (
               <div className="mt-4">
                 <h3 className="text-xl font-bold mb-2">✨ 已报名玩家 ✨</h3>
