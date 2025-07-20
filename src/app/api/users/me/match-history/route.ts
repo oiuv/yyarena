@@ -39,8 +39,11 @@ export async function GET(request: NextRequest) {
            M.status AS match_status,
            M.finished_at,
            P1.character_name AS player1_name,
+           P1.avatar AS player1_avatar,
            P2.character_name AS player2_name,
-           PW.character_name AS winner_name
+           P2.avatar AS player2_avatar,
+           PW.character_name AS winner_name,
+           PW.avatar AS winner_avatar
          FROM Registrations R
          JOIN Tournaments T ON R.tournament_id = T.id
          JOIN Users U ON T.organizer_id = U.id
@@ -93,8 +96,11 @@ export async function GET(request: NextRequest) {
           match_status: row.match_status,
           finished_at: row.finished_at,
           player1_name: row.player1_name,
+          player1_avatar: row.player1_avatar,
           player2_name: row.player2_name,
+          player2_avatar: row.player2_avatar,
           winner_name: row.winner_name,
+          winner_avatar: row.winner_avatar,
         });
       }
     }

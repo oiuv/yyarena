@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getToken } from '@/utils/clientAuth';
 import Image from 'next/image';
+import { getRegistrationStatusText, getTournamentStatusText } from '@/utils/statusTranslators';
 
 interface Match {
   match_id: number;
@@ -14,8 +15,11 @@ interface Match {
   match_status: string;
   finished_at: string;
   player1_name: string;
+  player1_avatar: string;
   player2_name: string;
+  player2_avatar: string;
   winner_name: string | null;
+  winner_avatar: string;
 }
 
 interface TournamentEntry {
@@ -91,8 +95,8 @@ export default function MatchHistoryPage() {
               <p><strong>主办方:</strong> {tournament.organizer_name}</p>
               <p><strong>报名时间:</strong> {new Date(tournament.registration_time).toLocaleString()}</p>
               <p><strong>比赛开始时间:</strong> {new Date(tournament.start_time).toLocaleString()}</p>
-              <p><strong>比赛状态:</strong> {tournament.tournament_status}</p>
-              <p><strong>报名状态:</strong> {tournament.registration_status}</p>
+              <p><strong>比赛状态:</strong> {getTournamentStatusText(tournament.tournament_status)}</p>
+              <p><strong>报名状态:</strong> {getRegistrationStatusText(tournament.registration_status)}</p>
 
               {tournament.matches.length > 0 && (
                 <div className="mt-6">
@@ -100,9 +104,38 @@ export default function MatchHistoryPage() {
                   {tournament.matches.map((match) => (
                     <div key={match.match_id} className="bg-gray-700 p-4 rounded-lg mb-3">
                       <p><strong>回合:</strong> {match.round_number}</p>
-                      <p><strong>对阵:</strong> {match.player1_name} vs {match.player2_name}</p>
-                      <p><strong>获胜者:</strong> {match.winner_name || '待定'}</p>
-                      <p><strong>对局状态:</strong> {match.match_status}</p>
+                      <div className="flex items-center justify-center space-x-4">
+                        <div className="flex flex-col items-center">
+                          <Image
+                            src={`/avatars/${match.player1_avatar || '000.webp'}`}
+                            alt={match.player1_name || '轮空'}
+                            width={48}
+                            height={48}
+                            className="rounded-full object-cover"
+                          />
+                          <span className="text-sm mt-1">{match.player1_name || '(轮空)'}</span>
+                        </div>
+                        <span className="text-xl font-bold">VS</span>
+                        <div className="flex flex-col items-center">
+                          <Image
+                            src={`/avatars/${match.player2_avatar || '000.webp'}`}
+                            alt={match.player2_name || '轮空'}
+                            width={48}
+                            height={48}
+                            className="rounded-full object-cover"
+                          />
+                          <span className="text-sm mt-1">{match.player2_name || '(轮空)'}</span>
+                        </div>
+                      </div>
+                      <p className="mt-2">
+                        <strong>获胜者:</strong>
+                        {match.winner_name ? (
+                          <span className="text-green-400"> {match.winner_name}</span>
+                        ) : (
+                          ' 待定'
+                        )}
+                      </p>
+                      <p><strong>对局状态:</strong> {getTournamentStatusText(match.match_status)}</p>
                       {match.finished_at && <p><strong>结束时间:</strong> {new Date(match.finished_at).toLocaleString()}</p>}
                     </div>
                   ))}

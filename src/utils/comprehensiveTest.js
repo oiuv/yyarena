@@ -177,11 +177,18 @@ async function ensurePlayerExists(player) {
         const response = await fetch('http://localhost:3000/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...player, role: 'player', avatar: player.avatar }),
+            body: JSON.stringify({ ...player, role: 'player' }), // Remove avatar from initial body
         });
         const data = await response.json();
         if (!response.ok && !data.message.includes('已存在')) {
              console.log(`注册玩家 ${player.character_name} 失败: ${data.message}`);
+        } else if (data.message && data.message.includes('已存在')) {
+            // If player exists, try to update character_name and avatar
+            await fetch('http://localhost:3000/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ game_id: player.game_id, character_name: player.character_name, avatar: player.avatar, role: 'player' }),
+            });
         }
     } catch (e) { /* 忽略网络等错误 */ }
 }
