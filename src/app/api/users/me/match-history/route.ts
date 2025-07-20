@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
            T.start_time,
            T.registration_deadline,
            T.status AS tournament_status,
+           T.cover_image_url,
            U.character_name AS organizer_name,
            M.id AS match_id,
            M.round_number,
@@ -76,9 +77,10 @@ export async function GET(request: NextRequest) {
           start_time: row.start_time,
           registration_deadline: row.registration_deadline,
           tournament_status: row.tournament_status,
+          cover_image_url: row.cover_image_url,
           organizer_name: row.organizer_name,
           matches: [],
-          awards: [] // Placeholder for awards
+          awards: [] // This will be populated next
         };
         matchHistory.push(tournamentEntry);
         tournamentMap.set(row.tournament_id, tournamentEntry);
@@ -86,7 +88,7 @@ export async function GET(request: NextRequest) {
 
       const currentTournament = tournamentMap.get(row.tournament_id);
 
-      if (row.match_id) {
+      if (row.match_id && !currentTournament.matches.some((m: any) => m.match_id === row.match_id)) {
         currentTournament.matches.push({
           match_id: row.match_id,
           round_number: row.round_number,
@@ -103,6 +105,18 @@ export async function GET(request: NextRequest) {
           winner_avatar: row.winner_avatar,
         });
       }
+    }
+
+    // Fetch awards for each tournament
+    for (const tournament of matchHistory) {
+      const awards: any[] = await query(
+        `SELECT P.name AS prize_name, P.description AS prize_description, P.image_url AS prize_image_url, PA.awarded_at
+         FROM PlayerAwards PA
+         JOIN Prizes P ON PA.prize_id = P.id
+         WHERE PA.tournament_id = ? AND PA.player_id = ?`,
+        [tournament.tournament_id, userId]
+      );
+      tournament.awards = awards;
     }
 
     return NextResponse.json(matchHistory);

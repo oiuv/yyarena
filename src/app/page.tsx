@@ -163,7 +163,7 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-t from-brand-charcoal via-transparent to-brand-charcoal/50"></div>
         </div>
         <div className="relative z-10 p-4">
-          <h1 className="text-5xl md:text-7xl font-bold mb-4 leading-tight tracking-wider">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 leading-tight tracking-wider text-balance text-wrap">
             天地为炉，以身化剑
           </h1>
           <p className="text-lg md:text-xl text-brand-ivory/80 max-w-2xl mx-auto">
@@ -178,7 +178,7 @@ export default function Home() {
       </div>
 
       {/* Tournaments Section */}
-      <div id="tournaments" className="container mx-auto px-4 py-16">
+      <div id="tournaments" className="container mx-auto px-4">
         {renderSection("⚔️ 激战正酣", ongoing, { color: 'brand-red', label: '进行中', status: 'ongoing' })}
         {renderSection("🔥 火热报名中", openForRegistration, { color: 'brand-gold', label: '报名中', status: 'openForRegistration' })}
         {renderSection("⏳ 报名已截止", registrationClosed, { color: 'gray', label: '即将开始', status: 'registrationClosed' })}

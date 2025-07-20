@@ -3,23 +3,23 @@
 // 辅助函数：将报名状态英文转换为中文
 export const getRegistrationStatusText = (status: string) => {
   switch (status) {
-    case 'active': return { text: '已报名', className: 'text-green-400' };
-    case 'withdrawn': return { text: '已退出', className: 'text-gray-500' };
-    case 'forfeited': return { text: '已弃权', className: 'text-red-600' };
-    default: return { text: status, className: 'text-white' };
+    case 'active': return { text: '已报名', className: 'text-brand-gold' };
+    case 'withdrawn': return { text: '已退出', className: 'text-brand-ivory/70' };
+    case 'forfeited': return { text: '已弃权', className: 'text-brand-red' };
+    default: return { text: status, className: 'text-brand-ivory' };
   }
 };
 
 // 辅助函数：将比赛状态英文转换为中文
 export const getTournamentStatusText = (status: string) => {
   switch (status) {
-    case 'pending': return { text: '待定', className: 'text-yellow-400' };
-    case 'registration_closed': return { text: '报名已截止', className: 'text-gray-400' };
-    case 'ongoing': return { text: '正在比赛中', className: 'text-green-400' };
-    case 'finished': return { text: '已结束', className: 'text-blue-400' };
-    case 'failed': return { text: '已失败', className: 'text-red-500' };
-    case 'extended_registration': return { text: '延期报名中', className: 'text-yellow-500' };
-    default: return { text: status, className: 'text-white' };
+    case 'pending': return { text: '待定', className: 'text-brand-gold' };
+    case 'registration_closed': return { text: '报名已截止', className: 'text-brand-ivory/60' };
+    case 'ongoing': return { text: '正在比赛中', className: 'text-brand-red' };
+    case 'finished': return { text: '已结束', className: 'text-brand-ivory/80' };
+    case 'failed': return { text: '已失败', className: 'text-brand-red' };
+    case 'extended_registration': return { text: '延期报名中', className: 'text-brand-gold' };
+    default: return { text: status, className: 'text-brand-ivory' };
   }
 };
 

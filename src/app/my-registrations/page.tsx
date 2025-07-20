@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { jwtDecode } from 'jwt-decode';
 
 import { getToken } from '@/utils/clientAuth'; // Assuming getToken is in clientAuth.ts
@@ -53,132 +54,51 @@ export default function MyRegistrationsPage() {
     fetchRegistrations();
   }, []);
 
-  const handleWithdraw = async (registrationId: number) => {
-    const token = getToken();
-    if (!token) {
-      alert('请先登录');
-      return;
-    }
-
-    if (!confirm('确定要退出本次报名吗？')) {
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/registrations/${registrationId}/withdraw`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        alert(data.message);
-        // Refresh registrations list
-        window.location.reload();
-      } else {
-        alert(`错误: ${data.message}`);
-      }
-    } catch (err) {
-      alert('一个未知错误发生');
-    }
-  };
-
-  const handleReRegister = async (tournamentId: number) => {
-    const token = getToken();
-    if (!token) {
-      alert('请先登录');
-      return;
-    }
-
-    if (!confirm('确定要重新报名本次比赛吗？')) {
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/registrations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ tournamentId }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        alert(data.message);
-        // Refresh registrations list
-        window.location.reload();
-      } else {
-        alert(`错误: ${data.message}`);
-      }
-    } catch (err) {
-      alert('一个未知错误发生');
-    }
-  };
-
   if (loading) {
-    return <div className="text-center p-8">加载中...</div>;
+    return <div className="text-center p-8 text-[#F5F5F5]">加载中...</div>;
   }
 
   if (error) {
-    return <div className="text-red-500 text-center p-8">{error}</div>;
+    return <div className="text-[#C83C23] text-center p-8">{error}</div>;
   }
 
   if (!currentUser || (currentUser.role !== 'player' && currentUser.role !== 'organizer')) {
-    return <div className="text-red-500 text-center p-8">只有玩家或主办方才能查看报名列表。</div>;
+    return <div className="text-[#C83C23] text-center p-8">只有玩家或主办方才能查看报名列表。</div>;
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-4 md:p-6 lg:p-12 bg-gray-900 text-white">
-      <h1 className="text-3xl md:text-4xl font-bold mb-6 md:mb-8 text-center">我的报名</h1>
+    <main className="flex min-h-screen flex-col items-center p-4 md:p-6 lg:p-12 bg-[#1A1A1A] text-[#F5F5F5]">
+      <h1 className="text-3xl md:text-4xl font-bold mb-6 md:mb-8 text-center text-[#B89766]">我的报名</h1>
       <div className="w-full max-w-full md:max-w-4xl px-2 md:px-0">
         {registrations.length > 0 ? (
-          <ul>
+          <div className="grid grid-cols-1 gap-6">
             {registrations.map((reg: any) => (
-              <li key={reg.registration_id} className="p-4 bg-gray-800 rounded-lg shadow-md mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                <div className="mb-3 sm:mb-0 text-left">
-                  <Link href={`/tournaments/details?id=${reg.tournament_id}`} className="block hover:bg-gray-700 p-2 rounded">
-                    <h3 className="text-lg md:text-xl font-bold">{reg.tournament_name}</h3>
-                    <p className="text-sm md:text-base">主办方: {reg.organizer_name}</p>
-                    <p className="text-sm md:text-base">报名时间: {new Date(reg.registration_time).toLocaleString()}</p>
-                    <p className="text-sm md:text-base">比赛开始: {new Date(reg.start_time).toLocaleString()}</p>
-                    <p className="text-sm md:text-base">报名截止: {new Date(reg.registration_deadline).toLocaleString()}</p>
-                    <p className="text-sm md:text-base">报名状态: {getRegistrationStatusText(reg.registration_status).text}</p>
-                    <p className="text-sm md:text-base">比赛状态: {getTournamentStatusText(reg.tournament_status).text}</p>
-                  </Link>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                  {reg.registration_status === 'active' && 
-                   reg.tournament_status !== 'ongoing' && 
-                   reg.tournament_status !== 'finished' && 
-                   new Date() < new Date(reg.registration_deadline) && (
-                    <button
-                      onClick={() => handleWithdraw(reg.registration_id)}
-                      className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded w-full sm:w-auto text-sm md:text-base"
-                    >
-                      退出报名
-                    </button>
-                  )}
-                  {reg.registration_status === 'withdrawn' && 
-                   reg.tournament_status !== 'ongoing' && 
-                   reg.tournament_status !== 'finished' && 
-                   new Date() < new Date(reg.registration_deadline) && (
-                    <button
-                      onClick={() => handleReRegister(reg.tournament_id)}
-                      className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded w-full sm:w-auto text-sm md:text-base"
-                    >
-                      重新报名
-                    </button>
-                  )}
-                </div>
-              </li>
+              <div key={reg.registration_id} className="p-6 bg-[#2A2A2A] rounded-lg shadow-md border border-[#B89766]/50 transition-transform duration-300 hover:scale-[1.02]">
+                <Link href={`/tournaments/details?id=${reg.tournament_id}`} className="block">
+                  <div className="relative w-full h-48 mb-4 rounded-md overflow-hidden">
+                    <Image
+                      src={reg.cover_image_url ? `/${reg.cover_image_url.startsWith('/') ? reg.cover_image_url.substring(1) : reg.cover_image_url}` : '/images/default_cover.jpg'}
+                      alt={reg.tournament_name}
+                      layout="fill"
+                      objectFit="cover"
+                    />
+                  </div>
+                  <h3 className="text-xl md:text-2xl font-bold mb-2 text-[#B89766]">{reg.tournament_name}</h3>
+                  <p className="text-sm md:text-base text-[#F5F5F5]">主办方: {reg.organizer_name}</p>
+                  <p className="text-sm md:text-base text-[#F5F5F5]">报名时间: {new Date(reg.registration_time).toLocaleString()}</p>
+                  <p className="text-sm md:text-base text-[#F5F5F5]">比赛开始: {new Date(reg.start_time).toLocaleString()}</p>
+                  <p className="text-sm md:text-base text-[#F5F5F5]">报名截止: {new Date(reg.registration_deadline).toLocaleString()}</p>
+                  <p className="text-sm md:text-base text-[#F5F5F5]">报名状态: {getRegistrationStatusText(reg.registration_status).text}</p>
+                  <p className="text-sm md:text-base text-[#F5F5F5]">比赛状态: {getTournamentStatusText(reg.tournament_status).text}</p>
+                  <button className="mt-4 w-full bg-[#B89766] text-[#1A1A1A] py-2 rounded-md font-bold hover:bg-[#A0855A] transition-colors duration-300">
+                    查看详情
+                  </button>
+                </Link>
+              </div>
             ))}
-          </ul>
+          </div>
         ) : (
-          <p className="text-center text-base md:text-xl">您还没有报名任何比赛。</p>
+          <p className="text-center text-base md:text-xl text-[#F5F5F5]">您还没有报名任何比赛。</p>
         )}
       </div>
     </main>

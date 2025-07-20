@@ -55,20 +55,20 @@ export default function Register() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-start pt-12">
-      <h1 className="text-4xl font-bold mb-8">注册</h1>
-      <p className="text-center text-sm text-gray-600 mb-4">
+    <div className="flex min-h-screen flex-col items-center justify-start pt-12 bg-[#1A1A1A] text-[#F5F5F5]">
+      <h1 className="text-4xl md:text-5xl font-bold mb-8 text-[#B89766]">注册</h1>
+      <p className="text-center text-base text-[#F5F5F5]/80 mb-4 max-w-md px-4">
         请务必如实填写您在燕云十六声游戏中的角色ID和角色名称。报名成功后，您必须使用报名的角色参加比赛，所有奖品也将只发放至对应ID的角色。
       </p>
       <div className="mb-4">
         <Image src="/images/tips.png" alt="角色名称和角色编号填写提示" width={400} height={200} />
       </div>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-md">
-        {error && <p className="text-red-500 text-center">{error}</p>}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-md p-8 bg-[#2A2A2A] rounded-lg shadow-lg border border-[#B89766]/50">
+        {error && <p className="text-[#C83C23] text-center mb-4">{error}</p>}
         <select
           value={role}
           onChange={(e) => setRole(e.target.value)}
-          className="p-2 border rounded text-black mb-4"
+          className="p-3 border border-[#B89766]/50 rounded bg-[#1A1A1A] text-[#F5F5F5] mb-4 focus:ring-2 focus:ring-[#B89766] focus:outline-none"
         >
           <option value="player">玩家</option>
           <option value="organizer">主办方</option>
@@ -81,7 +81,7 @@ export default function Register() {
               placeholder="用户名"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="p-2 border rounded text-black"
+              className="p-3 border border-[#B89766]/50 rounded bg-[#1A1A1A] text-[#F5F5F5] placeholder-[#F5F5F5]/70 focus:ring-2 focus:ring-[#B89766] focus:outline-none"
               required
             />
             <input
@@ -89,7 +89,7 @@ export default function Register() {
               placeholder="密码"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="p-2 border rounded text-black"
+              className="p-3 border border-[#B89766]/50 rounded bg-[#1A1A1A] text-[#F5F5F5] placeholder-[#F5F5F5]/70 focus:ring-2 focus:ring-[#B89766] focus:outline-none"
               required
             />
             <input
@@ -102,7 +102,7 @@ export default function Register() {
                   setGameId(value);
                 }
               }}
-              className="p-2 border rounded text-black"
+              className="p-3 border border-[#B89766]/50 rounded bg-[#1A1A1A] text-[#F5F5F5] placeholder-[#F5F5F5]/70 focus:ring-2 focus:ring-[#B89766] focus:outline-none"
               maxLength={10}
               minLength={10}
               required
@@ -119,16 +119,16 @@ export default function Register() {
                   setCharacterNameInputError('');
                 }
               }}
-              className="p-2 border rounded text-black"
+              className="p-3 border border-[#B89766]/50 rounded bg-[#1A1A1A] text-[#F5F5F5] placeholder-[#F5F5F5]/70 focus:ring-2 focus:ring-[#B89766] focus:outline-none"
               required
             />
-            {characterNameInputError && <p className="text-red-500 text-sm">{characterNameInputError}</p>}
+            {characterNameInputError && <p className="text-[#C83C23] text-sm">{characterNameInputError}</p>}
             <input
               type="url"
               placeholder="直播间/主页地址 (可选)"
               value={streamUrl}
               onChange={(e) => setStreamUrl(e.target.value)}
-              className="p-2 border rounded text-black"
+              className="p-3 border border-[#B89766]/50 rounded bg-[#1A1A1A] text-[#F5F5F5] placeholder-[#F5F5F5]/70 focus:ring-2 focus:ring-[#B89766] focus:outline-none"
             />
           </>
         ) : (
@@ -143,7 +143,7 @@ export default function Register() {
                   setGameId(value);
                 }
               }}
-              className="p-2 border rounded text-black"
+              className="p-3 border border-[#B89766]/50 rounded bg-[#1A1A1A] text-[#F5F5F5] placeholder-[#F5F5F5]/70 focus:ring-2 focus:ring-[#B89766] focus:outline-none"
               maxLength={10}
               minLength={10}
               required
@@ -160,26 +160,26 @@ export default function Register() {
                   setCharacterNameInputError('');
                 }
               }}
-              className="p-2 border rounded text-black"
+              className="p-3 border border-[#B89766]/50 rounded bg-[#1A1A1A] text-[#F5F5F5] placeholder-[#F5F5F5]/70 focus:ring-2 focus:ring-[#B89766] focus:outline-none"
               required // Make character name required
             />
-            {characterNameInputError && <p className="text-red-500 text-sm">{characterNameInputError}</p>}
+            {characterNameInputError && <p className="text-[#C83C23] text-sm">{characterNameInputError}</p>}
             <input
               type="tel"
               placeholder="手机号 (可选)"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              className="p-2 border rounded text-black"
+              className="p-3 border border-[#B89766]/50 rounded bg-[#1A1A1A] text-[#F5F5F5] placeholder-[#F5F5F5]/70 focus:ring-2 focus:ring-[#B89766] focus:outline-none"
             />
           </>
         )}
 
-        <button type="submit" className="p-2 bg-blue-500 text-white rounded">
+        <button type="submit" className="p-3 bg-[#B89766] text-[#1A1A1A] rounded-lg font-bold hover:bg-[#A0855A] transition-colors duration-300 shadow-md">
           注册
         </button>
       </form>
-      <p className="mt-4">
-        已有账号？ <a href="/login" className="text-blue-500">点击此处登录</a>
+      <p className="mt-6 text-lg">
+        已有账号？ <a href="/login" className="text-[#B89766] hover:underline">点击此处登录</a>
       </p>
     </div>
   );

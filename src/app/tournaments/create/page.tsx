@@ -11,7 +11,12 @@ import { useRouter } from 'next/navigation';
   const [startTime, setStartTime] = useState('');
   const [minPlayers, setMinPlayers] = useState(10);
   const [maxPlayers, setMaxPlayers] = useState(48);
-  const [eventDescription, setEventDescription] = useState('');
+  const [eventDescription, setEventDescription] = useState(
+    `1. 主办方会在比赛前30分钟创建砺兵台并更新房间编号在比赛详情页
+2. 玩家请从比赛详情页获取砺兵台房间编号并提前至少5分钟进入砺兵台
+3. 比赛对阵图会在比赛开始时自动生成在比赛详情页，请及时关注
+4. 本次比赛最终解释权归主办方所有`
+  );
   const [wechatQrCodeFile, setWechatQrCodeFile] = useState<File | null>(null);
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null); // New state for cover image file
   const [registrationDeadline, setRegistrationDeadline] = useState('');
@@ -121,63 +126,59 @@ import { useRouter } from 'next/navigation';
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-4 md:p-6 lg:p-12 bg-gray-900 text-white">
-      <div className="w-full max-w-full md:max-w-2xl p-4 md:p-6 bg-gray-800 rounded-lg shadow-md mb-8">
-        <h2 className="text-2xl font-bold mb-4 text-center">创建比赛</h2>
+    <main className="flex min-h-screen flex-col items-center p-4 md:p-6 lg:p-12 bg-brand-charcoal text-brand-ivory">
+      <div className="w-full max-w-full md:max-w-2xl p-4 md:p-6 bg-brand-charcoal/80 rounded-lg shadow-lg shadow-brand-gold/20 border border-brand-gold/50">
+        <h2 className="text-3xl font-bold mb-6 text-center text-brand-gold">创建比赛</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <label htmlFor="name" className="block text-white text-sm font-bold mb-2">
+          <label htmlFor="name" className="block text-brand-ivory text-sm font-bold mb-2">
             比赛名称:
           </label>
-          <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} className="p-2 border rounded bg-gray-700 text-white w-full" placeholder="例如：燕云十六声第一届比武大会" required />
+          <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} className="p-3 border border-brand-gold/50 rounded bg-brand-charcoal/70 text-brand-ivory w-full placeholder-brand-ivory/50 focus:ring-2 focus:ring-brand-gold focus:outline-none" placeholder="例如：燕云十六声第一届比武大会" required />
 
-          <label htmlFor="startTime" className="block text-white text-sm font-bold mb-2">
+          <label htmlFor="startTime" className="block text-brand-ivory text-sm font-bold mb-2">
             比赛开始时间:
           </label>
-          <input type="datetime-local" id="startTime" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="p-2 border rounded bg-gray-700 text-white w-full" required />
+          <input type="datetime-local" id="startTime" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="p-3 border border-brand-gold/50 rounded bg-brand-charcoal/70 text-brand-ivory w-full focus:ring-2 focus:ring-brand-gold focus:outline-none" required />
 
-          <label htmlFor="registrationDeadline" className="block text-white text-sm font-bold mb-2">
+          <label htmlFor="registrationDeadline" className="block text-brand-ivory text-sm font-bold mb-2">
             报名截止时间 (可选):
           </label>
-          <input type="datetime-local" id="registrationDeadline" value={registrationDeadline} onChange={(e) => setRegistrationDeadline(e.target.value)} className="p-2 border rounded bg-gray-700 text-white w-full" />
+          <input type="datetime-local" id="registrationDeadline" value={registrationDeadline} onChange={(e) => setRegistrationDeadline(e.target.value)} className="p-3 border border-brand-gold/50 rounded bg-brand-charcoal/70 text-brand-ivory w-full focus:ring-2 focus:ring-brand-gold focus:outline-none" />
 
-          <label htmlFor="minPlayers" className="block text-white text-sm font-bold mb-2">
+          <label htmlFor="minPlayers" className="block text-brand-ivory text-sm font-bold mb-2">
             最少参赛人数:
           </label>
-          <input type="number" id="minPlayers" value={minPlayers} onChange={(e) => setMinPlayers(parseInt(e.target.value))} className="p-2 border rounded bg-gray-700 text-white w-full" required />
+          <input type="number" id="minPlayers" value={minPlayers} onChange={(e) => setMinPlayers(parseInt(e.target.value))} className="p-3 border border-brand-gold/50 rounded bg-brand-charcoal/70 text-brand-ivory w-full focus:ring-2 focus:ring-brand-gold focus:outline-none" required />
 
-          <label htmlFor="maxPlayers" className="block text-white text-sm font-bold mb-2">
+          <label htmlFor="maxPlayers" className="block text-brand-ivory text-sm font-bold mb-2">
             最多参赛人数:
           </label>
-          <input type="number" id="maxPlayers" value={maxPlayers} onChange={(e) => setMaxPlayers(parseInt(e.target.value))} className="p-2 border rounded bg-gray-700 text-white w-full" required />
+          <input type="number" id="maxPlayers" value={maxPlayers} onChange={(e) => setMaxPlayers(parseInt(e.target.value))} className="p-3 border border-brand-gold/50 rounded bg-brand-charcoal/70 text-brand-ivory w-full focus:ring-2 focus:ring-brand-gold focus:outline-none" required />
 
-          <label htmlFor="eventDescription" className="block text-white text-sm font-bold mb-2">
+          <label htmlFor="eventDescription" className="block text-brand-ivory text-sm font-bold mb-2">
             赛事说明:
           </label>
-          <textarea id="eventDescription" value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} className="p-2 border rounded bg-gray-700 text-white w-full" rows={5} placeholder="例如:
-
-1. 请提前5分钟进入比赛房间，房间ID在比赛开始时在本页面公示。
-2. 对阵图在比赛开始时由系统自动生成，请关注本页了解自己对阵信息。
-3. 本次比赛解释权归主办方所有." required />
-          <label className="block text-white text-sm font-bold mb-2">
+          <textarea id="eventDescription" value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} className="p-3 border border-brand-gold/50 rounded bg-brand-charcoal/70 text-brand-ivory w-full focus:ring-2 focus:ring-brand-gold focus:outline-none" rows={5} placeholder="示例：1. 主办方会在比赛前30分钟创建砺兵台并更新房间编号在比赛详情页 2. 玩家请从比赛详情页获取砺兵台房间编号并提前至少5分钟进入砺兵台 3. 比赛对阵图会在比赛开始时自动生成在比赛详情页，请及时关注 4. 本次比赛最终解释权归主办方所有" required />
+          <label className="block text-brand-ivory text-sm font-bold mb-2">
             微信群二维码 (可选):
           </label>
-          <input type="file" accept="image/*" onChange={(e) => setWechatQrCodeFile(e.target.files ? e.target.files[0] : null)} className="p-2 border rounded bg-gray-700 text-white w-full" />
+          <input type="file" accept="image/*" onChange={(e) => setWechatQrCodeFile(e.target.files ? e.target.files[0] : null)} className="p-3 border border-brand-gold/50 rounded bg-brand-charcoal/70 text-brand-ivory w-full focus:ring-2 focus:ring-brand-gold focus:outline-none" />
 
-          <label className="block text-white text-sm font-bold mb-2">
+          <label className="block text-brand-ivory text-sm font-bold mb-2">
             比赛封面图 (可选):
           </label>
-          <input type="file" accept="image/*" onChange={(e) => setCoverImageFile(e.target.files ? e.target.files[0] : null)} className="p-2 border rounded bg-gray-700 text-white w-full" />
+          <input type="file" accept="image/*" onChange={(e) => setCoverImageFile(e.target.files ? e.target.files[0] : null)} className="p-3 border border-brand-gold/50 rounded bg-brand-charcoal/70 text-brand-ivory w-full focus:ring-2 focus:ring-brand-gold focus:outline-none" />
 
-          <label htmlFor="registrationCode" className="block text-white text-sm font-bold mb-2">
+          <label htmlFor="registrationCode" className="block text-brand-ivory text-sm font-bold mb-2">
             参赛验证码 (可选):
           </label>
-          <input type="text" id="registrationCode" value={registrationCode} onChange={(e) => setRegistrationCode(e.target.value)} className="p-2 border rounded bg-gray-700 text-white w-full" placeholder="用于非公开赛报名验证，如百业内部赛" />
+          <input type="text" id="registrationCode" value={registrationCode} onChange={(e) => setRegistrationCode(e.target.value)} className="p-3 border border-brand-gold/50 rounded bg-brand-charcoal/70 text-brand-ivory w-full placeholder-brand-ivory/50 focus:ring-2 focus:ring-brand-gold focus:outline-none" placeholder="用于非公开赛报名验证，如百业内部赛" />
           
-          <label className="block text-white text-sm font-bold mb-2">
+          <label className="block text-brand-ivory text-sm font-bold mb-2">
             默认比赛赛制:
           </label>
           <select
-            className="p-2 border rounded bg-gray-700 text-white w-full"
+            className="p-3 border border-brand-gold/50 rounded bg-brand-charcoal/70 text-brand-ivory w-full focus:ring-2 focus:ring-brand-gold focus:outline-none"
             value={defaultMatchFormat}
             onChange={(e) => setDefaultMatchFormat(e.target.value)}
           >
@@ -186,42 +187,42 @@ import { useRouter } from 'next/navigation';
             <option value="5局3胜">5局3胜</option>
           </select>
 
-          <h3 className="text-xl font-bold mb-2 mt-4 text-center">奖品设置</h3>
+          <h3 className="text-xl font-bold mb-2 mt-4 text-center text-brand-gold">奖品设置</h3>
           {rankedPrizes.map((rp, index) => (
             <div key={index} className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
-              <span className="w-20 flex-shrink-0 text-left">第 {rp.rank} 名:</span>
-              <select value={rp.prizeId} onChange={(e) => setRankedPrizes(rankedPrizes.map((p, i) => i === index ? { ...p, prizeId: e.target.value } : p))} className="p-2 border rounded bg-gray-700 text-white flex-grow w-full">
+              <span className="w-20 flex-shrink-0 text-left text-brand-ivory">第 {rp.rank} 名:</span>
+              <select value={rp.prizeId} onChange={(e) => setRankedPrizes(rankedPrizes.map((p, i) => i === index ? { ...p, prizeId: e.target.value } : p))} className="p-3 border border-brand-gold/50 rounded bg-brand-charcoal/70 text-brand-ivory flex-grow w-full focus:ring-2 focus:ring-brand-gold focus:outline-none">
                 <option value="">无奖品</option>
                 {prizes.map(prize => <option key={prize.id} value={prize.id}>{prize.name}</option>)}
               </select>
-              <input type="number" min="1" value={rp.quantity} onChange={(e) => setRankedPrizes(rankedPrizes.map((p, i) => i === index ? { ...p, quantity: parseInt(e.target.value) } : p))} className="p-2 w-full sm:w-20 border rounded bg-gray-700 text-white" />
+              <input type="number" min="1" value={rp.quantity} onChange={(e) => setRankedPrizes(rankedPrizes.map((p, i) => i === index ? { ...p, quantity: parseInt(e.target.value) } : p))} className="p-3 w-full sm:w-20 border border-brand-gold/50 rounded bg-brand-charcoal/70 text-brand-ivory focus:ring-2 focus:ring-brand-gold focus:outline-none" />
             </div>
           ))}
           <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center mt-2">
-            <span className="w-20 flex-shrink-0 text-left">参与奖:</span>
-            <select value={participationPrize.prizeId} onChange={(e) => setParticipationPrize({ ...participationPrize, prizeId: e.target.value })} className="p-2 border rounded bg-gray-700 text-white flex-grow w-full">
+            <span className="w-20 flex-shrink-0 text-left text-brand-ivory">参与奖:</span>
+            <select value={participationPrize.prizeId} onChange={(e) => setParticipationPrize({ ...participationPrize, prizeId: e.target.value })} className="p-3 border border-brand-gold/50 rounded bg-brand-charcoal/70 text-brand-ivory flex-grow w-full focus:ring-2 focus:ring-brand-gold focus:outline-none">
               <option value="">无奖品</option>
               {prizes.map(prize => <option key={prize.id} value={prize.id}>{prize.name}</option>)}
             </select>
-            <input type="number" min="1" value={participationPrize.quantity} onChange={(e) => setParticipationPrize({ ...participationPrize, quantity: parseInt(e.target.value) })} className="p-2 w-full sm:w-20 border rounded bg-gray-700 text-white" />
+            <input type="number" min="1" value={participationPrize.quantity} onChange={(e) => setParticipationPrize({ ...participationPrize, quantity: parseInt(e.target.value) })} className="p-3 w-full sm:w-20 border border-brand-gold/50 rounded bg-brand-charcoal/70 text-brand-ivory focus:ring-2 focus:ring-brand-gold focus:outline-none" />
           </div>
           {customPrizes.map((cp, index) => (
-            <div key={index} className="p-4 border rounded mt-2 bg-gray-700 flex flex-col gap-2">
-              <input type="text" placeholder="奖项名称" value={cp.customName} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, customName: e.target.value } : p))} className="p-2 w-full border rounded bg-gray-600" required/>
+            <div key={index} className="p-4 border border-brand-gold/50 rounded mt-2 bg-brand-charcoal/70 flex flex-col gap-2">
+              <input type="text" placeholder="奖项名称" value={cp.customName} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, customName: e.target.value } : p))} className="p-3 w-full border border-brand-gold/50 rounded bg-brand-charcoal/60 text-brand-ivory placeholder-brand-ivory/50 focus:ring-2 focus:ring-brand-gold focus:outline-none" required/>
               <div className="flex flex-col sm:flex-row gap-2">
-                <input type="number" placeholder="起始名次" value={cp.rangeStart} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, rangeStart: parseInt(e.target.value) } : p))} className="p-2 w-full border rounded bg-gray-600" required/>
-                <input type="number" placeholder="结束名次" value={cp.rangeEnd} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, rangeEnd: parseInt(e.target.value) } : p))} className="p-2 w-full border rounded bg-gray-600" required/>
+                <input type="number" placeholder="起始名次" value={cp.rangeStart} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, rangeStart: parseInt(e.target.value) } : p))} className="p-3 w-full border border-brand-gold/50 rounded bg-brand-charcoal/60 text-brand-ivory placeholder-brand-ivory/50 focus:ring-2 focus:ring-brand-gold focus:outline-none" required/>
+                <input type="number" placeholder="结束名次" value={cp.rangeEnd} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, rangeEnd: parseInt(e.target.value) } : p))} className="p-3 w-full border border-brand-gold/50 rounded bg-brand-charcoal/60 text-brand-ivory placeholder-brand-ivory/50 focus:ring-2 focus:ring-brand-gold focus:outline-none" required/>
               </div>
-              <select value={cp.prizeId} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, prizeId: e.target.value } : p))} className="p-2 w-full border rounded mt-2 bg-gray-600" required>
+              <select value={cp.prizeId} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, prizeId: e.target.value } : p))} className="p-3 w-full border border-brand-gold/50 rounded mt-2 bg-brand-charcoal/60 text-brand-ivory focus:ring-2 focus:ring-brand-gold focus:outline-none" required>
                 <option value="">无奖品</option>
                 {prizes.map(prize => <option key={prize.id} value={prize.id}>{prize.name}</option>)}
               </select>
-              <input type="number" min="1" placeholder="数量" value={cp.quantity} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, quantity: parseInt(e.target.value) } : p))} className="p-2 w-full border rounded mt-2 bg-gray-600" required/>
-              <button type="button" onClick={() => handleRemoveCustomPrize(index)} className="p-2 bg-red-500 text-white rounded mt-2 w-full">移除自定义奖项</button>
+              <input type="number" min="1" placeholder="数量" value={cp.quantity} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, quantity: parseInt(e.target.value) } : p))} className="p-3 w-full border border-brand-gold/50 rounded mt-2 bg-brand-charcoal/60 text-brand-ivory placeholder-brand-ivory/50 focus:ring-2 focus:ring-brand-gold focus:outline-none" required/>
+              <button type="button" onClick={() => handleRemoveCustomPrize(index)} className="p-3 bg-brand-red hover:bg-brand-red/80 text-brand-ivory rounded mt-2 w-full transition-colors duration-300">移除自定义奖项</button>
             </div>
           ))}
-          <button type="button" onClick={handleAddCustomPrize} className="p-2 bg-green-500 text-white rounded mt-2 w-full">添加自定义奖项</button>
-          <button type="submit" className="p-2 bg-blue-500 text-white rounded mt-4 w-full">创建比赛</button>
+          <button type="button" onClick={handleAddCustomPrize} className="p-3 bg-brand-gold hover:bg-brand-gold/80 text-brand-charcoal font-bold rounded mt-2 w-full transition-colors duration-300">添加自定义奖项</button>
+          <button type="submit" className="p-3 bg-brand-gold hover:bg-brand-gold/80 text-brand-charcoal font-bold rounded mt-4 w-full transition-colors duration-300">创建比赛</button>
         </form>
       </div>
     </main>

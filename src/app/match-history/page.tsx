@@ -85,11 +85,8 @@ export default function MatchHistoryPage() {
   // 加载状态
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-24" style={{
-        background: 'url(/images/yyarena.png) no-repeat center center fixed',
-        backgroundSize: 'cover',
-      }}>
-        <div className="text-2xl font-bold text-white bg-black bg-opacity-50 p-4 rounded-lg">加载比赛记录中...</div>
+      <div className="flex min-h-screen flex-col items-center justify-center p-24 bg-brand-charcoal text-brand-ivory">
+        <div className="text-2xl font-bold bg-brand-charcoal/80 p-4 rounded-lg">加载比赛记录中...</div>
       </div>
     );
   }
@@ -97,32 +94,30 @@ export default function MatchHistoryPage() {
   // 错误状态
   if (error) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-24" style={{
-        background: 'url(/images/yyarena.png) no-repeat center center fixed',
-        backgroundSize: 'cover',
-      }}>
-        <div className="text-2xl font-bold text-red-500 bg-black bg-opacity-50 p-4 rounded-lg">错误: {error}</div>
+      <div className="flex min-h-screen flex-col items-center justify-center p-24 bg-brand-charcoal text-brand-ivory">
+        <div className="text-2xl font-bold text-brand-red bg-brand-charcoal/80 p-4 rounded-lg">错误: {error}</div>
       </div>
     );
   }
 
   // 主页面渲染
   return (
-    <main className="flex min-h-screen flex-col items-center p-4 md:p-12 lg:p-24" style={{
-      background: 'url(/images/yyarena.png) no-repeat center center fixed',
-      backgroundSize: 'cover',
-    }}>
-      <div className="w-full max-w-6xl mx-auto bg-black bg-opacity-60 p-8 rounded-2xl shadow-2xl border border-gray-700">
-        <h1 className="text-5xl font-extrabold mb-10 text-center text-gray-100" style={{ textShadow: '0 0 15px rgba(255,255,255,0.5)' }}>
+    <main className="min-h-screen flex flex-col items-center p-4 md:p-12 lg:p-24 text-brand-ivory relative z-0">
+      <div className="absolute inset-0 z-[-1]" style={{
+        background: 'url(/images/yyarena.png) no-repeat center center fixed',
+        backgroundSize: 'cover',
+      }}></div>
+      <div className="w-full max-w-6xl mx-auto bg-brand-charcoal/80 p-8 rounded-2xl shadow-2xl border border-brand-gold/50">
+        <h1 className="text-5xl font-extrabold mb-10 text-center text-brand-gold" style={{ textShadow: '0 0 25px rgba(184,151,102,1.0), 0 0 10px rgba(0,0,0,0.5)' }}>
           我的比赛记录
         </h1>
 
         {matchHistory.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-xl text-gray-400 mb-6">江湖之路，尚未开启。您还没有参与过任何比赛。</p>
+            <p className="text-xl text-brand-ivory/70 mb-6">江湖之路，尚未开启。您还没有参与过任何比赛。</p>
             <button
               onClick={() => router.push('/')}
-              className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-8 rounded-lg transition-transform transform hover:scale-105 shadow-lg"
+              className="bg-brand-gold hover:bg-brand-gold/90 text-brand-charcoal font-bold py-3 px-8 rounded-lg transition-transform transform hover:scale-105 shadow-lg shadow-brand-gold/20"
             >
               浏览比赛，一战成名
             </button>
@@ -132,33 +127,34 @@ export default function MatchHistoryPage() {
             {matchHistory.map((tournament) => (
               <div
                 key={tournament.tournament_id}
-                className="bg-gray-900 bg-opacity-70 border border-gray-700 p-8 rounded-xl shadow-lg transition-all duration-300 hover:shadow-yellow-500/20 hover:border-yellow-600 hover:scale-[1.02]"
+                className="bg-brand-charcoal/70 border border-brand-gold/30 p-8 rounded-xl shadow-lg transition-all duration-300 hover:shadow-brand-gold/20 hover:border-brand-gold hover:scale-[1.02]"
               >
-                <h2 className="text-3xl font-bold mb-6 text-center text-yellow-400">{tournament.tournament_name}</h2>
+                <h2 className="text-3xl font-bold mb-6 text-center text-brand-gold">{tournament.tournament_name}</h2>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-8 text-gray-300">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-8 text-brand-ivory/90">
                   <p><strong>主办方:</strong> <span className="font-mono">{tournament.organizer_name}</span></p>
-                  <p><strong>报名时间:</strong> <span className="font-mono">{new Date(tournament.registration_time).toLocaleString()}</span></p>
-                  <p><strong>比赛开始:</strong> <span className="font-mono">{new Date(tournament.start_time).toLocaleString()}</span></p>
                   <div className="flex items-center space-x-3">
                     <strong>比赛状态:</strong>
                     <StatusBadge status={tournament.tournament_status} type="tournament" />
                   </div>
+
+                  <p><strong>报名时间:</strong> <span className="font-mono">{new Date(tournament.registration_time).toLocaleString()}</span></p>
                   <div className="flex items-center space-x-3">
                     <strong>报名状态:</strong>
                     <StatusBadge status={tournament.registration_status} type="registration" />
                   </div>
+                  <p><strong>开赛时间:</strong> <span className="font-mono">{new Date(tournament.start_time).toLocaleString()}</span></p>
                 </div>
 
                 {tournament.matches.length > 0 && (
                   <div className="mt-8">
-                    <h3 className="text-2xl font-semibold mb-6 text-center text-gray-200 border-t border-b border-gray-700 py-3">
+                    <h3 className="text-2xl font-semibold mb-6 text-center text-brand-ivory border-t border-b border-brand-gold/50 py-3">
                       我的对局
                     </h3>
                     <div className="space-y-6">
                       {tournament.matches.map((match) => (
-                        <div key={match.match_id} className="bg-gray-800 bg-opacity-80 p-6 rounded-lg border border-gray-600">
-                          <p className="text-center text-lg font-semibold mb-4 text-yellow-500">第 {match.round_number} 回合</p>
+                        <div key={match.match_id} className="bg-brand-charcoal/80 p-6 rounded-lg border border-brand-gold/40">
+                          <p className="text-center text-lg font-semibold mb-4 text-brand-gold">第 {match.round_number} 回合</p>
                           <div className="flex items-center justify-around space-x-4">
                             <div className="flex flex-col items-center text-center w-32">
                               <Image
@@ -166,40 +162,40 @@ export default function MatchHistoryPage() {
                                 alt={match.player1_name || '轮空'}
                                 width={80}
                                 height={80}
-                                className="rounded-full object-cover border-4 border-gray-600"
+                                className="rounded-full object-cover border-4 border-brand-gold/50"
                               />
-                              <span className="text-md mt-2 font-semibold truncate">{match.player1_name || '(轮空)'}</span>
+                              <span className="text-md mt-2 font-semibold truncate text-brand-ivory">{match.player1_name || '(轮空)'}</span>
                             </div>
-                            <span className="text-4xl font-bold text-red-600" style={{ textShadow: '0 0 10px rgba(255,0,0,0.7)' }}>VS</span>
+                            <span className="text-4xl font-bold text-brand-red" style={{ textShadow: '0 0 10px rgba(200,60,35,0.7)' }}>VS</span>
                             <div className="flex flex-col items-center text-center w-32">
                               <Image
                                 src={`/avatars/${match.player2_avatar || '000.webp'}`}
                                 alt={match.player2_name || '轮空'}
                                 width={80}
                                 height={80}
-                                className="rounded-full object-cover border-4 border-gray-600"
+                                className="rounded-full object-cover border-4 border-brand-gold/50"
                               />
-                              <span className="text-md mt-2 font-semibold truncate">{match.player2_name || '(轮空)'}</span>
+                              <span className="text-md mt-2 font-semibold truncate text-brand-ivory">{match.player2_name || '(轮空)'}</span>
                             </div>
                           </div>
                           <div className="mt-6 text-center">
                             {match.winner_name ? (
                               <div className="flex items-center justify-center space-x-3">
-                                <span className="text-lg font-semibold text-gray-300">胜者:</span>
+                                <span className="text-lg font-semibold text-brand-ivory/80">胜者:</span>
                                 <Image
                                   src={`/avatars/${match.winner_avatar || '000.webp'}`}
                                   alt={match.winner_name}
                                   width={40}
                                   height={40}
-                                  className="rounded-full object-cover border-2 border-yellow-400"
+                                  className="rounded-full object-cover border-2 border-brand-gold"
                                 />
-                                <span className="text-xl font-bold text-yellow-400">{match.winner_name}</span>
+                                <span className="text-xl font-bold text-brand-gold">{match.winner_name}</span>
                               </div>
                             ) : (
-                              <p className="text-lg font-semibold text-gray-400">胜负未分</p>
+                              <p className="text-lg font-semibold text-brand-ivory/60">胜负未分</p>
                             )}
                           </div>
-                          <div className="mt-4 flex flex-col md:flex-row justify-between items-start md:items-center text-sm text-gray-400 border-t border-gray-700 pt-3">
+                          <div className="mt-4 flex flex-col md:flex-row justify-between items-start md:items-center text-sm text-brand-ivory/70 border-t border-brand-gold/40 pt-3">
                             <div>
                               <strong>对局状态:</strong>
                               <StatusBadge status={match.match_status} type="match" />
@@ -212,11 +208,30 @@ export default function MatchHistoryPage() {
                   </div>
                 )}
 
-                {/* 奖品占位符 */}
+                {/* 奖品渲染 */}
                 {tournament.awards.length > 0 && (
                   <div className="mt-8">
-                    <h3 className="text-2xl font-semibold mb-4 text-center text-gray-200">我的奖品</h3>
-                    {/* 在此渲染奖品 */}
+                    <h3 className="text-2xl font-semibold mb-6 text-center text-brand-ivory border-t border-b border-brand-gold/50 py-3">
+                      我的战利品
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {tournament.awards.map((award, index) => (
+                        <div key={index} className="bg-brand-charcoal/80 p-4 rounded-lg border border-brand-gold/60 flex items-center space-x-4">
+                          <Image
+                            src={award.prize_image_url ? `/avatars/${award.prize_image_url}` : '/images/default_cover.jpg'}
+                            alt={award.prize_name}
+                            width={64}
+                            height={64}
+                            className="rounded-md object-cover"
+                          />
+                          <div>
+                            <p className="font-bold text-brand-gold">{award.prize_name}</p>
+                            <p className="text-sm text-brand-ivory/70">{award.prize_description}</p>
+                            <p className="text-xs text-brand-ivory/60 mt-1">发放于: {new Date(award.awarded_at).toLocaleDateString()}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

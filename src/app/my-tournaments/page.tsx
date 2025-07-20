@@ -57,36 +57,46 @@ export default function MyTournamentsPage() {
   }, [router]);
 
   if (loading) {
-    return <div className="text-center text-white text-xl">加载中...</div>;
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center p-24 bg-brand-charcoal text-brand-ivory">
+        <div className="text-2xl font-bold bg-brand-charcoal/80 p-4 rounded-lg">加载中...</div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-center text-red-500 text-xl">错误: {error}</div>;
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center p-24 bg-brand-charcoal text-brand-ivory">
+        <div className="text-2xl font-bold text-brand-red bg-brand-charcoal/80 p-4 rounded-lg">错误: {error}</div>
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-4xl font-bold text-white mb-8">我创建的比赛</h1>
-      {tournaments.length === 0 ? (
-        <p className="text-white text-lg">您还没有创建任何比赛。</p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tournaments.map((tournament) => (
-            <div key={tournament.id} className="bg-gray-800 rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-semibold text-white mb-2">{tournament.name}</h2>
-              <p className="text-gray-300 mb-1">开始时间: {new Date(tournament.start_time).toLocaleString()}</p>
-              <p className="text-gray-300 mb-1">报名截止: {new Date(tournament.registration_deadline).toLocaleString()}</p>
-              <p className="text-gray-300 mb-1">状态: {getTournamentStatusText(tournament.status).text}</p>
-              <p className="text-gray-300 mb-4">参赛人数: {tournament.min_players}-{tournament.max_players}</p>
-              <Link href={`/tournaments/details?id=${tournament.id}`}>
-                <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                  查看详情
-                </button>
-              </Link>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    <main className="min-h-screen flex flex-col items-center p-4 md:p-12 lg:p-24 bg-brand-charcoal text-brand-ivory">
+      <div className="w-full max-w-6xl mx-auto bg-brand-charcoal/80 p-8 rounded-2xl shadow-2xl border border-brand-gold/50">
+        <h1 className="text-4xl font-bold text-brand-gold mb-8 text-center">我创建的比赛</h1>
+        {tournaments.length === 0 ? (
+          <p className="text-brand-ivory text-lg text-center">您还没有创建任何比赛。</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {tournaments.map((tournament) => (
+              <div key={tournament.id} className="bg-brand-charcoal/70 rounded-lg shadow-lg shadow-brand-gold/20 border border-brand-gold/30 p-6">
+                <h2 className="text-2xl font-semibold text-brand-gold mb-2">{tournament.name}</h2>
+                <p className="text-brand-ivory/90 mb-1">开始时间: {new Date(tournament.start_time).toLocaleString()}</p>
+                <p className="text-brand-ivory/90 mb-1">报名截止: {new Date(tournament.registration_deadline).toLocaleString()}</p>
+                <p className="text-brand-ivory/90 mb-1">状态: {getTournamentStatusText(tournament.status).text}</p>
+                <p className="text-brand-ivory/90 mb-4">参赛人数: {tournament.min_players}-{tournament.max_players}</p>
+                <Link href={`/tournaments/details?id=${tournament.id}`} className="block mt-4">
+                  <button className="w-full bg-brand-gold hover:bg-brand-gold/80 text-brand-charcoal font-bold py-2 px-4 rounded transition-colors duration-300 md:w-auto">
+                    查看详情
+                  </button>
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
