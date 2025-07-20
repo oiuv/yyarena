@@ -168,7 +168,7 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center p-4 md:p-6 lg:p-12 bg-gradient-to-br from-gray-950 to-black text-white font-sans">
       <div className="w-full max-w-6xl mx-auto">
-        <h1 className="text-4xl md:text-5xl font-extrabold mb-8 md:mb-12 text-center text-amber-400 drop-shadow-lg">燕云砺兵台</h1>
+        <h1 className="relative z-10 text-4xl md:text-5xl font-extrabold mb-16 md:mb-20 text-center text-amber-400 drop-shadow-lg">燕云砺兵台</h1>
 
         {ongoingTournaments.length > 0 && (
           <section className="mb-8 md:mb-12 p-4 md:p-6 bg-gradient-to-br from-red-900 to-red-950 rounded-xl shadow-2xl border-4 border-yellow-700 transform hover:scale-105 transition-transform duration-300">

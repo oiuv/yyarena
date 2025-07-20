@@ -146,8 +146,8 @@ export default function MyRegistrationsPage() {
                     <p className="text-sm md:text-base">报名时间: {new Date(reg.registration_time).toLocaleString()}</p>
                     <p className="text-sm md:text-base">比赛开始: {new Date(reg.start_time).toLocaleString()}</p>
                     <p className="text-sm md:text-base">报名截止: {new Date(reg.registration_deadline).toLocaleString()}</p>
-                    <p className="text-sm md:text-base">报名状态: {getRegistrationStatusText(reg.registration_status)}</p>
-                    <p className="text-sm md:text-base">比赛状态: {getTournamentStatusText(reg.tournament_status)}</p>
+                    <p className="text-sm md:text-base">报名状态: {getRegistrationStatusText(reg.registration_status).text}</p>
+                    <p className="text-sm md:text-base">比赛状态: {getTournamentStatusText(reg.tournament_status).text}</p>
                   </Link>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">

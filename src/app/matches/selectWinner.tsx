@@ -143,7 +143,7 @@ export default function SelectWinnerPage() {
         <p>回合: {match.round_number}</p>
         <p>玩家1 ID: {match.player1_id}</p>
         <p>玩家2 ID: {match.player2_id || '轮空'}</p>
-        <p>状态: {getTournamentStatusText(match.status)}</p>
+        <p>状态: {getTournamentStatusText(match.status).text}</p>
         {match.winner_id && <p className="font-bold">当前获胜者: {match.winner_id}</p>}
       </div>
 
