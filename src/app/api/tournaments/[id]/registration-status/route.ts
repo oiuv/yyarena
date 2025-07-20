@@ -18,14 +18,15 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     const userId = decoded.id;
 
-    const registration = await query(
+    const registration: any = await query(
       'SELECT id FROM Registrations WHERE tournament_id = ? AND player_id = ? AND status = ?',
       [tournamentId, userId, 'active']
     );
 
     const isRegistered = registration.length > 0;
+    const registrationId = isRegistered ? registration[0].id : null;
 
-    return NextResponse.json({ isRegistered });
+    return NextResponse.json({ isRegistered, registrationId });
 
   } catch (error) {
     console.error('Error checking registration status:', error);

@@ -72,6 +72,7 @@ export default function TournamentDetailsClient() {
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
   const [registrationCodeInput, setRegistrationCodeInput] = useState('');
   const [isUserRegistered, setIsUserRegistered] = useState(false);
+  const [userRegistrationId, setUserRegistrationId] = useState<number | null>(null);
 
   const fetchDetails = useCallback(async () => {
     if (!tournamentId) return;
@@ -99,6 +100,7 @@ export default function TournamentDetailsClient() {
       if (registrationStatusRes && registrationStatusRes.ok) {
         const regData = await registrationStatusRes.json();
         setIsUserRegistered(regData.isRegistered);
+        setUserRegistrationId(regData.registrationId);
       }
 
       // Create a map of player IDs to avatars from the matches data
@@ -412,6 +414,11 @@ export default function TournamentDetailsClient() {
   };
 
   const handleWithdrawal = async () => {
+    if (!userRegistrationId) {
+      alert('无法找到您的报名记录，请刷新页面后重试。');
+      return;
+    }
+
     if (!window.confirm('您确定要退出本次比赛吗？退出后在报名截止前仍可重新报名。')) {
       return;
     }
@@ -423,14 +430,12 @@ export default function TournamentDetailsClient() {
     }
 
     try {
-      const res = await fetch(`/api/registrations`,
+      const res = await fetch(`/api/registrations/${userRegistrationId}/withdraw`,
         {
-          method: 'DELETE',
+          method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
-          body: JSON.stringify({ tournament_id: tournamentId }),
         }
       );
 
@@ -460,8 +465,9 @@ export default function TournamentDetailsClient() {
   const isPlayer = currentUser && currentUser.role === 'player';
   const isRegistrationOpen = new Date(tournament.registration_deadline) > new Date();
   const isTournamentUpcoming = new Date(tournament.start_time) > new Date();
-  const canRegister = isRegistrationOpen && currentUser && !isOrganizer && !isUserRegistered;
-  const canWithdraw = isRegistrationOpen && currentUser && !isOrganizer && isUserRegistered;
+  const isTournamentActionable = tournament.status !== 'ongoing' && tournament.status !== 'finished';
+  const canRegister = isRegistrationOpen && isTournamentActionable && currentUser && !isOrganizer && !isUserRegistered;
+  const canWithdraw = isRegistrationOpen && isTournamentActionable && currentUser && !isOrganizer && isUserRegistered;
 
   return (
     <main className="flex min-h-screen flex-col items-center p-4 md:p-6 lg:p-12 bg-gray-900 text-white">
