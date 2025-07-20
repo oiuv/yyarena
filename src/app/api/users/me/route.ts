@@ -21,11 +21,39 @@ export async function PUT(request: NextRequest) {
   }
 
   const userId = decodedToken.id;
-  const { stream_url, avatar, username, password, role } = await request.json();
+  const { stream_url, avatar, username, password, role, currentPassword, newPassword } = await request.json();
 
   try {
     let updateFields = [];
     let updateValues = [];
+
+    // Fetch the user from the database to get their current password hash
+    const user: any = await new Promise((resolve, reject) => {
+      db.get(`SELECT * FROM Users WHERE id = ?`, [userId], (err, row) => {
+        if (err) reject(err);
+        resolve(row);
+      });
+    });
+
+    if (!user) {
+      return NextResponse.json({ message: '用户不存在' }, { status: 404 });
+    }
+
+    // Handle password change for organizers
+    if (currentPassword && newPassword) {
+      if (user.role !== 'organizer') {
+        return NextResponse.json({ message: '只有主办方可以修改密码' }, { status: 403 });
+      }
+
+      const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+      if (!isPasswordValid) {
+        return NextResponse.json({ message: '当前密码不正确' }, { status: 401 });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      updateFields.push('password = ?');
+      updateValues.push(hashedPassword);
+    }
 
     // Check if the user is trying to upgrade to organizer
     if (role === 'organizer' && decodedToken.role === 'player') {

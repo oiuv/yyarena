@@ -34,6 +34,10 @@ export default function ProfilePage() {
   const [upgradeUsername, setUpgradeUsername] = useState<string>('');
   const [upgradePassword, setUpgradePassword] = useState<string>('');
   const [upgradeMessage, setUpgradeMessage] = useState<string>('');
+  const [currentPassword, setCurrentPassword] = useState<string>('');
+  const [newPassword, setNewPassword] = useState<string>('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState<string>('');
+  const [passwordChangeMessage, setPasswordChangeMessage] = useState<string>('');
   const router = useRouter();
 
   useEffect(() => {
@@ -186,6 +190,52 @@ export default function ProfilePage() {
     }
   };
 
+  const handleSubmitPasswordChange = async () => {
+    if (!user) return;
+
+    setPasswordChangeMessage('');
+
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      setPasswordChangeMessage('所有密码字段都不能为空。');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setPasswordChangeMessage('新密码和确认密码不匹配。');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordChangeMessage('新密码长度不能少于6位。');
+      return;
+    }
+
+    try {
+      const token = getToken();
+      const res = await fetch('/api/users/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setPasswordChangeMessage('密码修改成功！');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmNewPassword('');
+      } else {
+        setPasswordChangeMessage(data.message || '密码修改失败。');
+      }
+    } catch (error) {
+      console.error('Error changing password:', error);
+      setPasswordChangeMessage('修改密码时发生错误。');
+    }
+  };
+
   if (!user) {
     return <div className="flex min-h-screen flex-col items-center justify-center p-24 bg-gray-900 text-white">加载资料中...</div>;
   }
@@ -247,6 +297,55 @@ export default function ProfilePage() {
                 更新主页地址
               </button>
               {message && <p className="mt-4 text-center text-green-500">{message}</p>}
+            </div>
+          )}
+
+          {user.role === 'organizer' && (
+            <div className="mt-8 p-4 bg-gray-700 rounded-lg">
+              <h2 className="text-2xl font-bold mb-4">修改密码</h2>
+              <div className="mb-4">
+                <label htmlFor="currentPassword" className="block text-lg font-bold mb-2">当前密码:</label>
+                <input
+                  type="password"
+                  id="currentPassword"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full p-2 border rounded bg-gray-800 text-white"
+                  placeholder="请输入当前密码"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label htmlFor="newPassword" className="block text-lg font-bold mb-2">新密码:</label>
+                <input
+                  type="password"
+                  id="newPassword"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full p-2 border rounded bg-gray-800 text-white"
+                  placeholder="请输入新密码"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label htmlFor="confirmNewPassword" className="block text-lg font-bold mb-2">确认新密码:</label>
+                <input
+                  type="password"
+                  id="confirmNewPassword"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  className="w-full p-2 border rounded bg-gray-800 text-white"
+                  placeholder="请再次输入新密码"
+                  required
+                />
+              </div>
+              <button
+                onClick={handleSubmitPasswordChange}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              >
+                修改密码
+              </button>
+              {passwordChangeMessage && <p className="mt-4 text-center text-green-500">{passwordChangeMessage}</p>}
             </div>
           )}
 

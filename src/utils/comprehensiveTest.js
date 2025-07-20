@@ -63,17 +63,45 @@ const PLAYER_POOL = [
 function getArgs() {
   const args = {};
   process.argv.slice(2).forEach(arg => {
-    const [key, value] = arg.split('=');
-    if (key.startsWith('--')) {
-      args[key.substring(2)] = value;
+    if (arg.startsWith('--')) {
+      const parts = arg.substring(2).split('=');
+      const key = parts[0];
+      const value = parts.length > 1 ? parts[1] : true; // If no '=', set to true
+      args[key] = value;
     }
   });
   return args;
 }
 
+function displayHelp() {
+  console.log('\n用法: node comprehensiveTest.js [选项]');
+  console.log('模拟比赛创建、玩家注册和比赛进程。');
+  console.log('\n选项:');
+  console.log('  --players=<数量>    要注册的玩家数量 (默认: 10, 最大: 50)');
+  console.log('  --min=<数量>        比赛所需的最少玩家数量 (默认: 10)');
+  console.log('  --max=<数量>        比赛所需的最大玩家数量 (默认: 48)');
+  console.log('  --start             自动启动比赛 (默认: false)');
+  console.log('  --win               自动设置比赛获胜者 (默认: false, 仅在自动启动比赛时有效)');
+  console.log('  --help              显示此帮助信息');
+  console.log('\n示例:');
+  console.log('  node comprehensiveTest.js --players=20');
+  console.log('  node comprehensiveTest.js --players=30 --min=15 --max=30');
+  process.exit(0);
+}
+
 // --- API 辅助函数 ---
 
-async function registerOrLoginOrganizer(username, password) {
+async function registerOrLoginOrganizer(username, password = '123456') {
+
+  const organizerData = {
+    username,
+    password,
+    game_id: '1234567890', // 固定测试主办方ID
+    character_name: '燕子',
+    role: 'organizer',
+    stream_url: 'https://v.douyin.com/aEtLhQOXrV8/', // 新增主播主页地址
+  };
+
   // 尝试登录
   try {
     const loginResponse = await fetch('http://localhost:3000/api/auth/login', {
@@ -81,23 +109,22 @@ async function registerOrLoginOrganizer(username, password) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
     });
+    const loginData = await loginResponse.json();
     if (loginResponse.ok) {
-      const loginData = await loginResponse.json();
       console.log(`主办方账号 '${username}' 登录成功。`);
       return loginData.token;
+    } else if (loginData.message && loginData.message.includes('不存在') || loginData.message.includes('密码不正确')) {
+      console.log(`主办方账号 '${username}' 登录失败: ${loginData.message}。尝试注册...`);
+    } else {
+      console.error(`主办方账号 '${username}' 登录时发生未知错误: ${loginData.message}`);
+      return null;
     }
-  } catch (e) { /* 忽略登录错误，继续尝试注册 */ }
+  } catch (e) {
+    console.error(`尝试登录主办方账号 '${username}' 时发生网络错误: ${e.message}。尝试注册...`);
+  }
 
   // 登录失败则尝试注册
   try {
-    const organizerData = {
-      username,
-      password,
-      game_id: '1234567890', // 固定测试主办方ID
-      character_name: '燕子',
-      role: 'organizer',
-      stream_url: 'https://v.douyin.com/aEtLhQOXrV8/', // 新增主播主页地址
-    };
     const registerResponse = await fetch('http://localhost:3000/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -108,14 +135,11 @@ async function registerOrLoginOrganizer(username, password) {
       console.log(`主办方账号 '${username}' 注册并登录成功。`);
       return registerData.token;
     } else {
-      // 如果是因为用户已存在而失败，则尝试直接登录
-      if (registerData.message && registerData.message.includes('已存在')) {
-        return registerOrLoginOrganizer(username, password);
-      }
-      throw new Error(registerData.message || '主办方注册失败');
+      console.error(`主办方账号 '${username}' 注册失败: ${registerData.message}`);
+      return null;
     }
   } catch (error) {
-    console.error('主办方设置时出错:', error.message);
+    console.error('主办方注册时发生网络错误:', error.message);
     return null;
   }
 }
@@ -205,15 +229,94 @@ async function registerPlayerForTournament(token, tournamentId, characterName) {
   }
 }
 
+async function startTournament(token, tournamentId) {
+  console.log(`\n尝试启动比赛 (ID: ${tournamentId})...`);
+  try {
+    const response = await fetch(`http://localhost:3000/api/tournaments/${tournamentId}/start`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        room_name: '测试砺兵台',
+        room_number: '1234567890',
+        room_password: '1234',
+        livestream_url: 'https://live.douyin.com/244993118346'
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      console.error(`启动比赛失败: ${data.message}`);
+      return false;
+    } else {
+      console.log(`比赛 (ID: ${tournamentId}) 成功启动。`);
+      return true;
+    }
+  } catch (error) {
+    console.error(`启动比赛时出错:`, error.message);
+    return false;
+  }
+}
+
+async function getTournamentMatches(tournamentId) {
+  try {
+    const response = await fetch(`http://localhost:3000/api/tournaments/${tournamentId}/matches`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`获取比赛对阵信息失败: ${errorText}`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(error.message);
+    return null;
+  }
+}
+
+async function setMatchWinner(token, matchId, winnerId) {
+  try {
+    const response = await fetch(`http://localhost:3000/api/matches/${matchId}/winner`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ winner_id: winnerId, match_format: '1局1胜' }), // Added match_format
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      console.error(`设置对阵 (ID: ${matchId}) 获胜者失败: ${data.message || JSON.stringify(data)}`);
+      return false;
+    } else {
+      console.log(`对阵 (ID: ${matchId}) 获胜者设置为 ${winnerId}。`);
+      return true;
+    }
+  } catch (error) {
+    console.error(`设置获胜者时出错:`, error.message);
+    return false;
+  }
+}
+
 // --- 测试执行主逻辑 ---
 
 async function runTest() {
   const args = getArgs();
+
+  if (args.help) {
+    displayHelp();
+    return; 
+  }
+
   const numPlayers = parseInt(args.players || '10', 10);
   const minPlayers = parseInt(args.min || '10', 10);
   const maxPlayers = parseInt(args.max || '48', 10);
+  const autoStartTournament = args['start'] === true;
+  const autoSetWinners = args['win'] === true;
 
   console.log('--- 开始综合性自动化测试 ---');
+  console.log('调试信息: args =', args);
+  console.log('调试信息: autoStartTournament =', autoStartTournament);
   console.log(`测试场景: 为一个需要 ${minPlayers}-${maxPlayers} 人的比赛注册 ${numPlayers} 名玩家。`);
   console.log('------------------------------------');
 
@@ -225,7 +328,7 @@ async function runTest() {
   console.log('基础玩家池准备就绪。');
 
   // 2. 设置主办方
-  const organizerToken = await registerOrLoginOrganizer('test', 'test');
+  const organizerToken = await registerOrLoginOrganizer('test'); // 使用默认密码
   if (!organizerToken) {
     console.error('无法设置主办方账号，测试中止。');
     return;
@@ -254,6 +357,46 @@ async function runTest() {
     } else {
       console.log(`因登录失败，跳过为玩家 ${player.character_name} 报名比赛。`);
     }
+  }
+
+  // 5. 启动比赛 (可选)
+  if (autoStartTournament) {
+    const tournamentStarted = await startTournament(organizerToken, tournamentId);
+    if (!tournamentStarted) {
+      console.error('无法启动比赛，测试中止。');
+      return;
+    }
+
+    // 6. 模拟比赛进程：设置第一轮的获胜者 (可选，仅在自动启动比赛时有效)
+    if (autoSetWinners) {
+      console.log('\n开始模拟比赛进程...');
+      let currentMatches = await getTournamentMatches(tournamentId);
+      if (currentMatches && currentMatches.length > 0) {
+        const firstRoundMatches = currentMatches.filter(match => match.round_number === 1);
+        console.log(`发现 ${firstRoundMatches.length} 场第一轮对阵。`);
+
+        for (const match of firstRoundMatches) {
+          if (match.player1_id && match.player2_id) {
+            // 随机选择一个获胜者
+            const winnerId = Math.random() > 0.5 ? match.player1_id : match.player2_id;
+            await setMatchWinner(organizerToken, match.id, winnerId);
+          } else if (match.player1_id) {
+            // 只有player1，则player1获胜 (另一方弃权)
+            await setMatchWinner(organizerToken, match.id, match.player1_id);
+          } else if (match.player2_id) {
+            // 只有player2，则player2获胜 (另一方弃权)
+            await setMatchWinner(organizerToken, match.id, match.player2_id);
+          } else {
+            console.log(`对阵 (ID: ${match.id}) 双方均未到场或已弃权，跳过设置获胜者。`);
+          }
+        }
+      } else {
+        console.log('未找到任何对阵信息。');
+      }
+    }
+  } else {
+    console.log('\n根据参数设置，跳过自动启动比赛和设置获胜者。');
+    console.log('如需启用，请使用 --start 和 --win 参数。');
   }
 
   console.log('------------------------------------');
