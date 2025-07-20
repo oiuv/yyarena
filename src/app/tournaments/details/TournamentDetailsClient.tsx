@@ -470,29 +470,49 @@ export default function TournamentDetailsClient() {
   const canWithdraw = isRegistrationOpen && isTournamentActionable && currentUser && !isOrganizer && isUserRegistered;
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-4 md:p-6 lg:p-12 bg-gray-900 text-white">
-      <h1 className="text-4xl font-bold mb-4">{tournament.name}</h1>
-      <div className="w-full max-w-full md:max-w-4xl bg-gray-800 rounded-lg shadow-md p-4 md:p-6 mb-8">
+    <main className="flex min-h-screen flex-col items-center p-4 md:p-6 lg:p-12 bg-[#1A1A1A] text-[#F5F5F5]">
+      <h1 className="text-4xl font-bold mb-4 text-[#B89766]">{tournament.name}</h1>
+      <div className="w-full max-w-full md:max-w-4xl bg-[#2A2A2A] rounded-lg shadow-md p-4 md:p-6 mb-8 border border-[#B89766]/50">
         <div className="mb-4 text-center">
           <Image
             src={tournament.cover_image_url ? `/${tournament.cover_image_url.startsWith('/') ? tournament.cover_image_url.substring(1) : tournament.cover_image_url}` : '/images/default_cover.jpg'}
             alt="Tournament Cover"
             width={800}
             height={450}
-            className="rounded-lg object-cover mx-auto"
+            className="rounded-lg object-cover mx-auto border-2 border-[#B89766]/80"
           />
         </div>
-        <p><span className="font-bold">开始时间:</span> {new Date(tournament.start_time).toLocaleString()}</p>
-        <p><span className="font-bold">状态:</span> {getDynamicTournamentStatusText(tournament)}</p>
-        <p><span className="font-bold">最少参赛人数:</span> {tournament.min_players}</p>
-        <p><span className="font-bold">最大参赛人数:</span> {tournament.max_players}</p>
-        <p><span className="font-bold">说明:</span> <span dangerouslySetInnerHTML={{ __html: tournament.event_description.replace(/\n/g, '<br />') }} /></p>
+
+        {/* Refactored Info Section */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-6">
+          <div className="bg-[#1A1A1A] p-4 rounded-lg">
+            <p className="text-sm text-[#B89766]">开赛时间</p>
+            <p className="text-lg font-semibold">{new Date(tournament.start_time).toLocaleString()}</p>
+          </div>
+          <div className="bg-[#1A1A1A] p-4 rounded-lg">
+            <p className="text-sm text-[#B89766]">比赛状态</p>
+            <p className="text-lg font-semibold">{getDynamicTournamentStatusText(tournament)}</p>
+          </div>
+          <div className="bg-[#1A1A1A] p-4 rounded-lg">
+            <p className="text-sm text-[#B89766]">最少人数</p>
+            <p className="text-lg font-semibold">{tournament.min_players}</p>
+          </div>
+          <div className="bg-[#1A1A1A] p-4 rounded-lg">
+            <p className="text-sm text-[#B89766]">最大人数</p>
+            <p className="text-lg font-semibold">{tournament.max_players}</p>
+          </div>
+        </div>
+
+        <div className="bg-[#1A1A1A] p-4 rounded-lg mb-6">
+          <p className="text-lg font-bold text-[#B89766] mb-2">赛事说明</p>
+          <div className="text-[#F5F5F5]" dangerouslySetInnerHTML={{ __html: tournament.event_description.replace(/\n/g, '<br />') }} />
+        </div>
 
         <div className="mt-6 text-center">
           {canRegister && (
             <button 
               onClick={handleRegisterClick}
-              className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-lg transform hover:scale-105 transition-transform duration-300"
+              className="bg-[#B89766] hover:bg-[#C83C23] text-white font-bold py-3 px-6 rounded-lg text-lg shadow-lg transform hover:scale-105 transition-transform duration-300"
             >
               立即报名
             </button>
@@ -500,7 +520,7 @@ export default function TournamentDetailsClient() {
           {canWithdraw && (
             <button 
               onClick={handleWithdrawal}
-              className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-lg transform hover:scale-105 transition-transform duration-300"
+              className="bg-[#C83C23] hover:bg-[#B89766] text-white font-bold py-3 px-6 rounded-lg text-lg shadow-lg transform hover:scale-105 transition-transform duration-300"
             >
               退出报名
             </button>
@@ -512,15 +532,15 @@ export default function TournamentDetailsClient() {
 
         {isRegistrationModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
-            <div className="bg-gray-800 p-8 rounded-lg shadow-xl w-11/12 max-w-md border border-yellow-500">
-              <h2 className="text-2xl font-bold mb-4 text-yellow-400">需要验证码</h2>
-              <p className="mb-6 text-gray-300">此比赛为私密比赛，请输入参赛验证码。</p>
+            <div className="bg-[#2A2A2A] p-8 rounded-lg shadow-xl w-11/12 max-w-md border border-[#B89766]">
+              <h2 className="text-2xl font-bold mb-4 text-[#B89766]">需要验证码</h2>
+              <p className="mb-6 text-[#F5F5F5]">此比赛为私密比赛，请输入参赛验证码。</p>
               <input
                 type="text"
                 placeholder="请输入验证码"
                 value={registrationCodeInput}
                 onChange={(e) => setRegistrationCodeInput(e.target.value)}
-                className="w-full p-3 border border-gray-600 rounded bg-gray-700 text-white mb-6 focus:ring-2 focus:ring-yellow-500 focus:outline-none"
+                className="w-full p-3 border border-[#B89766]/50 rounded bg-[#1A1A1A] text-white mb-6 focus:ring-2 focus:ring-[#B89766] focus:outline-none"
                 required
               />
               <div className="flex justify-end gap-4">
@@ -534,7 +554,7 @@ export default function TournamentDetailsClient() {
                 <button
                   type="button"
                   onClick={handleModalSubmit}
-                  className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded transition-colors duration-300"
+                  className="bg-[#B89766] hover:bg-[#C83C23] text-white font-bold py-2 px-4 rounded transition-colors duration-300"
                 >
                   确认报名
                 </button>
@@ -545,16 +565,16 @@ export default function TournamentDetailsClient() {
 
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* 主办方信息 */}
-          <div className="p-4 bg-gray-700 rounded-lg flex items-center space-x-4">
+          <div className="p-4 bg-[#2A2A2A] rounded-lg flex items-center space-x-4 border border-[#B89766]/50">
             <Image
               src={tournament.organizer_avatar ? `/avatars/${tournament.organizer_avatar}` : '/avatars/000.webp'}
               alt={tournament.organizer_character_name || '主办方'}
               width={64}
               height={64}
-              className="rounded-full border-2 border-purple-500"
+              className="rounded-full border-2 border-[#B89766]"
             />
             <div>
-              <p className="text-lg font-medium">{tournament.organizer_character_name || '未知主办方'}</p>
+              <p className="text-lg font-medium text-[#F5F5F5]">{tournament.organizer_character_name || '未知主办方'}</p>
               {tournament.organizer_stream_url && (
                 <p className="text-sm">
                   <Link href={tournament.organizer_stream_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
@@ -566,11 +586,11 @@ export default function TournamentDetailsClient() {
           </div>
 
           {/* 直播信息 */}
-          <div className="p-4 bg-gray-700 rounded-lg flex flex-col items-center justify-center text-center">
-            <h3 className="text-xl font-bold mb-2">直播信息</h3>
+          <div className="p-4 bg-[#2A2A2A] rounded-lg flex flex-col items-center justify-center text-center border border-[#B89766]/50">
+            <h3 className="text-xl font-bold mb-2 text-[#B89766]">直播信息</h3>
             {roomDetails && roomDetails.livestreamUrl && tournament.status === 'ongoing' ? (
               <a href={roomDetails.livestreamUrl} target="_blank" rel="noopener noreferrer">
-                <button className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                <button className="bg-[#C83C23] hover:bg-[#B89766] text-white font-bold py-2 px-4 rounded">
                   正在直播中
                 </button>
               </a>
@@ -582,31 +602,31 @@ export default function TournamentDetailsClient() {
 
         {/* 砺兵台房间信息 */}
         {roomDetails && (roomDetails.room_name || roomDetails.room_number) ? (
-          <div className="mt-4 p-4 bg-gray-700 rounded-lg flex flex-col items-center text-center">
-            <h3 className="text-xl font-bold mb-2">🛡️ 砺兵台房间信息 🛡️</h3>
+          <div className="mt-4 p-4 bg-[#2A2A2A] rounded-lg flex flex-col items-center text-center border border-[#B89766]/50">
+            <h3 className="text-xl font-bold mb-2 text-[#B89766]">🛡️ 砺兵台房间信息 🛡️</h3>
             <p>房间名: {roomDetails.room_name}  |  房间ID: {roomDetails.room_number}{roomDetails.room_password && `  |  房间密码: ${roomDetails.room_password}`}</p>
           </div>
         ) : (
-          <div className="mt-4 p-4 bg-gray-700 rounded-lg flex flex-col items-center text-center text-gray-400">
-            <h3 className="text-xl font-bold mb-2">🛡️ 砺兵台房间信息 🛡️</h3>
+          <div className="mt-4 p-4 bg-[#2A2A2A] rounded-lg flex flex-col items-center text-center text-gray-400 border border-[#B89766]/50">
+            <h3 className="text-xl font-bold mb-2 text-[#B89766]">🛡️ 砺兵台房间信息 🛡️</h3>
             <p>（由主办方在正式开赛前填写）</p>
           </div>
         )}
 
         {tournament.prizes && tournament.prizes.length > 0 && (
-          <div className="mt-4 p-4 bg-gray-700 rounded-lg">
-            <h3 className="text-xl font-bold mb-2">奖品设置</h3>
+          <div className="mt-4 p-4 bg-[#2A2A2A] rounded-lg border border-[#B89766]/50">
+            <h3 className="text-xl font-bold mb-2 text-[#B89766]">奖品设置</h3>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-700">
-                <thead className="bg-gray-700">
+                <thead className="bg-[#1A1A1A]">
                   <tr>
-                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">奖项</th>
-                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">排名</th>
-                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">奖品名称</th>
-                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">数量</th>
+                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-[#B89766] uppercase tracking-wider">奖项</th>
+                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-[#B89766] uppercase tracking-wider">排名</th>
+                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-[#B89766] uppercase tracking-wider">奖品名称</th>
+                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-[#B89766] uppercase tracking-wider">数量</th>
                   </tr>
                 </thead>
-                <tbody className="bg-gray-800 divide-y divide-gray-700">
+                <tbody className="bg-[#2A2A2A] divide-y divide-gray-700">
                   {(() => {
                     const participationPrize = tournament.prizes.find((p: any) => p.custom_prize_name === '参与奖');
                     const nonParticipationPrizes = tournament.prizes.filter((p: any) => p.custom_prize_name !== '参与奖');
@@ -672,10 +692,10 @@ export default function TournamentDetailsClient() {
 
                       return (
                         <tr key={index}>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-200">{awardType}</td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-200">{rankDisplay}</td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-200">{prize.prize_name}</td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-200">{prize.quantity}</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-[#F5F5F5]">{awardType}</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-[#F5F5F5]">{rankDisplay}</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-[#F5F5F5]">{prize.prize_name}</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-[#F5F5F5]">{prize.quantity}</td>
                         </tr>
                       );
                     });
@@ -690,7 +710,7 @@ export default function TournamentDetailsClient() {
       {isOrganizer && tournament.status === 'pending' && (
         <button 
           onClick={handleStartTournament} 
-          className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded mb-8"
+          className="bg-[#B89766] hover:bg-[#C83C23] text-white font-bold py-2 px-4 rounded mb-8"
         >
           {isTournamentUpcoming ? '提前开始比赛' : '开始比赛'}
         </button>
@@ -698,30 +718,30 @@ export default function TournamentDetailsClient() {
 
       {isRoomModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-gray-800 p-8 rounded-lg shadow-xl">
-            <h2 className="text-2xl font-bold mb-4">完善砺兵台房间信息</h2>
+          <div className="bg-[#2A2A2A] p-8 rounded-lg shadow-xl border border-[#B89766]/50">
+            <h2 className="text-2xl font-bold mb-4 text-[#B89766]">完善砺兵台房间信息</h2>
             <form onSubmit={handleSubmitRoomInfoAndStart}>
               <div className="mb-4">
-                <label htmlFor="roomName" className="block mb-2">房间名</label>
+                <label htmlFor="roomName" className="block mb-2 text-[#B89766]">房间名</label>
                 <input
                   id="roomName"
                   type="text"
                   value={roomInfo.name}
                   onChange={(e) => setRoomInfo({ ...roomInfo, name: e.target.value })}
-                  className="w-full p-2 border rounded bg-gray-700 text-white"
+                  className="w-full p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white"
                   maxLength={9}
                   placeholder="请填写在游戏中创建的砺兵台房间名称 (限制9个字符)"
                   required
                 />
               </div>
               <div className="mb-4">
-                <label htmlFor="roomNumber" className="block mb-2">房间ID</label>
+                <label htmlFor="roomNumber" className="block mb-2 text-[#B89766]">房间ID</label>
                 <input
                   id="roomNumber"
                   type="text"
                   value={roomInfo.number}
                   onChange={(e) => setRoomInfo({ ...roomInfo, number: e.target.value })}
-                  className="w-full p-2 border rounded bg-gray-700 text-white"
+                  className="w-full p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white"
                   maxLength={10}
                   pattern="\d{10}"
                   placeholder="请填写在游戏中创建的砺兵台房间ID (10位数字)"
@@ -729,26 +749,26 @@ export default function TournamentDetailsClient() {
                 />
               </div>
               <div className="mb-4">
-                <label htmlFor="roomPassword" className="block mb-2">房间密码 (可选)</label>
+                <label htmlFor="roomPassword" className="block mb-2 text-[#B89766]">房间密码 (可选)</label>
                 <input
                   id="roomPassword"
                   type="text"
                   value={roomInfo.pass}
                   onChange={(e) => setRoomInfo({ ...roomInfo, pass: e.target.value })}
-                  className="w-full p-2 border rounded bg-gray-700 text-white"
+                  className="w-full p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white"
                   maxLength={4}
                   pattern="\d{4}"
                   placeholder="请填写房间密码 (4位数字，无密码则留空)"
                 />
               </div>
               <div className="mb-4">
-                <label htmlFor="livestreamUrl" className="block mb-2">直播网址 (可选)</label>
+                <label htmlFor="livestreamUrl" className="block mb-2 text-[#B89766]">直播网址 (可选)</label>
                 <input
                   id="livestreamUrl"
                   type="url"
                   value={roomInfo.livestreamUrl}
                   onChange={(e) => setRoomInfo({ ...roomInfo, livestreamUrl: e.target.value })}
-                  className="w-full p-2 border rounded bg-gray-700 text-white"
+                  className="w-full p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white"
                   placeholder="例如: https://live.douyin.com/244993118346"
                 />
               </div>
@@ -757,7 +777,7 @@ export default function TournamentDetailsClient() {
                 <button type="button" onClick={() => setIsRoomModalOpen(false)} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
                   取消
                 </button>
-                <button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                <button type="submit" className="bg-[#B89766] hover:bg-[#C83C23] text-white font-bold py-2 px-4 rounded">
                   确认并开始比赛
                 </button>
               </div>
@@ -768,7 +788,7 @@ export default function TournamentDetailsClient() {
 
       {!currentUser && tournament.status === 'pending' && (
         <Link href="/login">
-          <button className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mb-8">
+          <button className="bg-[#B89766] hover:bg-[#C83C23] text-white font-bold py-2 px-4 rounded mb-8">
             登录后报名
           </button>
         </Link>
@@ -777,18 +797,18 @@ export default function TournamentDetailsClient() {
       
 
       {tournament.status === 'finished' && tournament.final_rankings && (
-        <div className="w-full max-w-4xl bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-3xl font-bold mb-4 text-center text-amber-400">🏆 最终排名 🏆</h2>
+        <div className="w-full max-w-4xl bg-[#2A2A2A] rounded-lg shadow-md p-6 mb-8 border border-[#B89766]/50">
+          <h2 className="text-3xl font-bold mb-4 text-center text-[#B89766]">🏆 最终排名 🏆</h2>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-700">
-              <thead className="bg-gray-700">
+              <thead className="bg-[#1A1A1A]">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">排名</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">玩家</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">奖品</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[#B89766] uppercase tracking-wider">排名</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[#B89766] uppercase tracking-wider">玩家</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[#B89766] uppercase tracking-wider">奖品</th>
                 </tr>
               </thead>
-              <tbody className="bg-gray-800 divide-y divide-gray-700">
+              <tbody className="bg-[#2A2A2A] divide-y divide-gray-700">
                 {tournament.final_rankings.map((player: any) => {
                   const awardedPrize = awardedPrizes.find(ap => ap.player_id === player.player_id);
                   const prizeWonByRank = getPrizeForRank(player.rank, tournament.prizes);
@@ -816,7 +836,7 @@ export default function TournamentDetailsClient() {
                             />
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-white">{player.character_name}</div>
+                            <div className="text-sm font-medium text-[#F5F5F5]">{player.character_name}</div>
                           </div>
                         </div>
                       </td>
@@ -827,7 +847,7 @@ export default function TournamentDetailsClient() {
                           ) : (
                             <div className="flex items-center gap-2">
                               <select
-                                className="p-2 border rounded bg-gray-700 text-white"
+                                className="p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white"
                                 value={selectedPrizes[player.player_id] || ''}
                                 onChange={(e) => handlePrizeSelectionChange(player.player_id, e.target.value)}
                               >
@@ -839,7 +859,7 @@ export default function TournamentDetailsClient() {
                               <button
                                 onClick={() => handleAwardPrize(player.player_id)}
                                 disabled={awarding === player.player_id}
-                                className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-bold disabled:bg-gray-500"
+                                className="p-2 bg-[#B89766] text-white rounded-lg hover:bg-[#C83C23] transition-colors duration-200 font-bold disabled:bg-gray-500"
                               >
                                 {awarding === player.player_id ? '发放中...' : '确认发放'}
                               </button>
@@ -862,13 +882,13 @@ export default function TournamentDetailsClient() {
         </div>
       )}
 
-      <h2 className="text-3xl font-bold mb-4">对阵图</h2>
+      <h2 className="text-3xl font-bold mb-4 text-[#B89766]">对阵图</h2>
       <div className="w-full max-w-full md:max-w-4xl px-2 md:px-0">
         {matches.length > 0 ? (
           matches.map(match => (
-            <div key={match.id} className="bg-gray-800 p-4 rounded-lg shadow-lg mb-4 border border-gray-700">
+            <div key={match.id} className="bg-[#2A2A2A] p-4 rounded-lg shadow-lg mb-4 border border-[#B89766]/50">
               <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
-                <p className="text-lg font-semibold text-gray-300 mb-2 sm:mb-0">
+                <p className="text-lg font-semibold text-[#B89766] mb-2 sm:mb-0">
                   第 {match.round_number} 轮
                   <span className="ml-2 text-sm text-gray-400"> ({getMatchStage(matches.filter(m => m.round_number === match.round_number).length)})</span>
                 </p>
@@ -886,13 +906,13 @@ export default function TournamentDetailsClient() {
                     height={64}
                     className="rounded-full border-2 border-blue-500"
                   />
-                  <span className="mt-2 text-lg font-medium text-center">
+                  <span className="mt-2 text-lg font-medium text-center text-[#F5F5F5]">
                     {match.player1_character_name || 'Player 1'}
                     {match.player1_registration_status === 'forfeited' ? ' (弃权)' : ''}
                   </span>
                 </div>
 
-                <span className="text-3xl font-bold text-amber-400">VS</span>
+                <span className="text-3xl font-bold text-[#B89766]">VS</span>
 
                 <div className="flex flex-col items-center">
                   <Image
@@ -900,9 +920,9 @@ export default function TournamentDetailsClient() {
                     alt={match.player2_character_name || 'Player 2'}
                     width={64}
                     height={64}
-                    className="rounded-full border-2 border-red-500"
+                    className="rounded-full border-2 border-[#C83C23]"
                   />
-                  <span className="mt-2 text-lg font-medium text-center">
+                  <span className="mt-2 text-lg font-medium text-center text-[#F5F5F5]">
                     {match.player2_character_name || (match.player2_id === null ? '(轮空)' : 'Player 2')}
                     {match.player2_registration_status === 'forfeited' ? ' (弃权)' : ''}
                   </span>
@@ -919,7 +939,7 @@ export default function TournamentDetailsClient() {
                     <div className="flex flex-col items-center gap-3">
                       <div className="flex flex-col sm:flex-row items-center sm:justify-center gap-2 w-full">
                         <select
-                          className="p-2 border rounded bg-gray-700 text-white w-full sm:w-auto"
+                          className="p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white w-full sm:w-auto"
                           onChange={(e) => handleWinnerSelectionChange(match.id, e.target.value)}
                           value={matchSelections[match.id]?.winnerSelection || ""}
                         >
@@ -931,7 +951,7 @@ export default function TournamentDetailsClient() {
                           <option value="forfeit_both">双方弃权</option>
                         </select>
                         <select
-                          className="p-2 border rounded bg-gray-700 text-white w-full sm:w-auto"
+                          className="p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white w-full sm:w-auto"
                           value={matchSelections[match.id]?.matchFormat || "1局1胜"}
                           onChange={(e) => handleMatchFormatChange(match.id, e.target.value)}
                         >
@@ -942,7 +962,7 @@ export default function TournamentDetailsClient() {
                       </div>
                       <button
                         onClick={() => handleMarkWinner(match)}
-                        className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-bold w-full"
+                        className="p-3 bg-[#B89766] hover:bg-[#C83C23] text-white rounded-lg transition-colors duration-200 font-bold w-full"
                       >
                         {(() => {
                           const selection = matchSelections[match.id]?.winnerSelection;
@@ -962,13 +982,13 @@ export default function TournamentDetailsClient() {
           ))
         ) : (
           <div className="text-center">
-            <div className="bg-yellow-900/50 border border-yellow-700 text-yellow-300 p-4 rounded-lg text-center my-6">
+            <div className="bg-[#B89766]/10 border border-[#B89766]/50 text-[#B89766] p-4 rounded-lg text-center my-6">
                 <p className="text-xl font-bold">⏳ 对阵尚未生成 ⏳</p>
                 <p className="mt-2">正式开赛时将自动生成对阵，请及时关注本页更新。</p>
             </div>
             {registeredPlayers.length > 0 && (
               <div className="mt-4">
-                <h3 className="text-xl font-bold mb-2">✨ 已报名玩家 ✨</h3>
+                <h3 className="text-xl font-bold mb-2 text-[#B89766]">✨ 已报名玩家 ✨</h3>
                 <div className="flex flex-wrap justify-center gap-4">
                   {registeredPlayers.map((player: any, idx: number) => (
                     <div key={idx} className="flex flex-col items-center">
@@ -977,7 +997,7 @@ export default function TournamentDetailsClient() {
                         alt={player.character_name}
                         width={64}
                         height={64}
-                        className="inline-block h-16 w-16 rounded-full ring-2 ring-blue-400"
+                        className="inline-block h-16 w-16 rounded-full ring-2 ring-[#B89766]"
                       />
                       <p className="text-sm mt-1">{player.character_name}</p>
                     </div>
