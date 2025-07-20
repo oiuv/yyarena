@@ -199,12 +199,12 @@ export default function MatchHistoryPage() {
                               <p className="text-lg font-semibold text-gray-400">胜负未分</p>
                             )}
                           </div>
-                          <div className="mt-4 flex justify-between items-center text-sm text-gray-400 border-t border-gray-700 pt-3">
+                          <div className="mt-4 flex flex-col md:flex-row justify-between items-start md:items-center text-sm text-gray-400 border-t border-gray-700 pt-3">
                             <div>
                               <strong>对局状态:</strong>
                               <StatusBadge status={match.match_status} type="match" />
                             </div>
-                            {match.finished_at && <p><strong>结束于:</strong> {new Date(match.finished_at).toLocaleString()}</p>}
+                            {match.finished_at && <p><strong>结束时间:</strong> {new Date(match.finished_at).toLocaleString()}</p>}
                           </div>
                         </div>
                       ))}

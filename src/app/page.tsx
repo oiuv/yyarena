@@ -3,26 +3,83 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { getToken } from '@/utils/clientAuth';
-import { jwtDecode } from 'jwt-decode';
+
+// Reusable Tournament Card Component
+const TournamentCard = ({ tournament, registeredPlayersAvatars, statusConfig }: any) => {
+  const { color, label, status } = statusConfig;
+
+  const renderCardButton = () => {
+    switch (status) {
+      case 'ongoing':
+        return <div className="bg-brand-red hover:bg-opacity-80 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 text-center">观看比赛</div>;
+      case 'openForRegistration':
+        return <div className="bg-brand-gold hover:bg-opacity-80 text-brand-charcoal font-bold py-2 px-4 rounded-lg transition-colors duration-300 text-center">了解详情</div>;
+      case 'finished':
+        return <div className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 text-center">赛事回顾</div>;
+      case 'failed':
+      case 'registrationClosed':
+        return null; // No button for these states
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Link href={`/tournaments/details?id=${tournament.id}`} className="flex flex-col bg-brand-charcoal/60 backdrop-blur-sm rounded-lg overflow-hidden shadow-lg border border-brand-gold/20 hover:border-brand-gold/60 transition-all duration-300 group">
+      <div className="relative w-full h-48">
+        <Image
+          src={tournament.cover_image_url || '/images/default_cover.jpg'}
+          alt={tournament.name}
+          fill
+          className="object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+        <div className={`absolute top-2 right-2 px-3 py-1 rounded-full text-sm font-bold text-white bg-${color}-500/80`}>
+          {label}
+        </div>
+      </div>
+      <div className="p-4 flex flex-col flex-grow">
+        <div className="flex-grow">
+          <h3 className="text-xl font-bold text-brand-ivory mb-2 truncate">{tournament.name}</h3>
+          <p className="text-sm text-brand-ivory/70 mb-1">开赛时间: {new Date(tournament.start_time).toLocaleString()}</p>
+          <p className="text-sm text-brand-ivory/70 mb-3">报名截止: {new Date(tournament.registration_deadline).toLocaleString()}</p>
+          
+          {/* Player Avatars */}
+          {registeredPlayersAvatars[tournament.id] && registeredPlayersAvatars[tournament.id].length > 0 && (
+            <div className="flex items-center -space-x-2 mb-4 flex-wrap">
+              {registeredPlayersAvatars[tournament.id].slice(0, 20).map((player: any, idx: number) => (
+                <Image
+                  key={idx}
+                  src={player.avatar ? `/avatars/${player.avatar}` : '/avatars/000.webp'}
+                  alt={player.character_name}
+                  width={24}
+                  height={24}
+                  className="rounded-full ring-2 ring-brand-charcoal"
+                />
+              ))}
+              {tournament.registeredPlayersCount > 20 && (
+                <span className="flex items-center justify-center h-6 w-6 rounded-full bg-brand-gold/80 text-xs text-brand-charcoal ring-2 ring-brand-charcoal">+{tournament.registeredPlayersCount - 20}</span>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-between items-center mt-4">
+          <span className="text-sm font-semibold text-brand-gold">{tournament.registeredPlayersCount || 0} / {tournament.max_players} 人</span>
+          {renderCardButton()}
+        </div>
+      </div>
+    </Link>
+  );
+};
+
 
 export default function Home() {
   const [tournaments, setTournaments] = useState<any[]>([]);
-  const [ongoingTournaments, setOngoingTournaments] = useState<any[]>([]);
-  const [openForRegistrationTournaments, setOpenForRegistrationTournaments] = useState<any[]>([]);
-  const [registrationClosedTournaments, setRegistrationClosedTournaments] = useState<any[]>([]);
-  const [finishedTournaments, setFinishedTournaments] = useState<any[]>([]);
-  const [failedTournaments, setFailedTournaments] = useState<any[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  const [userRegisteredTournamentIds, setUserRegisteredTournamentIds] = useState<Set<number>>(new Set());
   const [registeredPlayersAvatars, setRegisteredPlayersAvatars] = useState<{ [key: number]: any[] }>({});
-  const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
-  const [selectedTournamentForRegistration, setSelectedTournamentForRegistration] = useState<any>(null);
-  const [registrationCodeInput, setRegistrationCodeInput] = useState('');
 
   const fetchRegisteredPlayersAvatars = useCallback(async (tournamentId: number) => {
     try {
-      const res = await fetch(`/api/tournaments/${tournamentId}/registered-players-avatars?limit=10`);
+      const res = await fetch(`/api/tournaments/${tournamentId}/registered-players-avatars?limit=20`);
       if (res.ok) {
         const avatars = await res.json();
         setRegisteredPlayersAvatars(prev => ({ ...prev, [tournamentId]: avatars }));
@@ -32,403 +89,103 @@ export default function Home() {
     }
   }, []);
 
-  const executeRegistration = useCallback(async (tournamentId: number, tournamentName: string, code: string | null) => {
-    const token = getToken();
-    if (!token) {
-      alert('请登录后报名比赛。');
-      return;
-    }
-
+  const fetchTournaments = useCallback(async () => {
     try {
-      const res = await fetch('/api/registrations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ tournamentId, registrationCode: code }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        alert(`成功报名比赛: ${tournamentName}！`);
-        setUserRegisteredTournamentIds(prev => new Set(prev).add(tournamentId));
-        fetchRegisteredPlayersAvatars(tournamentId);
-        setIsRegistrationModalOpen(false); // Close modal on success
-        setRegistrationCodeInput(''); // Clear input
-      } else {
-        alert(`报名失败: ${data.message || '未知错误'}`);
-      }
+      const tournamentsRes = await fetch('/api/tournaments');
+      const tournamentsData = await tournamentsRes.json();
+      setTournaments(tournamentsData);
+      tournamentsData.forEach((t: any) => fetchRegisteredPlayersAvatars(t.id));
     } catch (error) {
-      console.error('Registration error:', error);
-      alert('报名时发生网络错误。');
+      console.error('Error fetching tournaments:', error);
     }
   }, [fetchRegisteredPlayersAvatars]);
 
-  const handleRegister = useCallback(async (tournamentId: number, tournamentName: string, requiresCode: boolean) => {
-    if (requiresCode) {
-      setSelectedTournamentForRegistration({ id: tournamentId, name: tournamentName });
-      setIsRegistrationModalOpen(true);
-      return;
-    }
-    
-    await executeRegistration(tournamentId, tournamentName, null); // No code needed
-  }, [executeRegistration]);
+  useEffect(() => {
+    fetchTournaments();
+  }, [fetchTournaments]);
 
-  const handleModalSubmit = () => {
-    if (selectedTournamentForRegistration) {
-      if (!registrationCodeInput) {
-        alert('请输入参赛验证码。');
-        return;
-      }
-      executeRegistration(selectedTournamentForRegistration.id, selectedTournamentForRegistration.name, registrationCodeInput);
-    }
+  const categorizeTournaments = () => {
+    const now = new Date();
+    const ongoing: any[] = [];
+    const openForRegistration: any[] = [];
+    const registrationClosed: any[] = [];
+    const finished: any[] = [];
+    const failed: any[] = [];
+
+    tournaments.forEach((tournament: any) => {
+      const startTime = new Date(tournament.start_time);
+      const registrationDeadline = new Date(tournament.registration_deadline);
+
+      if (tournament.status === 'ongoing') ongoing.push(tournament);
+      else if (tournament.status === 'finished') finished.push(tournament);
+      else if (tournament.status === 'failed') failed.push(tournament);
+      else if (now < registrationDeadline) openForRegistration.push(tournament);
+      else if (now >= registrationDeadline && now < startTime) registrationClosed.push(tournament);
+      else if (now >= startTime && (tournament.registeredPlayersCount || 0) >= tournament.min_players) ongoing.push(tournament);
+      else failed.push(tournament);
+    });
+
+    return { ongoing, openForRegistration, registrationClosed, finished, failed };
   };
 
-  const fetchUserDataAndTournaments = useCallback(async () => {
-    const token = getToken();
-    if (token) {
-      try {
-        const decodedToken: any = jwtDecode(token);
-        setCurrentUserId(decodedToken.id);
+  const { ongoing, openForRegistration, registrationClosed, finished, failed } = categorizeTournaments();
 
-        const registrationsRes = await fetch('/api/users/me/registrations', {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-        if (registrationsRes.ok) {
-            const registrationsData = await registrationsRes.json();
-            const registeredIds: Set<number> = new Set(registrationsData.map((reg: any) => Number(reg.tournament_id)));
-            setUserRegisteredTournamentIds(registeredIds);
-          }
-        } catch (error) {
-          console.error('Error decoding token or fetching registrations:', error);
-          setCurrentUserId(null);
-          setUserRegisteredTournamentIds(new Set());
-        }
-      }
-
-      try {
-        const tournamentsRes = await fetch('/api/tournaments');
-        const tournamentsData = await tournamentsRes.json();
-        
-        const now = new Date();
-
-        const ongoing: any[] = [];
-        const openForRegistration: any[] = [];
-        const registrationClosed: any[] = [];
-        const finished: any[] = [];
-        const failed: any[] = [];
-
-        tournamentsData.forEach((tournament: any) => {
-          const now = new Date();
-          const startTime = new Date(tournament.start_time);
-          const registrationDeadline = new Date(tournament.registration_deadline);
-          const registeredPlayersCount = tournament.registeredPlayersCount || 0;
-
-          if (tournament.status === 'ongoing') {
-            ongoing.push(tournament);
-          } else if (tournament.status === 'finished') {
-            finished.push(tournament);
-          } else if (tournament.status === 'failed') {
-            failed.push(tournament);
-          } else if (now < registrationDeadline) {
-            openForRegistration.push(tournament);
-          } else if (now >= registrationDeadline && now < startTime) {
-            registrationClosed.push(tournament);
-          } else if (now >= startTime && registeredPlayersCount >= tournament.min_players) {
-            // This case should ideally be handled by 'ongoing' status from backend
-            // but as a fallback, if it's past start time and enough players, consider it ongoing
-            ongoing.push(tournament);
-          } else {
-            failed.push(tournament);
-          }
-        });
-
-        setOngoingTournaments(ongoing);
-        setOpenForRegistrationTournaments(openForRegistration);
-        setRegistrationClosedTournaments(registrationClosed);
-        setFinishedTournaments(finished);
-        setFailedTournaments(failed);
-
-        setTournaments(tournamentsData);
-
-        openForRegistration.forEach(tournament => {
-          fetchRegisteredPlayersAvatars(tournament.id);
-        });
-
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    }, [fetchRegisteredPlayersAvatars]);
-
-  useEffect(() => {
-    fetchUserDataAndTournaments();
-  }, [fetchUserDataAndTournaments]);
+  const renderSection = (title: string, tournaments: any[], statusConfig: any) => {
+    if (tournaments.length === 0) return null;
+    return (
+      <section className="mb-16">
+        <h2 className="text-3xl font-bold text-brand-gold mb-6 border-b-2 border-brand-gold/30 pb-3">{title}</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {tournaments.map(t => (
+            <TournamentCard
+              key={t.id}
+              tournament={t}
+              registeredPlayersAvatars={registeredPlayersAvatars}
+              statusConfig={statusConfig}
+            />
+          ))}
+        </div>
+      </section>
+    );
+  };
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-4 md:p-6 lg:p-12 bg-gradient-to-br from-gray-950 to-black text-white font-sans">
-      <div className="w-full max-w-6xl mx-auto">
-        <h1 className="relative z-10 text-4xl md:text-5xl font-extrabold mb-16 md:mb-20 text-center text-amber-400 drop-shadow-lg">燕云砺兵台</h1>
-
-        {ongoingTournaments.length > 0 && (
-          <section className="mb-8 md:mb-12 p-4 md:p-6 bg-gradient-to-br from-red-900 to-red-950 rounded-xl shadow-2xl border-4 border-yellow-700 transform hover:scale-105 transition-transform duration-300">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 md:mb-6 text-amber-300 border-b-2 border-amber-600 pb-2 md:pb-3">⚔️ 激战正酣 ⚔️</h2>
-            <div className="grid grid-cols-1 gap-4 md:gap-6">
-              {ongoingTournaments.map((tournament: any) => (
-                <Link key={tournament.id} href={`/tournaments/details?id=${tournament.id}`} className="flex flex-col sm:flex-row items-center p-4 md:p-6 bg-red-800/70 rounded-lg shadow-xl border border-red-600 hover:bg-red-700/80 transition-all duration-300 transform hover:-translate-y-1 hover:scale-102 group">
-                  <div className="relative w-full sm:w-48 h-32 sm:h-28 flex-shrink-0 mb-4 sm:mb-0 sm:mr-6 rounded-lg overflow-hidden border border-red-500">
-                    <Image
-                      src={tournament.cover_image_url || '/images/default_cover.jpg'}
-                      alt={tournament.name}
-                      layout="fill"
-                      objectFit="cover"
-                      className="transition-transform duration-300 group-hover:scale-110"
-                    />
-                  </div>
-                  <div className="flex-grow text-center sm:text-left">
-                    <h3 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-amber-200 group-hover:text-amber-500 transition-colors duration-300">{tournament.name}</h3>
-                    <p className="text-red-100 text-sm md:text-base mb-1">开始时间: {new Date(tournament.start_time).toLocaleString()}</p>
-                    <p className="text-red-100 text-sm md:text-base mb-1">已报名: {tournament.registeredPlayersCount || 0} / {tournament.max_players}</p>
-                    {tournament.room_name && <p className="text-red-100 text-sm md:text-base mb-1">房间名: {tournament.room_name}</p>}
-                    {tournament.room_number && <p className="text-red-100 text-sm md:text-base mb-1">房间号: {tournament.room_number}</p>}
-                    
-                    {tournament.stream_url && <p className="text-red-100 text-sm md:text-base mb-1">直播间/主页: <a href={tournament.stream_url} target="_blank" rel="noopener noreferrer" className="text-amber-300 hover:underline">{tournament.stream_url}</a></p>}
-                  </div>
-                  <div className="flex-shrink-0 mt-4 sm:mt-0 sm:ml-auto">
-                    <button className="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors duration-300">
-                      观看比赛
-                    </button>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {openForRegistrationTournaments.length > 0 && (
-          <section className="mb-8 md:mb-12 p-4 md:p-6 bg-gradient-to-br from-orange-900 to-red-900 rounded-xl shadow-2xl border-4 border-emerald-500 transform hover:scale-105 transition-transform duration-300">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 md:mb-6 text-orange-300 border-b-2 border-orange-600 pb-2 md:pb-3">🔥 火热报名中 🔥</h2>
-            <div className="grid grid-cols-1 gap-4 md:gap-6">
-              {openForRegistrationTournaments.map((tournament: any) => (
-                <Link key={tournament.id} href={`/tournaments/details?id=${tournament.id}`} className="flex flex-col lg:flex-row items-center p-4 md:p-6 bg-orange-800/70 rounded-lg shadow-xl border border-orange-600 hover:bg-orange-700/80 transition-all duration-300 transform hover:-translate-y-1 hover:scale-102 group">
-                  <div className="relative w-full lg:w-1/4 h-40 md:h-48 flex-shrink-0 mb-4 lg:mb-0 lg:mr-6 rounded-lg overflow-hidden border border-emerald-500">
-                    <Image
-                      src={tournament.cover_image_url || '/images/default_cover.jpg'}
-                      alt={tournament.name}
-                      layout="fill"
-                      objectFit="cover"
-                      className="transition-transform duration-300 group-hover:scale-110"
-                    />
-                  </div>
-                  <div className="flex-grow text-center lg:text-left grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h3 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-orange-200 group-hover:text-orange-500 transition-colors duration-300">{tournament.name}</h3>
-                      <p className="text-orange-100 text-sm md:text-base mb-1">开始时间: {new Date(tournament.start_time).toLocaleString()}</p>
-                      <p className="text-orange-100 text-sm md:text-base mb-1">报名截止: {new Date(tournament.registration_deadline).toLocaleString()}</p>
-                      <p className="text-orange-100 text-sm md:text-base mb-1">已报名: {tournament.registeredPlayersCount || 0} / {tournament.max_players}</p>
-                      
-                      {tournament.organizerCharacterName && (
-                        <div className="flex items-center mt-3 justify-center lg:justify-start">
-                          <Image
-                            src={tournament.organizerAvatar ? `/avatars/${tournament.organizerAvatar}` : '/avatars/000.webp'}
-                            alt={tournament.organizerCharacterName}
-                            width={32}
-                            height={32}
-                            className="rounded-full mr-2 border border-emerald-400"
-                          />
-                          <p className="text-orange-200 text-sm md:text-base">主办方: {tournament.organizerCharacterName}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      {tournament.prize_settings && (
-                        <div className="mt-3">
-                          <p className="text-orange-200 text-sm md:text-base font-bold">主要奖品:</p>
-                          {tournament.prize_settings.ranked && tournament.prize_settings.ranked.length > 0 && (
-                            <ul className="list-disc list-inside text-orange-100 text-sm text-left">
-                              {tournament.prize_settings.ranked.map((prize: any, idx: number) => (
-                                <li key={idx}>{prize.custom_prize_name || prize.prize_name || `第${prize.rank}名奖品`}</li>
-                              ))}
-                            </ul>
-                          )}
-                          {tournament.prize_settings.participation && tournament.prize_settings.participation.prize_id && (
-                            <p className="text-orange-100 text-sm text-left">参与奖: {tournament.prize_settings.participation.custom_prize_name || tournament.prize_settings.participation.prize_name || '系统默认参与奖'}</p>
-                          )}
-                        </div>
-                      )}
-
-                      {registeredPlayersAvatars[tournament.id] && registeredPlayersAvatars[tournament.id].length > 0 && (
-                        <div className="mt-4">
-                          <p className="text-orange-200 text-sm md:text-base font-bold mb-2">已报名玩家:</p>
-                          <div className="flex -space-x-2 overflow-hidden justify-center lg:justify-start">
-                            {registeredPlayersAvatars[tournament.id].map((player: any, idx: number) => (
-                              <Image
-                                key={idx}
-                                src={player.avatar ? `/avatars/${player.avatar}` : '/avatars/000.webp'}
-                                alt={player.character_name}
-                                width={32}
-                                height={32}
-                                className="inline-block h-8 w-8 rounded-full ring-2 ring-emerald-400"
-                              />
-                            ))}
-                            {tournament.registeredPlayersCount > registeredPlayersAvatars[tournament.id].length && (
-                              <span className="flex items-center justify-center h-8 w-8 rounded-full bg-orange-700 text-orange-100 text-xs ring-2 ring-emerald-400">+{tournament.registeredPlayersCount - registeredPlayersAvatars[tournament.id].length}</span>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {currentUserId === null ? (
-                        <div className="mt-4">
-                            <Link href="/login">
-                                <button
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-200"
-                                >
-                                    登录后报名
-                                </button>
-                            </Link>
-                        </div>
-                        ) : (
-                        currentUserId && tournament.organizer_id !== currentUserId && (
-                            <div className="mt-4">
-                            {userRegisteredTournamentIds.has(tournament.id) ? (
-                                <span className="text-emerald-400 font-bold">您已报名</span>
-                            ) : (
-                                <button
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    handleRegister(tournament.id, tournament.name, !!tournament.registration_code);
-                                }}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-200"
-                                >
-                                {tournament.registration_code ? '报名参赛' : '一键报名'}
-                                </button>
-                            )}
-                            </div>
-                        )
-                        )}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {isRegistrationModalOpen && selectedTournamentForRegistration && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-            <div className="bg-gray-800 p-6 md:p-8 rounded-lg shadow-xl w-11/12 max-w-md">
-              <h2 className="text-xl md:text-2xl font-bold mb-4">{selectedTournamentForRegistration.name}</h2>
-              <p className="mb-4 text-sm md:text-base">此比赛需要验证码才能报名。</p>
-              <input
-                type="text"
-                placeholder="请输入参赛验证码"
-                value={registrationCodeInput}
-                onChange={(e) => setRegistrationCodeInput(e.target.value)}
-                className="w-full p-2 border rounded bg-gray-700 text-white mb-4 text-sm md:text-base"
-                required
-              />
-              <div className="flex justify-end gap-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsRegistrationModalOpen(false);
-                    setRegistrationCodeInput('');
-                    setSelectedTournamentForRegistration(null);
-                  }}
-                  className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded text-sm md:text-base"
-                >
-                  取消
-                </button>
-                <button
-                  type="button"
-                  onClick={handleModalSubmit}
-                  className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded text-sm md:text-base"
-                >
-                  确认报名
-                </button>
-              </div>
-            </div>
+    <main className="min-h-screen bg-brand-charcoal text-brand-ivory">
+      {/* Hero Section */}
+      <div className="relative h-[45vh] min-h-[350px] flex items-center justify-center text-center overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/images/default_cover.jpg" // Replace with a proper hero image
+            alt="背景-水墨江湖"
+            fill
+            className="object-cover opacity-30"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-brand-charcoal via-transparent to-brand-charcoal/50"></div>
+        </div>
+        <div className="relative z-10 p-4">
+          <h1 className="text-5xl md:text-7xl font-bold mb-4 leading-tight tracking-wider">
+            天地为炉，以身化剑
+          </h1>
+          <p className="text-lg md:text-xl text-brand-ivory/80 max-w-2xl mx-auto">
+            旧的英雄，已随烽烟与传说远去；新的侠客面对浩瀚江湖，又将去向何处？
+          </p>
+          <div className="mt-8">
+            <Link href="#tournaments" className="bg-brand-gold text-brand-charcoal font-bold py-3 px-8 rounded-lg text-lg hover:bg-opacity-90 transition-all duration-300 shadow-lg shadow-brand-gold/20">
+                查看赛事
+            </Link>
           </div>
-        )}
-
-        {registrationClosedTournaments.length > 0 && (
-          <section className="mb-8 md:mb-12 p-4 md:p-6 bg-gradient-to-br from-indigo-900 to-indigo-950 rounded-xl shadow-2xl border-4 border-indigo-500 transform hover:scale-105 transition-transform duration-300">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 md:mb-6 text-indigo-300 border-b-2 border-indigo-600 pb-2 md:pb-3">⏳ 报名已截止 ⏳</h2>
-            <div className="grid grid-cols-1 gap-4 md:gap-6">
-              {registrationClosedTournaments.map((tournament: any) => (
-                <Link key={tournament.id} href={`/tournaments/details?id=${tournament.id}`} className="flex flex-col sm:flex-row items-center p-4 md:p-6 bg-indigo-800/70 rounded-lg shadow-xl border border-indigo-600 hover:bg-indigo-700/80 transition-all duration-300 transform hover:-translate-y-1 hover:scale-102 group">
-                  <div className="relative w-full sm:w-48 h-32 sm:h-28 flex-shrink-0 mb-4 sm:mb-0 sm:mr-6 rounded-lg overflow-hidden border border-indigo-500">
-                    <Image
-                      src={tournament.cover_image_url || '/images/default_cover.jpg'}
-                      alt={tournament.name}
-                      layout="fill"
-                      objectFit="cover"
-                      className="transition-transform duration-300 group-hover:scale-110"
-                    />
-                  </div>
-                  <div className="flex-grow text-center sm:text-left">
-                    <h3 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-indigo-200 group-hover:text-indigo-500 transition-colors duration-300">{tournament.name}</h3>
-                    <p className="text-indigo-100 text-sm md:text-base mb-1">开始时间: {new Date(tournament.start_time).toLocaleString()}</p>
-                    <p className="text-indigo-100 text-sm md:text-base mb-1">状态: 即将开始</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {finishedTournaments.length > 0 && (
-          <section className="mb-8 md:mb-12 p-4 md:p-6 bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl shadow-2xl border-4 border-gray-600 transform hover:scale-105 transition-transform duration-300">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 md:mb-6 text-gray-300 border-b-2 border-gray-500 pb-2 md:pb-3">🏆 比赛已结束 🏆</h2>
-            <div className="grid grid-cols-1 gap-4 md:gap-6">
-              {finishedTournaments.map((tournament: any) => (
-                <Link key={tournament.id} href={`/tournaments/details?id=${tournament.id}`} className="flex flex-col sm:flex-row items-center p-4 md:p-6 bg-gray-700/70 rounded-lg shadow-xl border border-gray-600 hover:bg-gray-600/80 transition-all duration-300 transform hover:-translate-y-1 hover:scale-102 group">
-                  <div className="relative w-full sm:w-48 h-32 sm:h-28 flex-shrink-0 mb-4 sm:mb-0 sm:mr-6 rounded-lg overflow-hidden border border-gray-500">
-                    <Image
-                      src={tournament.cover_image_url || '/images/default_cover.jpg'}
-                      alt={tournament.name}
-                      layout="fill"
-                      objectFit="cover"
-                      className="transition-transform duration-300 group-hover:scale-110"
-                    />
-                  </div>
-                  <div className="flex-grow text-center sm:text-left">
-                    <h3 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-gray-200 group-hover:text-gray-400 transition-colors duration-300">{tournament.name}</h3>
-                    <p className="text-gray-100 text-sm md:text-base mb-1">开始时间: {new Date(tournament.start_time).toLocaleString()}</p>
-                    <p className="text-gray-100 text-sm md:text-base mb-1">状态: 已结束</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {failedTournaments.length > 0 && (
-          <section className="mb-8 md:mb-12 p-4 md:p-6 bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl shadow-2xl border-4 border-gray-600 transform hover:scale-105 transition-transform duration-300">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 md:mb-6 text-gray-300 border-b-2 border-gray-500 pb-2 md:pb-3">💔 活动组织失败 💔</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-              {failedTournaments.map((tournament: any) => (
-                <Link key={tournament.id} href={`/tournaments/details?id=${tournament.id}`} className="block p-4 bg-gray-700/70 rounded-lg shadow-xl border border-gray-600 hover:bg-gray-600/80 transition-all duration-300 transform hover:-translate-y-1 hover:scale-102 group">
-                    <div className="relative w-full h-32 mb-4 rounded-lg overflow-hidden border border-gray-500">
-                        <Image
-                            src={tournament.cover_image_url || '/images/default_cover.jpg'}
-                            alt={tournament.name}
-                            layout="fill"
-                            objectFit="cover"
-                            className="transition-transform duration-300 group-hover:scale-110"
-                        />
-                    </div>
-                    <h3 className="text-xl md:text-2xl font-bold mb-1 md:mb-2 text-gray-200 group-hover:text-gray-400 transition-colors duration-300">{tournament.name}</h3>
-                    <p className="text-gray-100 text-sm mb-1">开始时间: {new Date(tournament.start_time).toLocaleString()}</p>
-                    <p className="text-red-400 text-sm font-bold">状态: 活动组织失败</p>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
+        </div>
       </div>
+
+      {/* Tournaments Section */}
+      <div id="tournaments" className="container mx-auto px-4 py-16">
+        {renderSection("⚔️ 激战正酣", ongoing, { color: 'brand-red', label: '进行中', status: 'ongoing' })}
+        {renderSection("🔥 火热报名中", openForRegistration, { color: 'brand-gold', label: '报名中', status: 'openForRegistration' })}
+        {renderSection("⏳ 报名已截止", registrationClosed, { color: 'gray', label: '即将开始', status: 'registrationClosed' })}
+        {renderSection("🏆 比赛已结束", finished, { color: 'gray', label: '已结束', status: 'finished' })}
+        {renderSection("💔 组织失败", failed, { color: 'gray', label: '已失败', status: 'failed' })}
+      </div>
+
     </main>
   );
 }
