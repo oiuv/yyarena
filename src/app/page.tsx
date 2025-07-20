@@ -120,10 +120,10 @@ export default function Home() {
         const failed: any[] = [];
 
         tournamentsData.forEach((tournament: any) => {
+          const now = new Date();
           const startTime = new Date(tournament.start_time);
           const registrationDeadline = new Date(tournament.registration_deadline);
           const registeredPlayersCount = tournament.registeredPlayersCount || 0;
-          const registrationCode = tournament.registration_code; // Get registration code
 
           if (tournament.status === 'ongoing') {
             ongoing.push(tournament);

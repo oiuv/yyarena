@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link'; // Import Link
 import { getToken } from '@/utils/clientAuth';
 import { jwtDecode } from 'jwt-decode';
 
@@ -278,6 +279,14 @@ export default function ProfilePage() {
               </div>
             </div>
           )}
+
+          <Link href="/match-history">
+            <button
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4"
+            >
+              查看我的比赛记录
+            </button>
+          </Link>
           
           {user.role === 'organizer' && (
             <div className="mt-4">

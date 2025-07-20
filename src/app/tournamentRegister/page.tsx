@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
+import { getTournamentStatusText, getDynamicTournamentStatusText } from '@/utils/statusTranslators';
 
 function getToken() {
   const name = 'token=';
