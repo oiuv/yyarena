@@ -80,7 +80,7 @@ export default function RootLayout({
             {userRole === 'organizer' && (
               <>
                 <Link href="/my-tournaments" className="text-amber-400 hover:underline transition-colors duration-200">我的比赛</Link>
-                <Link href="/prizes/manage" className="text-amber-400 hover:underline transition-colors duration-200">管理奖品</Link>
+                
                 <Link href="/tournaments/create" className="text-amber-400 hover:underline transition-colors duration-200">创建比赛</Link>
               </>
             )}

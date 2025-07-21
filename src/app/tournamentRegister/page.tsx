@@ -71,6 +71,12 @@ export default function TournamentRegisterPage() {
   return (
     <main className="flex min-h-screen flex-col items-center p-4 md:p-6 lg:p-12 bg-[#1A1A1A] text-[#F5F5F5]">
       <h1 className="text-3xl md:text-4xl font-bold mb-6 md:mb-8 text-center text-[#B89766]">可报名的比赛</h1>
+      <div className="w-full max-w-full md:max-w-4xl bg-[#C83C23]/20 border border-[#C83C23] text-[#F5F5F5] p-4 rounded-lg mb-6 text-left">
+          <p className="text-base">
+            <span className="text-lg font-bold text-[#C83C23]">重要提示：</span>
+            已报名的玩家请务必准时参赛。如因时间原因无法参加，请在报名截止前退出，否则将按弃赛处理。玩家弃赛达3次后，将无法报名平台上的任何比赛。
+          </p>
+        </div>
       {message && <p className="mt-4 text-base md:text-lg text-[#C83C23] text-center">{message}</p>}
 
       {!currentUser || (currentUser.role !== 'player' && currentUser.role !== 'organizer') ? (
@@ -88,10 +94,10 @@ export default function TournamentRegisterPage() {
                     <p className="text-sm md:text-base text-[#F5F5F5]">当前状态: {getDynamicTournamentStatusText(tournament)}</p>
                     <p className="text-sm md:text-base text-[#F5F5F5]">已报名: {tournament.registeredPlayersCount || 0} / {tournament.max_players}</p>
                   </div>
-                  <div className="mt-4 text-right">
+                  <div className="mt-4 text-center">
                     <Link href={`/tournaments/details?id=${tournament.id}`}>
                       <button
-                        className="bg-[#B89766] hover:bg-[#C83C23] text-white font-bold py-2 px-4 rounded transition-colors duration-300"
+                        className="w-full bg-[#B89766] hover:bg-[#C83C23] text-white font-bold py-2 px-4 rounded transition-colors duration-300"
                       >
                         查看详情并报名
                       </button>
