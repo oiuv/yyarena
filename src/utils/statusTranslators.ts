@@ -28,23 +28,40 @@ export const getDynamicTournamentStatusText = (tournament: any) => {
   const startTime = new Date(tournament.start_time);
   const registrationDeadline = new Date(tournament.registration_deadline);
   const registeredPlayersCount = tournament.registeredPlayersCount || 0;
+  const minPlayers = tournament.min_players;
 
-  if (tournament.status === 'finished') {
-    return '已结束';
-  } else if (tournament.status === 'ongoing') {
-    return '正在比赛中';
-  } else if (tournament.status === 'failed') {
-    return '活动组织失败';
-  } else if (tournament.status === 'extended_registration') {
-    return '延期报名中';
-  } else if (now < registrationDeadline) {
+  // 1. 优先判断数据库中的明确状态
+  if (tournament.status === 'finished') return '已结束';
+  if (tournament.status === 'ongoing') return '正在比赛中';
+  if (tournament.status === 'failed') return '活动组织失败';
+  if (tournament.status === 'extended_registration') return '延期报名中';
+
+  // 2. 然后判断“火热报名中”
+  if (now < registrationDeadline) {
     return '火热报名中';
-  } else if (now >= registrationDeadline && now < startTime) {
-    return '即将开始';
-  } else if (now >= startTime && registeredPlayersCount >= tournament.min_players) {
-    return '进行中'; // Fallback for ongoing if status not updated yet
-  } else if (now >= registrationDeadline && registeredPlayersCount < tournament.min_players) {
-    return '活动组织失败'; // If registration closed and not enough players
   }
-  return '待定';
+
+  // 从这里开始，当前时间已过报名截止时间
+
+  // 3. 其次判断“活动组织失败”
+  if (registeredPlayersCount < minPlayers) {
+    return '活动组织失败';
+  }
+
+  // 从这里开始，报名人数已达标
+
+  // 4. 接着判断“即将开始”
+  if (now < startTime) {
+    return '即将开始';
+  }
+
+  // 从这里开始，当前时间已过比赛开始时间
+
+  // 5. 最后判断“比赛准备中”
+  if (tournament.status === 'pending' || tournament.status === 'registration_closed') {
+    return '比赛准备中';
+  }
+
+  // Fallback to static status text
+  return getTournamentStatusText(tournament.status).text;
 };

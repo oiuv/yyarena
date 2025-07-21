@@ -92,7 +92,7 @@
 *   **报名与匹配:**
     *   当报名人数达到“最大参赛人数”后，系统自动关闭报名通道。
     *   当报名截止时间到达时，系统检查报名人数。
-        *   如果报名人数达到主办方设置的“最少参赛人数”，则比赛状态变为“报名已结束”。对阵图将在主办方点击“开始比赛”后生成。
+        *   如果报名人数达到主办方设置的“最少参赛人数”，则比赛进入“即将开始”或“比赛准备中”状态。对阵图将在主办方点击“开始比赛”后生成。
         *   如果报名人数未达到“最少参赛人数”，则视为活动组织失败，比赛状态变为“已失败 (failed)”，由主办方决定关闭比赛或延长报名时间。
 *   **晋级流程:**
     *   主办方选定胜者后，系统自动将胜者匹配到下一轮比赛，直到决出最终冠军。当出现冠军后，比赛状态自动改为“已结束”。
@@ -107,17 +107,20 @@
     *   **次要排名依据（决胜分）：** 如果多名玩家在同一轮被淘汰，系统将比较淘汰他们的**对手的最终排名**。输给更强对手（即最终排名更高的对手）的玩家，其排名会更高。
     *   **并列排名：** 只有当主要排名依据（淘汰轮次）和次要排名依据（对手的最终排名）都完全相同时，玩家才会获得并列排名。
 *   **比赛状态流转:**
-    *   创建比赛后状态为“待定”。
-    *   报名截止时间到达后，根据报名人数，状态可能变为“报名已结束”或“已失败 (failed)”。
-    *   当到达主办方设置的比赛时间后，或者主办方手动点击“开始比赛”后，比赛状态变为“进行中”。**如果在设置的时间之前点了开始比赛则要求创建者二次确认避免误操作，并且比赛开始时间会同步更新为当前时间。**
-    *   如果到了设置的比赛开始时间主办方没有点开始比赛，在网页上状态为比赛即将开始而不是比赛进行中，也就是必须主办方点开始者进入正式的进行中状态。
-    *   当出现冠军后，自动改状态为“已结束”。
+    *   **待定 (pending):** 比赛创建后的初始状态。
+    *   **火热报名中:** 比赛创建后，在报名截止时间之前的状态。
+    *   **活动组织失败 (failed):** 报名时间截止后，若报名人数未达到最少要求，则进入此状态。
+    *   **即将开始:** 报名截止后、比赛开始前，且报名人数达标的状态。
+    *   **比赛准备中:** 比赛时间已到，但主办方尚未点击“开始比赛”的状态。
+    *   **进行中 (ongoing):** 主办方点击“开始比赛”后，比赛正式开始。
+    *   **已结束 (finished):** 决出最终冠军后。
+    *   **延期报名中 (extended_registration):** 主办方在活动组织失败后，选择延长报名时间。
 
 ### 4.4. 网站首页展示
 
 *   **赛事列表:** 网站首页为赛事列表，显示以下类型的比赛：
     *   **正在进行中的比赛:** 报名已结束，正在比赛中。除了显示比赛信息，还要显示直播间地址和燕云十六声砺兵台房间号。玩家可在游戏中搜索房间号进入观战（前提是房间人数未超过50人且房间未设置密码或主办方填写了密码）。
-    *   **即将开始的比赛:** 包括报名中和报名已结束但还未到比赛时间的比赛。**火热报名中的比赛，即使未登录用户也能看到已报名玩家的头像列表（限制显示数量，例如10个），以刺激玩家登录报名。**
+    *   **即将开始的比赛:** 包括“火热报名中”、“即将开始”和“比赛准备中”的比赛。**火热报名中的比赛，即使未登录用户也能看到已报名玩家的头像列表（限制显示数量，例如10个），以刺激玩家登录报名。**
     *   **已经结束的比赛。**
     *   **活动组织失败的比赛:** 将以卡片式列表展示，包含配图、名称、比赛信息和状态。
 
@@ -160,7 +163,7 @@
 ## 5. 数据库设计草案
 
 *   **Users (用户表):** `id`, `username` (主办方账号), `password` (主办方密码), `game_id` (燕云十六声角色编号，唯一), `character_name` (燕云十六声角色名称，唯一), `phone_number` (可选), `role` (organizer, player), `stream_url` (TEXT, 主播直播间/主页地址，可选), `avatar` (TEXT, 默认 '000.webp'), `total_participations` (INTEGER, 默认 0), `first_place_count` (INTEGER, 默认 0), `second_place_count` (INTEGER, 默认 0), `third_place_count` (INTEGER, 默认 0), `forfeit_count` (INTEGER, 默认 0)
-*   **Tournaments (比赛表):** `id`, `name`, `organizer_id`, `start_time`, `registration_deadline` (报名截止时间), `min_players`, `max_players` (最大48), `status` (pending, registration_closed, ongoing, finished, failed, extended_registration), `event_description` (TEXT), `wechat_qr_code_url` (TEXT，存储图片URL，可选), `cover_image_url` (TEXT, 默认 'default_cover.jpg'), `room_name` (TEXT), `room_number` (TEXT，10位数字), `room_password` (TEXT，4位数字，可选), `livestream_url` (TEXT, 直播间地址，可选), `registration_code` (TEXT, 参赛验证码，可选), `winner_id`, `default_match_format` (TEXT), **`final_rankings` (TEXT)**
+*   **Tournaments (比赛表):** `id`, `name`, `organizer_id`, `start_time`, `registration_deadline` (报名截止时间), `min_players`, `max_players` (最大48), `status` (pending, ongoing, finished, failed, extended_registration), `event_description` (TEXT), `wechat_qr_code_url` (TEXT，存储图片URL，可选), `cover_image_url` (TEXT, 默认 'default_cover.jpg'), `room_name` (TEXT), `room_number` (TEXT，10位数字), `room_password` (TEXT，4位数字，可选), `livestream_url` (TEXT, 直播间地址，可选), `registration_code` (TEXT, 参赛验证码，可选), `winner_id`, `default_match_format` (TEXT), **`final_rankings` (TEXT)**
 *   **Prizes (奖品表):** `id`, `name`, `description`, `image_url`
     *   默认奖品列表：八音窍、2580长鸣珠时装、1280长鸣珠时装/武学特效/坐骑、980长鸣珠奇术特效、680长鸣珠时装/武器外观/坐骑、60长鸣珠时装/武器外观/坐骑、128元典藏战令、68元精英战令、30元月卡。
 *   **TournamentPrizes (比赛奖品表):** `id`, `tournament_id` (外键), `prize_id` (外键, 可为空), `rank_start` (名次开始), `rank_end` (名次结束), `custom_prize_name` (自定义奖品名), `quantity` (数量)。

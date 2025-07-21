@@ -113,16 +113,41 @@ export default function Home() {
     const failed: any[] = [];
 
     tournaments.forEach((tournament: any) => {
-      const startTime = new Date(tournament.start_time);
       const registrationDeadline = new Date(tournament.registration_deadline);
+      const registeredPlayersCount = tournament.registeredPlayersCount || 0;
+      const minPlayers = tournament.min_players;
 
-      if (tournament.status === 'ongoing') ongoing.push(tournament);
-      else if (tournament.status === 'finished') finished.push(tournament);
-      else if (tournament.status === 'failed') failed.push(tournament);
-      else if (now < registrationDeadline) openForRegistration.push(tournament);
-      else if (now >= registrationDeadline && now < startTime) registrationClosed.push(tournament);
-      else if (now >= startTime && (tournament.registeredPlayersCount || 0) >= tournament.min_players) ongoing.push(tournament);
-      else failed.push(tournament);
+      // 1. 优先判断数据库中的明确状态
+      if (tournament.status === 'ongoing') {
+        ongoing.push(tournament);
+        return; // 使用 return 代替 continue，因为在 forEach 中
+      }
+      if (tournament.status === 'finished') {
+        finished.push(tournament);
+        return;
+      }
+      if (tournament.status === 'failed') {
+        failed.push(tournament);
+        return;
+      }
+
+      // 2. 判断是否仍在报名中
+      if (now < registrationDeadline) {
+        openForRegistration.push(tournament);
+        return;
+      }
+
+      // --- 从这里开始，报名已截止 (now >= registrationDeadline) ---
+
+      // 3. 判断是否因人数不足而失败
+      if (registeredPlayersCount < minPlayers) {
+        failed.push(tournament);
+        return;
+      }
+
+      // --- 从这里开始，报名已截止且人数达标 ---
+      // 凡是走到这里的，都属于“即将开始”或“比赛准备中”的范畴
+      registrationClosed.push(tournament);
     });
 
     return { ongoing, openForRegistration, registrationClosed, finished, failed };
