@@ -473,7 +473,7 @@ export default function TournamentDetailsClient() {
     <main className="flex min-h-screen flex-col items-center p-4 md:p-6 lg:p-12 bg-[#1A1A1A] text-[#F5F5F5]">
       <h1 className="text-4xl font-bold mb-4 text-[#B89766]">{tournament.name}</h1>
 
-      <div className="w-full max-w-full md:max-w-4xl bg-[#2A2A2A] rounded-lg shadow-md p-4 md:p-6 mb-8 border border-[#B89766]/50">
+      <div className="w-full max-w-6xl bg-[#2A2A2A] rounded-lg shadow-md p-4 md:p-6 mb-8 border border-[#B89766]/50">
         <div className="mb-4 text-center">
           <Image
             src={tournament.cover_image_url ? `/${tournament.cover_image_url.startsWith('/') ? tournament.cover_image_url.substring(1) : tournament.cover_image_url}` : '/images/default_cover.jpg'}
@@ -806,7 +806,8 @@ export default function TournamentDetailsClient() {
       
 
       {tournament.status === 'finished' && tournament.final_rankings && (
-        <div className="w-full max-w-4xl bg-[#2A2A2A] rounded-lg shadow-md p-6 mb-8 border border-[#B89766]/50">
+
+        <div className="w-full max-w-6xl bg-[#2A2A2A] rounded-lg shadow-md p-6 mb-8 border border-[#B89766]/50">
           <h2 className="text-3xl font-bold mb-4 text-center text-[#B89766]">🏆 最终排名 🏆</h2>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-700">
@@ -892,7 +893,7 @@ export default function TournamentDetailsClient() {
       )}
 
       <h2 className="text-3xl font-bold mb-4 text-[#B89766]">对阵图</h2>
-      <div className="w-full max-w-full md:max-w-4xl px-2 md:px-0">
+      <div className="w-full max-w-6xl px-2 md:px-0">
         {matches.length > 0 ? (
           matches.map(match => (
             <div key={match.id} className="bg-[#2A2A2A] p-4 rounded-lg shadow-lg mb-4 border border-[#B89766]/50">

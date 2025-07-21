@@ -82,7 +82,7 @@ export default function TournamentRegisterPage() {
       {!currentUser || (currentUser.role !== 'player' && currentUser.role !== 'organizer') ? (
         <p className="text-base md:text-xl text-center text-[#F5F5F5]">请先<Link href="/login" className="text-[#B89766] hover:underline">登录</Link>以玩家或主办方身份查看可报名的比赛。</p>
       ) : (
-        <div className="w-full max-w-full md:max-w-4xl px-2 md:px-0">
+        <div className="w-full max-w-6xl mx-auto px-2 md:px-0">
           {tournaments.filter(filterAvailableTournaments).length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {tournaments.filter(filterAvailableTournaments).map((tournament: any) => (

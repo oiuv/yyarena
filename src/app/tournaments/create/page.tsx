@@ -127,7 +127,7 @@ import { useRouter } from 'next/navigation';
 
   return (
     <main className="flex min-h-screen flex-col items-center p-4 md:p-6 lg:p-12 bg-brand-charcoal text-brand-ivory">
-      <div className="w-full max-w-full md:max-w-2xl p-4 md:p-6 bg-brand-charcoal/80 rounded-lg shadow-lg shadow-brand-gold/20 border border-brand-gold/50">
+      <div className="w-full max-w-6xl mx-auto p-4 md:p-6 bg-brand-charcoal/80 rounded-lg shadow-lg shadow-brand-gold/20 border border-brand-gold/50">
         <h2 className="text-3xl font-bold mb-6 text-center text-brand-gold">创建比赛</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <label htmlFor="name" className="block text-brand-ivory text-sm font-bold mb-2">

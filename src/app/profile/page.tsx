@@ -246,7 +246,7 @@ export default function ProfilePage() {
     <main className="flex min-h-screen flex-col items-center p-6 md:p-12 lg:p-24 bg-[#1A1A1A] text-[#F5F5F5]">
       <h1 className="text-4xl font-bold mb-8 text-[#B89766]">我的资料</h1>
 
-      <div className="bg-[#2A2A2A] p-6 md:p-8 rounded-lg shadow-md w-full md:max-w-md lg:max-w-4xl border border-[#B89766]/50">
+      <div className="bg-[#2A2A2A] p-6 md:p-8 rounded-lg shadow-md w-full max-w-6xl mx-auto border border-[#B89766]/50">
         <div className="mb-6 p-4 bg-[#1A1A1A] rounded-lg border border-[#B89766]/30">
           <h2 className="text-2xl font-bold mb-4 text-[#B89766] text-center">个人信息</h2>
           <div className="flex flex-col items-center mb-6">
