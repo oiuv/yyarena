@@ -27,6 +27,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: '缺少比赛ID' }, { status: 400 });
   }
 
+  // Fetch player's forfeit_count
+  const player: any = await new Promise((resolve, reject) => {
+    db.get('SELECT forfeit_count FROM Users WHERE id = ?', [playerId], (err: Error | null, row: any) => {
+      if (err) reject(err);
+      else resolve(row);
+    });
+  });
+
+  if (!player) {
+    return NextResponse.json({ message: '玩家不存在' }, { status: 404 });
+  }
+
+  const FORFEIT_LIMIT = 3; // Define the forfeit limit
+  if (player.forfeit_count >= FORFEIT_LIMIT) {
+    return NextResponse.json({ message: `您的弃赛次数过多（${player.forfeit_count}次），无法报名新的比赛。` }, { status: 403 });
+  }
+
   try {
     // 2. Check Tournament Status and Availability
     const tournament: any = await new Promise((resolve, reject) => {

@@ -22,6 +22,9 @@ db.serialize(() => {
   db.run("ALTER TABLE Users ADD COLUMN second_place_count INTEGER DEFAULT 0", () => {});
   db.run("ALTER TABLE Users ADD COLUMN third_place_count INTEGER DEFAULT 0", () => {});
   db.run("ALTER TABLE Users ADD COLUMN forfeit_count INTEGER DEFAULT 0", () => {});
+  db.run("ALTER TABLE Users ADD COLUMN last_login_ip TEXT", () => {});
+  db.run("ALTER TABLE Users ADD COLUMN last_login_time TEXT", () => {});
+  db.run("ALTER TABLE Users ADD COLUMN login_count INTEGER DEFAULT 0", () => {});
 
   db.run(`
     CREATE TABLE IF NOT EXISTS Tournaments (
@@ -49,6 +52,9 @@ db.serialize(() => {
       FOREIGN KEY (winner_id) REFERENCES Users(id)
     )
   `);
+
+  // Add new columns to Tournaments table if they don't exist
+  db.run("ALTER TABLE Tournaments ADD COLUMN view_count INTEGER DEFAULT 0", () => {});
 
   db.run(`
     CREATE TABLE IF NOT EXISTS Prizes (

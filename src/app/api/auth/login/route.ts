@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 const { db, query } = require('@/database.js');
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-default-secret-key'; // It's better to use an environment variable for the secret
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const { username, password, game_id, phone_number } = await request.json();
     let user: any = null;
@@ -61,6 +61,21 @@ export async function POST(request: Request) {
     if (game_id || phone_number) {
       tokenRole = 'player';
     }
+
+    // Get client IP address
+    const clientIp = request.headers.get('x-forwarded-for') || request.ip;
+
+    // Update user's login information
+    await new Promise((resolve, reject) => {
+      db.run(
+        `UPDATE Users SET last_login_ip = ?, last_login_time = ?, login_count = login_count + 1 WHERE id = ?`,
+        [clientIp, new Date().toISOString(), user.id],
+        function (this: any, err: Error | null) {
+          if (err) reject(err);
+          else resolve(this);
+        }
+      );
+    });
 
     const token = jwt.sign(
       { id: user.id, username: user.username, game_id: user.game_id, character_name: user.character_name, role: tokenRole, stream_url: user.stream_url, avatar: user.avatar },

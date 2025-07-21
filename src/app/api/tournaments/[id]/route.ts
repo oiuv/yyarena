@@ -28,6 +28,23 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ message: '比赛不存在' }, { status: 404 });
     }
 
+    // Increment view_count
+    await new Promise((resolve, reject) => {
+      db.run(
+        `UPDATE Tournaments SET view_count = view_count + 1 WHERE id = ?`,
+        [tournamentId],
+        function (this: any, err: Error | null) {
+          if (err) { 
+            console.error('Error incrementing view_count:', err); // 添加错误日志
+            reject(err);
+          } else {
+            console.log(`Tournament ID ${tournamentId} view_count incremented. Current changes: ${this.changes}`); // 添加成功日志
+            resolve(this);
+          }
+        }
+      );
+    });
+
     console.log('Tournament start_time from DB:', tournament.start_time);
     console.log('Tournament registration_deadline from DB:', tournament.registration_deadline);
 

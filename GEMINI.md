@@ -211,4 +211,5 @@
     const { query } = require('@/database.js');
     const results = await query('SELECT * FROM Users WHERE id = ?', [userId]);
     ```
-*   **直接访问 `db` 对象:** 仅在需要执行事务或 `query` 函数无法满足的复杂场景下，才应直接使用 `db` 对象。''
+*   **直接访问 `db` 对象:** 仅在需要执行事务或 `query` 函数无法满足的复杂场景下，才应直接使用 `db` 对象。
+*   **数据库列添加规范:** 对于已上线的项目，在 `src/database.js` 中添加新的数据库列时，必须使用 `ALTER TABLE ... ADD COLUMN` 语句，而不是直接修改 `CREATE TABLE` 语句的内部定义，以避免删除现有数据库。
