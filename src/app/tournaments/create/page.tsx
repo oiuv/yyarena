@@ -78,7 +78,17 @@ import { useRouter } from 'next/navigation';
       return;
     }
 
-    // No longer require minPlayers and maxPlayers to be even, as per new requirements.
+    // Custom prize validation
+    for (const cp of customPrizes) {
+      if (cp.rangeStart < 0 || cp.rangeStart > 50 || cp.rangeEnd < 0 || cp.rangeEnd > 50) {
+        alert('自定义奖项的排名范围必须在 0 到 50 之间。');
+        return;
+      }
+      if (cp.rangeStart > cp.rangeEnd) {
+        alert('自定义奖项的起始名次不能大于结束名次。');
+        return;
+      }
+    }
 
     const formData = new FormData();
     formData.append('name', name);
@@ -210,8 +220,8 @@ import { useRouter } from 'next/navigation';
             <div key={index} className="p-4 border border-brand-gold/50 rounded mt-2 bg-brand-charcoal/70 flex flex-col gap-2">
               <input type="text" placeholder="奖项名称" value={cp.customName} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, customName: e.target.value } : p))} className="p-3 w-full border border-brand-gold/50 rounded bg-brand-charcoal/60 text-brand-ivory placeholder-brand-ivory/50 focus:ring-2 focus:ring-brand-gold focus:outline-none" required/>
               <div className="flex flex-col sm:flex-row gap-2">
-                <input type="number" placeholder="起始名次" value={cp.rangeStart} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, rangeStart: parseInt(e.target.value) } : p))} className="p-3 w-full border border-brand-gold/50 rounded bg-brand-charcoal/60 text-brand-ivory placeholder-brand-ivory/50 focus:ring-2 focus:ring-brand-gold focus:outline-none" required/>
-                <input type="number" placeholder="结束名次" value={cp.rangeEnd} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, rangeEnd: parseInt(e.target.value) } : p))} className="p-3 w-full border border-brand-gold/50 rounded bg-brand-charcoal/60 text-brand-ivory placeholder-brand-ivory/50 focus:ring-2 focus:ring-brand-gold focus:outline-none" required/>
+                <input type="number" placeholder="起始名次 (0-50)" value={cp.rangeStart} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, rangeStart: parseInt(e.target.value) } : p))} className="p-3 w-full border border-brand-gold/50 rounded bg-brand-charcoal/60 text-brand-ivory placeholder-brand-ivory/50 focus:ring-2 focus:ring-brand-gold focus:outline-none" required min="0" max="50"/>
+                <input type="number" placeholder="结束名次 (0-50)" value={cp.rangeEnd} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, rangeEnd: parseInt(e.target.value) } : p))} className="p-3 w-full border border-brand-gold/50 rounded bg-brand-charcoal/60 text-brand-ivory placeholder-brand-ivory/50 focus:ring-2 focus:ring-brand-gold focus:outline-none" required min="0" max="50"/>
               </div>
               <select value={cp.prizeId} onChange={e => setCustomPrizes(customPrizes.map((p, i) => i === index ? { ...p, prizeId: e.target.value } : p))} className="p-3 w-full border border-brand-gold/50 rounded mt-2 bg-brand-charcoal/60 text-brand-ivory focus:ring-2 focus:ring-brand-gold focus:outline-none" required>
                 <option value="">无奖品</option>
