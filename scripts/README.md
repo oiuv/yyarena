@@ -36,6 +36,16 @@ python image_extractor.py
 pip install opencv-python numpy Pillow
 ```
 
+### `comprehensiveTest.js`
+
+此脚本用于模拟比赛创建、玩家注册和比赛进程，是进行端到端测试的工具。
+
+**用法：**
+
+```bash
+node comprehensiveTest.js --players=<数量> --min=<数量> --max=<数量> --start --win --no-pp
+```
+
 **未来脚本：**
 
-任何其他支持项目但不直接属于 Web 应用程序运行时的独立脚本都将放置在此目录中。
+任何其他支持项目但不直接属于 Web 应用程序运行时的独立脚本都将放置在此目录中.

@@ -105,6 +105,136 @@ export async function generateMatchesAndStartTournament(tournamentId: number) {
   }
 }
 
+export async function calculateAndStoreFinalRankings(tournamentId: number) {
+  console.log(`[calculateAndStoreFinalRankings] Starting for tournament ${tournamentId}`);
+  const allMatches: any[] = await query('SELECT * FROM Matches WHERE tournament_id = ? ORDER BY round_number DESC', [tournamentId]);
+  const allRegistrations: any[] = await query(`SELECT r.player_id, u.character_name, u.avatar, r.status as registration_status FROM Registrations r JOIN Users u ON r.player_id = u.id WHERE r.tournament_id = ? AND (r.status = 'active' OR r.status = 'forfeited')`, [tournamentId]);
+
+  const playerStats = new Map();
+  for (const reg of allRegistrations) {
+    playerStats.set(reg.player_id, {
+      character_name: reg.character_name,
+      avatar: reg.avatar,
+      elimination_round: 0,
+      lost_to_player_id: null,
+      is_forfeited_registration: reg.registration_status === 'forfeited',
+      eliminated_in_forfeited_match: false,
+    });
+  }
+
+  for (const match of allMatches) {
+    if (match.status === 'forfeited') {
+      if (match.player1_id) {
+        const stats1 = playerStats.get(match.player1_id);
+        if (stats1 && stats1.elimination_round === 0) {
+          stats1.elimination_round = match.round_number;
+          stats1.eliminated_in_forfeited_match = true;
+        }
+      }
+      if (match.player2_id) {
+        const stats2 = playerStats.get(match.player2_id);
+        if (stats2 && stats2.elimination_round === 0) {
+          stats2.elimination_round = match.round_number;
+          stats2.eliminated_in_forfeited_match = true;
+        }
+      }
+      continue;
+    }
+
+    if (match.winner_id !== null && match.winner_id !== undefined) {
+      const loserId = match.player1_id === match.winner_id ? match.player2_id : match.player1_id;
+      if (loserId) {
+        const stats = playerStats.get(loserId);
+        if (stats && stats.elimination_round === 0) {
+          stats.elimination_round = match.round_number;
+          stats.lost_to_player_id = match.winner_id;
+        }
+      }
+    }
+  }
+
+  // Find the champion to correctly set their elimination round
+  const tournament: any = await query('SELECT winner_id FROM Tournaments WHERE id = ?', [tournamentId]);
+  const championId = tournament[0]?.winner_id;
+
+  if (championId) {
+    const championStats = playerStats.get(championId);
+    if (championStats) {
+      const maxRound = allMatches.length > 0 ? Math.max(...allMatches.map(m => m.round_number)) : 0;
+      championStats.elimination_round = maxRound + 1;
+    }
+  }
+
+  const sortedPlayers = Array.from(playerStats.entries()).sort(([, a], [, b]) => {
+    const a_is_forfeited = a.is_forfeited_registration || a.eliminated_in_forfeited_match;
+    const b_is_forfeited = b.is_forfeited_registration || b.eliminated_in_forfeited_match;
+
+    if (a_is_forfeited && !b_is_forfeited) return 1;
+    if (!a_is_forfeited && b_is_forfeited) return -1;
+
+    if (a.elimination_round !== b.elimination_round) {
+      return b.elimination_round - a.elimination_round;
+    }
+
+    if (!a_is_forfeited && !b_is_forfeited) {
+      const opponentAStats = a.lost_to_player_id ? playerStats.get(a.lost_to_player_id) : null;
+      const opponentBStats = b.lost_to_player_id ? playerStats.get(b.lost_to_player_id) : null;
+      return (opponentBStats?.elimination_round || 0) - (opponentAStats?.elimination_round || 0);
+    }
+    return 0;
+  });
+
+  const finalRankings: any[] = [];
+  let currentRank = 0;
+  let lastPlayerSignature = '';
+
+  for (let i = 0; i < sortedPlayers.length; i++) {
+    const [playerId, stats] = sortedPlayers[i];
+    const opponentStats = stats.lost_to_player_id ? playerStats.get(stats.lost_to_player_id) : null;
+    const opponentRound = opponentStats?.elimination_round || 0;
+    const isForfeited = stats.is_forfeited_registration || stats.eliminated_in_forfeited_match;
+
+    const currentPlayerSignature = isForfeited
+      ? `${isForfeited}-${stats.elimination_round}`
+      : `${isForfeited}-${stats.elimination_round}-${opponentRound}`;
+
+    if (currentPlayerSignature !== lastPlayerSignature) {
+      currentRank = i + 1;
+      lastPlayerSignature = currentPlayerSignature;
+    }
+
+    finalRankings.push({
+      rank: currentRank,
+      player_id: playerId,
+      character_name: stats.character_name,
+      avatar: stats.avatar,
+      is_forfeited: isForfeited,
+    });
+  }
+
+  await query('UPDATE Tournaments SET final_rankings = ? WHERE id = ?', [JSON.stringify(finalRankings), tournamentId]);
+  console.log(`[calculateAndStoreFinalRankings] Final rankings stored for tournament ${tournamentId}.`);
+
+  // Update player stats (1st, 2nd, 3rd place)
+  // Reset counts first to avoid double counting on regeneration
+  const playerIds = finalRankings.map(p => p.player_id);
+  if (playerIds.length > 0) {
+    const placeholders = playerIds.map(() => '?').join(',');
+    await query(`UPDATE Users SET first_place_count = 0, second_place_count = 0, third_place_count = 0 WHERE id IN (${placeholders})`, playerIds);
+  }
+
+  for (const player of finalRankings) {
+    if (player.rank === 1) {
+      await query('UPDATE Users SET first_place_count = first_place_count + 1 WHERE id = ?', [player.player_id]);
+    } else if (player.rank === 2) {
+      await query('UPDATE Users SET second_place_count = second_place_count + 1 WHERE id = ?', [player.player_id]);
+    } else if (player.rank === 3) {
+      await query('UPDATE Users SET third_place_count = third_place_count + 1 WHERE id = ?', [player.player_id]);
+    }
+  }
+  console.log(`[calculateAndStoreFinalRankings] Player stats updated for tournament ${tournamentId}.`);
+}
+
 export async function advanceTournamentRound(tournamentId: number, currentRound: number) {
   console.log(`[advanceTournamentRound] Advancing tournament ${tournamentId}, current round: ${currentRound}`);
   try {
@@ -134,123 +264,10 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
     if (winners.length === 1) {
       const championId = winners[0];
       await query('UPDATE Tournaments SET status = ?, winner_id = ? WHERE id = ?', ['finished', championId, tournamentId]);
-      await query('UPDATE Users SET first_place_count = first_place_count + 1 WHERE id = ?', [championId]);
       console.log(`[advanceTournamentRound] Tournament ${tournamentId} finished. Champion: ${championId}`);
 
       // Calculate and store final rankings
-      const allMatches: any[] = await query('SELECT * FROM Matches WHERE tournament_id = ? ORDER BY round_number DESC', [tournamentId]);
-      const allRegistrations: any[] = await query(`SELECT r.player_id, u.character_name, u.avatar, r.status as registration_status FROM Registrations r JOIN Users u ON r.player_id = u.id WHERE r.tournament_id = ? AND (r.status = 'active' OR r.status = 'forfeited')`, [tournamentId]);
-
-      const playerStats = new Map();
-      for (const reg of allRegistrations) {
-        playerStats.set(reg.player_id, {
-          character_name: reg.character_name,
-          avatar: reg.avatar,
-          elimination_round: 0,
-          lost_to_player_id: null,
-          is_forfeited_registration: reg.registration_status === 'forfeited',
-          eliminated_in_forfeited_match: false,
-        });
-      }
-
-      for (const match of allMatches) {
-        if (match.status === 'forfeited') {
-          if (match.player1_id) {
-            const stats1 = playerStats.get(match.player1_id);
-            if (stats1 && stats1.elimination_round === 0) {
-              stats1.elimination_round = match.round_number;
-              stats1.eliminated_in_forfeited_match = true;
-            }
-          }
-          if (match.player2_id) {
-            const stats2 = playerStats.get(match.player2_id);
-            if (stats2 && stats2.elimination_round === 0) {
-              stats2.elimination_round = match.round_number;
-              stats2.eliminated_in_forfeited_match = true;
-            }
-          }
-          continue;
-        }
-
-        if (match.winner_id !== null && match.winner_id !== undefined) {
-          const loserId = match.player1_id === match.winner_id ? match.player2_id : match.player1_id;
-          if (loserId) {
-            const stats = playerStats.get(loserId);
-            if (stats && stats.elimination_round === 0) {
-              stats.elimination_round = match.round_number;
-              stats.lost_to_player_id = match.winner_id;
-            }
-          }
-        }
-      }
-
-      const championStats = playerStats.get(championId);
-      if (championStats) {
-        const maxRound = allMatches.length > 0 ? Math.max(...allMatches.map(m => m.round_number)) : 0;
-        championStats.elimination_round = maxRound + 1;
-      }
-
-      const sortedPlayers = Array.from(playerStats.entries()).sort(([, a], [, b]) => {
-        const a_is_forfeited = a.is_forfeited_registration || a.eliminated_in_forfeited_match;
-        const b_is_forfeited = b.is_forfeited_registration || b.eliminated_in_forfeited_match;
-
-        if (a_is_forfeited && !b_is_forfeited) return 1;
-        if (!a_is_forfeited && b_is_forfeited) return -1;
-
-        if (a.elimination_round !== b.elimination_round) {
-          return b.elimination_round - a.elimination_round;
-        }
-
-        if (!a_is_forfeited && !b_is_forfeited) {
-          const opponentAStats = a.lost_to_player_id ? playerStats.get(a.lost_to_player_id) : null;
-          const opponentBStats = b.lost_to_player_id ? playerStats.get(b.lost_to_player_id) : null;
-          return (opponentBStats?.elimination_round || 0) - (opponentAStats?.elimination_round || 0);
-        }
-        return 0;
-      });
-
-      const finalRankings: any[] = [];
-      let currentRank = 0;
-      let lastPlayerSignature = '';
-
-      for (let i = 0; i < sortedPlayers.length; i++) {
-        const [playerId, stats] = sortedPlayers[i];
-        const opponentStats = stats.lost_to_player_id ? playerStats.get(stats.lost_to_player_id) : null;
-        const opponentRound = opponentStats?.elimination_round || 0;
-        const isForfeited = stats.is_forfeited_registration || stats.eliminated_in_forfeited_match;
-
-        // Forfeited players are ranked only by the round they were eliminated in.
-        // Non-forfeited players have opponent's strength as a tie-breaker.
-        const currentPlayerSignature = isForfeited
-          ? `${isForfeited}-${stats.elimination_round}`
-          : `${isForfeited}-${stats.elimination_round}-${opponentRound}`;
-
-        if (currentPlayerSignature !== lastPlayerSignature) {
-          currentRank = i + 1;
-          lastPlayerSignature = currentPlayerSignature;
-        }
-
-        finalRankings.push({
-          rank: currentRank,
-          player_id: playerId,
-          character_name: stats.character_name,
-          avatar: stats.avatar,
-          is_forfeited: isForfeited,
-        });
-      }
-
-      // --- Critical Step 1: Save the final rankings --- 
-      await query('UPDATE Tournaments SET final_rankings = ? WHERE id = ?', [JSON.stringify(finalRankings), tournamentId]);
-      console.log(`[advanceTournamentRound] Final rankings stored for tournament ${tournamentId}.`);
-
-      // --- Step 2: Update non-critical player stats (2nd and 3rd place) ---
-      for (const player of finalRankings) {
-        if (player.rank === 2) {
-          await query('UPDATE Users SET second_place_count = second_place_count + 1 WHERE id = ?', [player.player_id]);
-        } else if (player.rank === 3) {
-          await query('UPDATE Users SET third_place_count = third_place_count + 1 WHERE id = ?', [player.player_id]);
-        }
-      }
+      await calculateAndStoreFinalRankings(tournamentId);
 
       return;
     }
