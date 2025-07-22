@@ -51,6 +51,51 @@ export async function POST(request: Request, { params }: { params: { id: string 
     if (forfeit_type === 'both') {
       finalWinnerId = null;
       finalStatus = 'forfeited';
+      // Update both players' registration status to forfeited and increment forfeit_count
+      if (match.player1_id) {
+        await new Promise((resolve, reject) => {
+          db.run(
+            'UPDATE Registrations SET status = ? WHERE tournament_id = ? AND player_id = ?',
+            ['forfeited', match.tournament_id, match.player1_id],
+            function (this: any, err: Error | null) {
+              if (err) reject(err);
+              else resolve(this);
+            }
+          );
+        });
+        await new Promise((resolve, reject) => {
+          db.run(
+            'UPDATE Users SET forfeit_count = forfeit_count + 1 WHERE id = ?',
+            [match.player1_id],
+            function (this: any, err: Error | null) {
+              if (err) reject(err);
+              else resolve(this);
+            }
+          );
+        });
+      }
+      if (match.player2_id) {
+        await new Promise((resolve, reject) => {
+          db.run(
+            'UPDATE Registrations SET status = ? WHERE tournament_id = ? AND player_id = ?',
+            ['forfeited', match.tournament_id, match.player2_id],
+            function (this: any, err: Error | null) {
+              if (err) reject(err);
+              else resolve(this);
+            }
+          );
+        });
+        await new Promise((resolve, reject) => {
+          db.run(
+            'UPDATE Users SET forfeit_count = forfeit_count + 1 WHERE id = ?',
+            [match.player2_id],
+            function (this: any, err: Error | null) {
+              if (err) reject(err);
+              else resolve(this);
+            }
+          );
+        });
+      }
     } else if (forfeit_type === 'player1') {
       finalWinnerId = match.player2_id;
       finalStatus = 'finished';
