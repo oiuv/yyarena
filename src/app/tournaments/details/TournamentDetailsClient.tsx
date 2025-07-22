@@ -597,8 +597,8 @@ export default function TournamentDetailsClient() {
           {/* 直播信息 */}
           <div className="p-4 bg-[#2A2A2A] rounded-lg flex flex-col items-center justify-center text-center border border-[#B89766]/50">
             <h3 className="text-xl font-bold mb-2 text-[#B89766]">直播信息</h3>
-            {roomDetails && roomDetails.livestreamUrl && tournament.status === 'ongoing' ? (
-              <a href={roomDetails.livestreamUrl} target="_blank" rel="noopener noreferrer">
+            {tournament && tournament.livestream_url && tournament.status === 'ongoing' ? (
+              <a href={tournament.livestream_url} target="_blank" rel="noopener noreferrer">
                 <button className="bg-[#C83C23] hover:bg-[#B89766] text-white font-bold py-2 px-4 rounded">
                   正在直播中
                 </button>
@@ -618,7 +618,12 @@ export default function TournamentDetailsClient() {
         ) : (
           <div className="mt-4 p-4 bg-[#2A2A2A] rounded-lg flex flex-col items-center text-center text-gray-400 border border-[#B89766]/50">
             <h3 className="text-xl font-bold mb-2 text-[#B89766]">🛡️ 砺兵台房间信息 🛡️</h3>
-            <p>（由主办方在正式开赛前填写）</p>
+            { (currentUser && (isOrganizer || isUserRegistered)) ? (
+                <p>（由主办方在正式开赛前填写）</p>
+              ) : (
+                <p>（房间信息仅对已报名玩家开放，请登录并报名后查看）</p>
+              )
+            }
           </div>
         )}
 
@@ -821,7 +826,8 @@ export default function TournamentDetailsClient() {
               <tbody className="bg-[#2A2A2A] divide-y divide-gray-700">
                 {tournament.final_rankings.map((player: any) => {
                   const awardedPrize = awardedPrizes.find(ap => ap.player_id === player.player_id);
-                  const prizeWonByRank = getPrizeForRank(player.rank, tournament.prizes);
+                  // If a player has forfeited, they are not eligible for any rank-based or participation prizes.
+                  const prizeWonByRank = player.is_forfeited ? null : getPrizeForRank(player.rank, tournament.prizes);
 
                   return (
                     <tr key={player.player_id}>

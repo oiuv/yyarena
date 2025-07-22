@@ -77,11 +77,12 @@ function displayHelp() {
   console.log('\n用法: node comprehensiveTest.js [选项]');
   console.log('模拟比赛创建、玩家注册和比赛进程。');
   console.log('\n选项:');
-  console.log('  --players=<数量>    要注册的玩家数量 (默认: 10, 最大: 50)');
+  console.log('  --players=<数量>    要注册的玩家数量 (默认: 32, 最大: 50)');
   console.log('  --min=<数量>        比赛所需的最少玩家数量 (默认: 10)');
   console.log('  --max=<数量>        比赛所需的最大玩家数量 (默认: 48)');
   console.log('  --start             自动启动比赛 (默认: false)');
   console.log('  --win               自动设置比赛获胜者 (默认: false, 仅在自动启动比赛时有效)');
+  console.log('  --no-pp             不设置参与奖 (默认: false)');
   console.log('  --help              显示此帮助信息');
   console.log('\n示例:');
   console.log('  node comprehensiveTest.js --players=20');
@@ -144,7 +145,7 @@ async function registerOrLoginOrganizer(username, password = '123456') {
   }
 }
 
-async function createTournament(token, { minPlayers, maxPlayers }) {
+async function createTournament(token, { minPlayers, maxPlayers, prizes = {} }) {
   const formData = new FormData();
   formData.append('name', `燕云武道大会 - ${new Date().toLocaleDateString()}`);
   formData.append('start_time', new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString());
@@ -152,6 +153,8 @@ async function createTournament(token, { minPlayers, maxPlayers }) {
   formData.append('min_players', minPlayers);
   formData.append('max_players', maxPlayers);
   formData.append('event_description', `这是一场自动化测试比赛，需要 ${minPlayers} 至 ${maxPlayers} 名玩家。`);
+  console.log("Prize data being sent:", JSON.stringify(prizes)); // Add this line for debugging
+  formData.append('prize_settings', JSON.stringify(prizes)); // 将奖品数据作为JSON字符串附加到prize_settings字段
 
   try {
     const response = await fetch('http://localhost:3000/api/tournaments', {
@@ -307,6 +310,24 @@ async function setMatchWinner(token, matchId, winnerId) {
 
 // --- 测试执行主逻辑 ---
 
+// 定义奖品数据
+const PRIZE_DATA_BASE = {
+  ranked: [
+    { rank: 1, prizeId: "1", quantity: 1 },
+    { rank: 2, prizeId: "2", quantity: 1 },
+    { rank: 3, prizeId: "3", quantity: 1 },
+    { rank: 4, prizeId: "4", quantity: 1 },
+    { rank: 5, prizeId: "5", quantity: 1 },
+  ],
+  custom: [
+    { customName: "优胜奖", rangeStart: 6, rangeEnd: 10, prizeId: "9", quantity: 1 },
+    { customName: "幸运奖", rangeStart: 18, rangeEnd: 18, prizeId: "8", quantity: 1 },
+    { customName: "特别解说奖", rangeStart: 0, rangeEnd: 0, prizeId: "7", quantity: 1 },
+  ],
+};
+
+// --- 测试执行主逻辑 ---
+
 async function runTest() {
   const args = getArgs();
 
@@ -315,11 +336,18 @@ async function runTest() {
     return; 
   }
 
-  const numPlayers = parseInt(args.players || '10', 10);
+  const numPlayers = parseInt(args.players || '32', 10);
+
   const minPlayers = parseInt(args.min || '10', 10);
   const maxPlayers = parseInt(args.max || '48', 10);
   const autoStartTournament = args['start'] === true;
   const autoSetWinners = args['win'] === true;
+  const noParticipationPrize = args['no-pp'] === true;
+
+  let PRIZE_DATA = { ...PRIZE_DATA_BASE };
+  if (!noParticipationPrize) {
+    PRIZE_DATA.participation = { prizeId: "6", quantity: 1 };
+  }
 
   console.log('--- 开始综合性自动化测试 ---');
   console.log('调试信息: args =', args);
@@ -342,7 +370,7 @@ async function runTest() {
   }
 
   // 3. 创建比赛
-  const tournamentId = await createTournament(organizerToken, { minPlayers, maxPlayers });
+  const tournamentId = await createTournament(organizerToken, { minPlayers, maxPlayers, prizes: PRIZE_DATA });
   if (!tournamentId) {
     console.error('无法创建比赛，测试中止。');
     return;
@@ -356,7 +384,8 @@ async function runTest() {
   console.log('开始为选定玩家报名...');
   for (let i = 0; i < selectedPlayers.length; i++) {
     const player = selectedPlayers[i];
-    console.log(`\n处理第 ${i + 1}/${numPlayers} 位玩家 (角色名: ${player.character_name}, ID: ${player.game_id})`);
+    console.log(`
+处理第 ${i + 1}/${numPlayers} 位玩家 (角色名: ${player.character_name}, ID: ${player.game_id})`);
 
     const playerToken = await loginPlayer(player.game_id);
     if (playerToken) {
