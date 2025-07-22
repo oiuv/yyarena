@@ -846,7 +846,10 @@ export default function TournamentDetailsClient() {
                             />
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-[#F5F5F5]">{player.character_name}</div>
+                            <div className="text-sm font-medium text-[#F5F5F5]">
+                              {player.character_name}
+                              {player.is_forfeited && <span className="text-red-500 ml-2 text-xs">(弃权)</span>}
+                            </div>
                           </div>
                         </div>
                       </td>

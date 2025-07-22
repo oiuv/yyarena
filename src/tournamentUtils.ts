@@ -113,8 +113,8 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
     console.log(`[advanceTournamentRound] Current round matches fetched: ${currentRoundMatches.length}`);
 
     // 2. Check if all matches in the current round are finished
-    const allMatchesFinished = currentRoundMatches.every(match => match.status === 'finished' || match.status === 'forfeited'); // Added forfeited status
-    console.log(`[advanceTournamentRound] All matches in current round finished: ${allMatchesFinished}`); // Added log
+    const allMatchesFinished = currentRoundMatches.every(match => match.status === 'finished' || match.status === 'forfeited');
+    console.log(`[advanceTournamentRound] All matches in current round finished: ${allMatchesFinished}`);
 
     if (!allMatchesFinished) {
       console.log(`[advanceTournamentRound] Not all matches in round ${currentRound} for tournament ${tournamentId} are finished. Skipping advance.`);
@@ -123,9 +123,9 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
 
     // 3. Get all valid winners from the current round
     const winners = currentRoundMatches
-      .filter(match => match.winner_id !== null && match.winner_id !== undefined) // Filter out null/undefined winners
+      .filter(match => match.winner_id !== null && match.winner_id !== undefined)
       .map(match => match.winner_id);
-    console.log(`[advanceTournamentRound] Valid winners from current round: ${winners.length}`); // Added log
+    console.log(`[advanceTournamentRound] Valid winners from current round: ${winners.length}`);
 
     // 4. Determine the next round number
     const nextRound = currentRound + 1;
@@ -133,56 +133,53 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
     // 5. If only one winner remains, declare them the tournament champion
     if (winners.length === 1) {
       const championId = winners[0];
-      await new Promise((resolve, reject) => {
-        db.run(
-          'UPDATE Tournaments SET status = ?, winner_id = ? WHERE id = ?',
-          ['finished', championId, tournamentId],
-          function (this: any, err: Error | null) {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(this);
-            }
-          }
-        );
-      });
-      // Increment champion's first_place_count
-      await new Promise((resolve, reject) => {
-        db.run(
-          'UPDATE Users SET first_place_count = first_place_count + 1 WHERE id = ?',
-          [championId],
-          function (this: any, err: Error | null) {
-            if (err) reject(err);
-            else resolve(this);
-          }
-        );
-      });
+      await query('UPDATE Tournaments SET status = ?, winner_id = ? WHERE id = ?', ['finished', championId, tournamentId]);
+      await query('UPDATE Users SET first_place_count = first_place_count + 1 WHERE id = ?', [championId]);
       console.log(`[advanceTournamentRound] Tournament ${tournamentId} finished. Champion: ${championId}`);
 
-      // Calculate and store final rankings with tie-breaking based on opponent strength
+      // Calculate and store final rankings
       const allMatches: any[] = await query('SELECT * FROM Matches WHERE tournament_id = ? ORDER BY round_number DESC', [tournamentId]);
-
       const allRegistrations: any[] = await query(`SELECT r.player_id, u.character_name, u.avatar, r.status as registration_status FROM Registrations r JOIN Users u ON r.player_id = u.id WHERE r.tournament_id = ? AND (r.status = 'active' OR r.status = 'forfeited')`, [tournamentId]);
 
       const playerStats = new Map();
       for (const reg of allRegistrations) {
         playerStats.set(reg.player_id, {
           character_name: reg.character_name,
-          avatar: reg.avatar, // Include avatar
-          elimination_round: 0, // Default for players with no matches played or no losses
-          lost_to_player_id: null, // ID of the player they lost to
-          is_forfeited_registration: reg.registration_status === 'forfeited', // New flag
+          avatar: reg.avatar,
+          elimination_round: 0,
+          lost_to_player_id: null,
+          is_forfeited_registration: reg.registration_status === 'forfeited',
+          eliminated_in_forfeited_match: false,
         });
       }
 
       for (const match of allMatches) {
-        if (match.winner_id === null || match.winner_id === undefined) continue;
-        const loserId = match.player1_id === match.winner_id ? match.player2_id : match.player1_id;
-        if (loserId) {
-          const stats = playerStats.get(loserId);
-          if (stats && stats.elimination_round === 0) { // Only record the first loss
-            stats.elimination_round = match.round_number;
-            stats.lost_to_player_id = match.winner_id;
+        if (match.status === 'forfeited') {
+          if (match.player1_id) {
+            const stats1 = playerStats.get(match.player1_id);
+            if (stats1 && stats1.elimination_round === 0) {
+              stats1.elimination_round = match.round_number;
+              stats1.eliminated_in_forfeited_match = true;
+            }
+          }
+          if (match.player2_id) {
+            const stats2 = playerStats.get(match.player2_id);
+            if (stats2 && stats2.elimination_round === 0) {
+              stats2.elimination_round = match.round_number;
+              stats2.eliminated_in_forfeited_match = true;
+            }
+          }
+          continue;
+        }
+
+        if (match.winner_id !== null && match.winner_id !== undefined) {
+          const loserId = match.player1_id === match.winner_id ? match.player2_id : match.player1_id;
+          if (loserId) {
+            const stats = playerStats.get(loserId);
+            if (stats && stats.elimination_round === 0) {
+              stats.elimination_round = match.round_number;
+              stats.lost_to_player_id = match.winner_id;
+            }
           }
         }
       }
@@ -190,142 +187,100 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
       const championStats = playerStats.get(championId);
       if (championStats) {
         const maxRound = allMatches.length > 0 ? Math.max(...allMatches.map(m => m.round_number)) : 0;
-        championStats.elimination_round = maxRound + 1; // Give champion the highest round
+        championStats.elimination_round = maxRound + 1;
       }
 
-      // Sort players based on elimination round, then by opponent's elimination round, and finally by forfeited status
       const sortedPlayers = Array.from(playerStats.entries()).sort(([, a], [, b]) => {
-        // Primary sort: Forfeited registrations come last
-        if (a.is_forfeited_registration && !b.is_forfeited_registration) return 1;
-        if (!a.is_forfeited_registration && b.is_forfeited_registration) return -1;
+        const a_is_forfeited = a.is_forfeited_registration || a.eliminated_in_forfeited_match;
+        const b_is_forfeited = b.is_forfeited_registration || b.eliminated_in_forfeited_match;
 
-        // If both are forfeited or both are not forfeited, then sort by elimination_round
+        if (a_is_forfeited && !b_is_forfeited) return 1;
+        if (!a_is_forfeited && b_is_forfeited) return -1;
+
         if (a.elimination_round !== b.elimination_round) {
           return b.elimination_round - a.elimination_round;
         }
 
-        // If elimination_round is same (and not forfeited), then tie-breaker: Opponent's strength
-        // This part only applies to players who actually lost a match
-        if (!a.is_forfeited_registration && !b.is_forfeited_registration) {
+        if (!a_is_forfeited && !b_is_forfeited) {
           const opponentAStats = a.lost_to_player_id ? playerStats.get(a.lost_to_player_id) : null;
           const opponentBStats = b.lost_to_player_id ? playerStats.get(b.lost_to_player_id) : null;
           return (opponentBStats?.elimination_round || 0) - (opponentAStats?.elimination_round || 0);
         }
-
-        // If both are forfeited and elimination_round is same, maintain original order (or sort by ID if needed)
         return 0;
       });
 
       const finalRankings: any[] = [];
       let currentRank = 0;
-      let lastEliminationRound = -1;
-      let lastOpponentRound = -1;
-      let lastForfeitedStatus = false;
+      let lastPlayerSignature = '';
 
       for (let i = 0; i < sortedPlayers.length; i++) {
         const [playerId, stats] = sortedPlayers[i];
         const opponentStats = stats.lost_to_player_id ? playerStats.get(stats.lost_to_player_id) : null;
         const opponentRound = opponentStats?.elimination_round || 0;
+        const isForfeited = stats.is_forfeited_registration || stats.eliminated_in_forfeited_match;
 
-        // Determine rank - only advance rank if primary or secondary sort criteria change
-        if (stats.elimination_round !== lastEliminationRound || 
-            opponentRound !== lastOpponentRound || 
-            stats.is_forfeited_registration !== lastForfeitedStatus) {
+        // Forfeited players are ranked only by the round they were eliminated in.
+        // Non-forfeited players have opponent's strength as a tie-breaker.
+        const currentPlayerSignature = isForfeited
+          ? `${isForfeited}-${stats.elimination_round}`
+          : `${isForfeited}-${stats.elimination_round}-${opponentRound}`;
+
+        if (currentPlayerSignature !== lastPlayerSignature) {
           currentRank = i + 1;
+          lastPlayerSignature = currentPlayerSignature;
         }
 
         finalRankings.push({
           rank: currentRank,
           player_id: playerId,
-          character_name: stats.character_name + (stats.is_forfeited_registration ? ' (弃权)' : ''),
-          avatar: stats.avatar, // Include avatar
+          character_name: stats.character_name,
+          avatar: stats.avatar,
+          is_forfeited: isForfeited,
         });
-
-        // Update second_place_count and third_place_count
-        if (currentRank === 2) {
-          await new Promise((resolve, reject) => {
-            db.run(
-              'UPDATE Users SET second_place_count = second_place_count + 1 WHERE id = ?',
-              [playerId],
-              function (this: any, err: Error | null) {
-                if (err) reject(err);
-                else resolve(this);
-              }
-            );
-          });
-        } else if (currentRank === 3) {
-          await new Promise((resolve, reject) => {
-            db.run(
-              'UPDATE Users SET third_place_count = third_place_count + 1 WHERE id = ?',
-              [playerId],
-              function (this: any, err: Error | null) {
-                if (err) reject(err);
-                else resolve(this);
-              }
-            );
-          });
-        }
-
-        lastEliminationRound = stats.elimination_round;
-        lastOpponentRound = opponentRound;
-        lastForfeitedStatus = stats.is_forfeited_registration;
       }
 
-      await new Promise((resolve, reject) => {
-        db.run(
-          'UPDATE Tournaments SET final_rankings = ? WHERE id = ?',
-          [JSON.stringify(finalRankings), tournamentId],
-          function (this: any, err: Error | null) {
-            if (err) reject(err);
-            else resolve(this);
-          }
-        );
-      });
+      // --- Critical Step 1: Save the final rankings --- 
+      await query('UPDATE Tournaments SET final_rankings = ? WHERE id = ?', [JSON.stringify(finalRankings), tournamentId]);
       console.log(`[advanceTournamentRound] Final rankings stored for tournament ${tournamentId}.`);
+
+      // --- Step 2: Update non-critical player stats (2nd and 3rd place) ---
+      for (const player of finalRankings) {
+        if (player.rank === 2) {
+          await query('UPDATE Users SET second_place_count = second_place_count + 1 WHERE id = ?', [player.player_id]);
+        } else if (player.rank === 3) {
+          await query('UPDATE Users SET third_place_count = third_place_count + 1 WHERE id = ?', [player.player_id]);
+        }
+      }
+
       return;
     }
 
-    // If no winners, or odd number of winners (after filtering), handle bye or end tournament
     if (winners.length === 0) {
         console.log(`[advanceTournamentRound] No winners in round ${currentRound} for tournament ${tournamentId}. Ending tournament.`);
-        await new Promise((resolve, reject) => {
-            db.run(
-                'UPDATE Tournaments SET status = ? WHERE id = ?',
-                ['finished', tournamentId], // Mark as finished without a winner
-                function (this: any, err: Error | null) {
-                    if (err) reject(err);
-                    else resolve(this);
-                }
-            );
-        });
+        await query('UPDATE Tournaments SET status = ? WHERE id = ?', ['finished', tournamentId]);
         return;
     }
 
-
-    // 6. Otherwise, create new match pairings for the next round
     const nextRoundMatches: Match[] = [];
     let byePlayer = null;
 
-    // Shuffle winners to ensure the bye is random
     for (let i = winners.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [winners[i], winners[j]] = [winners[j], winners[i]];
     }
 
     if (winners.length % 2 !== 0) {
-      byePlayer = winners.pop(); // Last winner gets a bye
+      byePlayer = winners.pop();
       console.log(`[advanceTournamentRound] Player ${byePlayer} gets a bye in Tournament ${tournamentId} Round ${nextRound}.`);
     }
 
-    // Determine match format for the next round (simplified for now, can be more complex later)
-    let nextRoundMatchFormat = "1局1胜"; // Default
-    if (winners.length <= 2) { // Example: Finals or semi-finals
+    let nextRoundMatchFormat = "1局1胜";
+    if (winners.length <= 2) {
         nextRoundMatchFormat = "5局3胜";
-    } else if (winners.length <= 6) { // Example: Quarter-finals
+    } else if (winners.length <= 6) {
         nextRoundMatchFormat = "3局2胜";
     }
     console.log(`[advanceTournamentRound] Next round match format: ${nextRoundMatchFormat}`);
-
 
     for (let i = 0; i < winners.length; i += 2) {
       nextRoundMatches.push({
@@ -339,8 +294,6 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
     }
     console.log(`[advanceTournamentRound] Generated ${nextRoundMatches.length} new matches for Round ${nextRound}.`);
 
-
-    // 7. Insert new matches into the Matches table
     await new Promise((resolve, reject) => {
       db.serialize(() => {
         db.run('BEGIN TRANSACTION');
@@ -353,7 +306,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
             match.round_number,
             match.player1_id,
             match.player2_id,
-            null, // winner_id is null initially
+            null,
             match.status,
             null,
             match.match_format
@@ -367,18 +320,11 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
       });
     });
 
-    // Handle bye player if any (insert as a finished match)
     if (byePlayer) {
-        await new Promise((resolve, reject) => {
-            db.run(
-                'INSERT INTO Matches (tournament_id, round_number, player1_id, player2_id, winner_id, status, finished_at, match_format) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                [tournamentId, nextRound, byePlayer, null, byePlayer, 'finished', new Date().toISOString(), nextRoundMatchFormat],
-                function (this: any, err: Error | null) {
-                    if (err) reject(err);
-                    else resolve(this);
-                }
-            );
-        });
+        await query(
+            'INSERT INTO Matches (tournament_id, round_number, player1_id, player2_id, winner_id, status, finished_at, match_format) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [tournamentId, nextRound, byePlayer, null, byePlayer, 'finished', new Date().toISOString(), nextRoundMatchFormat]
+        );
     }
 
     console.log(`Generated ${nextRoundMatches.length} matches for Round ${nextRound} of Tournament ${tournamentId}.`);
