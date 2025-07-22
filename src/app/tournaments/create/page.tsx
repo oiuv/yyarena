@@ -13,9 +13,10 @@ import { useRouter } from 'next/navigation';
   const [maxPlayers, setMaxPlayers] = useState(48);
   const [eventDescription, setEventDescription] = useState(
     `1. 主办方会在比赛前30分钟创建砺兵台并更新房间编号在比赛详情页
-2. 玩家请从比赛详情页获取砺兵台房间编号并提前至少5分钟进入砺兵台
+2. 玩家请从比赛详情页获取砺兵台房间编号并提前至少15分钟进入砺兵台
 3. 比赛对阵图会在比赛开始时自动生成在比赛详情页，请及时关注
-4. 本次比赛最终解释权归主办方所有`
+4. 参赛玩家必须修改个人头像为游戏角色图像，否则主办方有权取消奖励
+5. 本次比赛最终解释权归主办方所有，预祝各位赛事顺利`
   );
   const [wechatQrCodeFile, setWechatQrCodeFile] = useState<File | null>(null);
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null); // New state for cover image file
@@ -168,7 +169,11 @@ import { useRouter } from 'next/navigation';
           <label htmlFor="eventDescription" className="block text-brand-ivory text-sm font-bold mb-2">
             赛事说明:
           </label>
-          <textarea id="eventDescription" value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} className="p-3 border border-brand-gold/50 rounded bg-brand-charcoal/70 text-brand-ivory w-full focus:ring-2 focus:ring-brand-gold focus:outline-none" rows={5} placeholder="示例：1. 主办方会在比赛前30分钟创建砺兵台并更新房间编号在比赛详情页 2. 玩家请从比赛详情页获取砺兵台房间编号并提前至少5分钟进入砺兵台 3. 比赛对阵图会在比赛开始时自动生成在比赛详情页，请及时关注 4. 本次比赛最终解释权归主办方所有" required />
+          <textarea id="eventDescription" value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} className="p-3 border border-brand-gold/50 rounded bg-brand-charcoal/70 text-brand-ivory w-full focus:ring-2 focus:ring-brand-gold focus:outline-none" rows={5} placeholder="示例：1. 主办方会在比赛前30分钟创建砺兵台并更新房间编号在比赛详情页
+2. 玩家请从比赛详情页获取砺兵台房间编号并提前至少15分钟进入砺兵台
+3. 比赛对阵图会在比赛开始时自动生成在比赛详情页，请及时关注
+4. 参赛玩家必须修改个人头像为游戏角色图像，否则主办方有权取消奖励
+5. 本次比赛最终解释权归主办方所有，预祝各位赛事顺利" required />
           <label className="block text-brand-ivory text-sm font-bold mb-2">
             微信群二维码 (可选):
           </label>

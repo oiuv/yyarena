@@ -538,7 +538,7 @@ export default function TournamentDetailsClient() {
         <div className="w-full bg-[#C83C23]/20 border border-[#C83C23] text-[#F5F5F5] p-4 rounded-lg mb-6 text-left">
           <p className="text-base">
             <span className="text-lg font-bold text-[#C83C23]">重要提示：</span>
-            已报名的玩家请务必准时参赛。如因时间原因无法参加，请在报名截止前退出，否则将按弃赛处理。玩家弃赛达3次后，将无法报名平台上的任何比赛。
+            已报名的玩家请务必准时参赛。如因时间原因无法参加，请在报名截止前2小时退出，否则将按弃赛处理。玩家弃赛达3次后，将无法报名平台上的任何比赛。
           </p>
         </div>
 
