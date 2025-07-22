@@ -1,38 +1,53 @@
-# 环境配置文件
+# Environment variables
 .env.local
 .env.development
 .env.test
 .env.production
 
-# 依赖目录
+# Dependency directories
 node_modules/
 
-# 构建输出目录
+# Build output directories
 .next/
 out/
+dist/
+build/
 
-# 数据库文件
+# Database files
 database.db
+database.db-journal
 
-# 编辑器/IDE 配置
+# Editor/IDE configuration and temporary files
 .vscode/
 .idea/
+*~
+*.swp
+*.swo
+*.bak
 
-# 缓存文件
+# Log files
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
 
-# 类型声明文件
+# Type declaration files
 next-env.d.ts
 
-# 可选忽略（根据需求调整）
-# public/  # 如果public目录包含需要版本控制的内容，请注释掉此行
-# package-lock.json  # 如果需要锁定依赖版本，请注释掉此行
+# Package manager lock files
+# package-lock.json  # This line is commented out to ensure it's tracked by Git
 
-# 用户上传的图片
+# Test coverage reports
+coverage/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+commit_message.txt
+
+# Project-specific ignores
+# User uploaded content
 public/tournament_covers/
 public/uploads/
-
-# 提交信息临时文件
-commit_message.txt

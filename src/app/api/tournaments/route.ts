@@ -114,14 +114,15 @@ export async function POST(request: NextRequest) {
   let coverImageUrl = '/images/default_cover.jpg'; // Default cover image
   if (coverImageFile) {
     try {
-      const fileBuffer = Buffer.from(await coverImageFile.arrayBuffer());
-      const uploadDir = path.join(process.cwd(), 'public', 'tournament_covers');
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'covers');
       await fs.mkdir(uploadDir, { recursive: true });
-      const fileExtension = path.extname(coverImageFile.name);
-      const filename = `${uuidv4()}${fileExtension}`;
-      const filePath = path.join(uploadDir, filename);
-      await fs.writeFile(filePath, fileBuffer);
-      coverImageUrl = `/tournament_covers/${filename}`;
+
+      if (coverImageFile) {
+        const filename = `${uuidv4()}${path.extname(coverImageFile.name)}`;
+        const filePath = path.join(uploadDir, filename);
+        await fs.writeFile(filePath, Buffer.from(await coverImageFile.arrayBuffer()));
+        coverImageUrl = `/uploads/covers/${filename}`;
+      }
     } catch (error) {
       console.error('Error saving cover image:', error);
       return NextResponse.json({ message: '封面图片保存失败' }, { status: 500 });
