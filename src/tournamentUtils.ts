@@ -10,8 +10,33 @@ interface Match {
   match_format?: string; // Add this line for match format
 }
 
+// Helper to convert match format string to a comparable number
+function getMatchFormatPriority(format: string): number {
+  switch (format) {
+    case "1局1胜": return 1;
+    case "3局2胜": return 2;
+    case "5局3胜": return 3;
+    default: return 0; // Should not happen
+  }
+}
+
+// Helper to convert match format number back to string
+function getMatchFormatString(priority: number): string {
+  switch (priority) {
+    case 1: return "1局1胜";
+    case 2: return "3局2胜";
+    case 3: return "5局3胜";
+    default: return "1局1胜"; // Default to 1局1胜 if invalid
+  }
+}
+
 export async function generateMatchesAndStartTournament(tournamentId: number) {
   try {
+    // Fetch tournament details to get default_match_format
+    const tournamentDetails: any[] = await query('SELECT default_match_format FROM Tournaments WHERE id = ?', [tournamentId]);
+    const defaultTournamentMatchFormat = tournamentDetails[0]?.default_match_format || "1局1胜";
+    const defaultTournamentMatchFormatPriority = getMatchFormatPriority(defaultTournamentMatchFormat);
+
     // 1. Fetch all active registered players
     const registrations: any[] = await query('SELECT player_id FROM Registrations WHERE tournament_id = ? AND status = ?', [tournamentId, 'active']);
 
@@ -34,6 +59,11 @@ export async function generateMatchesAndStartTournament(tournamentId: number) {
       byePlayer = players.pop(); // Last player gets a bye
     }
 
+    // Determine match format for Round 1, ensuring it's at least the default tournament format
+    let round1MatchFormat = "1局1胜"; // Base format for round 1
+    const round1MatchFormatPriority = getMatchFormatPriority(round1MatchFormat);
+    const finalRound1MatchFormat = getMatchFormatString(Math.max(round1MatchFormatPriority, defaultTournamentMatchFormatPriority));
+
     for (let i = 0; i < players.length; i += 2) {
       matches.push({
         tournament_id: tournamentId,
@@ -41,6 +71,7 @@ export async function generateMatchesAndStartTournament(tournamentId: number) {
         player1_id: players[i],
         player2_id: players[i + 1],
         status: 'pending',
+        match_format: finalRound1MatchFormat,
       });
     }
 
@@ -53,7 +84,7 @@ export async function generateMatchesAndStartTournament(tournamentId: number) {
         player2_id: null, // Indicate a bye
         winner_id: byePlayer,
         status: 'finished', // Bye matches are immediately finished
-        match_format: "1局1胜",
+        match_format: finalRound1MatchFormat,
       });
       console.log(`Player ${byePlayer} gets a bye in Tournament ${tournamentId} Round 1.`);
     }
@@ -74,7 +105,7 @@ export async function generateMatchesAndStartTournament(tournamentId: number) {
             match.winner_id || null, // Handle winner_id for bye matches
             match.status,
             match.status === 'finished' ? new Date().toISOString() : null, // Set finished_at for bye
-            match.match_format || "1局1胜" // Default match format
+            match.match_format // Use the determined match format
           );
         });
         stmt.finalize();
@@ -238,6 +269,11 @@ export async function calculateAndStoreFinalRankings(tournamentId: number) {
 export async function advanceTournamentRound(tournamentId: number, currentRound: number) {
   console.log(`[advanceTournamentRound] Advancing tournament ${tournamentId}, current round: ${currentRound}`);
   try {
+    // Fetch tournament details to get default_match_format
+    const tournamentDetails: any[] = await query('SELECT default_match_format FROM Tournaments WHERE id = ?', [tournamentId]);
+    const defaultTournamentMatchFormat = tournamentDetails[0]?.default_match_format || "1局1胜";
+    const defaultTournamentMatchFormatPriority = getMatchFormatPriority(defaultTournamentMatchFormat);
+
     // 1. Get all matches for the current round
     const currentRoundMatches: any[] = await query('SELECT * FROM Matches WHERE tournament_id = ? AND round_number = ?', [tournamentId, currentRound]);
     console.log(`[advanceTournamentRound] Current round matches fetched: ${currentRoundMatches.length}`);
@@ -291,13 +327,23 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
       console.log(`[advanceTournamentRound] Player ${byePlayer} gets a bye in Tournament ${tournamentId} Round ${nextRound}.`);
     }
 
-    let nextRoundMatchFormat = "1局1胜";
+    // Determine suggested match format based on number of winners
+    let suggestedMatchFormat = "1局1胜";
     if (winners.length <= 2) {
-        nextRoundMatchFormat = "5局3胜";
+        suggestedMatchFormat = "5局3胜"; // Final or semi-final with 2 players
     } else if (winners.length <= 6) {
-        nextRoundMatchFormat = "3局2胜";
+        suggestedMatchFormat = "3局2胜";
     }
-    console.log(`[advanceTournamentRound] Next round match format: ${nextRoundMatchFormat}`);
+
+    // Compare suggested format with default tournament format and take the higher priority one
+    const suggestedMatchFormatPriority = getMatchFormatPriority(suggestedMatchFormat);
+    const finalNextRoundMatchFormat = getMatchFormatString(Math.max(suggestedMatchFormatPriority, defaultTournamentMatchFormatPriority));
+
+    // Special rule: Final must be 5局3胜
+    const isFinalRound = winners.length === 2; // Assuming 2 players means it's the final
+    const actualNextRoundMatchFormat = isFinalRound ? "5局3胜" : finalNextRoundMatchFormat;
+
+    console.log(`[advanceTournamentRound] Next round match format: ${actualNextRoundMatchFormat}`);
 
     for (let i = 0; i < winners.length; i += 2) {
       nextRoundMatches.push({
@@ -306,7 +352,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
         player1_id: winners[i],
         player2_id: winners[i + 1],
         status: 'pending',
-        match_format: nextRoundMatchFormat,
+        match_format: actualNextRoundMatchFormat,
       });
     }
     console.log(`[advanceTournamentRound] Generated ${nextRoundMatches.length} new matches for Round ${nextRound}.`);
@@ -340,7 +386,7 @@ export async function advanceTournamentRound(tournamentId: number, currentRound:
     if (byePlayer) {
         await query(
             'INSERT INTO Matches (tournament_id, round_number, player1_id, player2_id, winner_id, status, finished_at, match_format) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [tournamentId, nextRound, byePlayer, null, byePlayer, 'finished', new Date().toISOString(), nextRoundMatchFormat]
+            [tournamentId, nextRound, byePlayer, null, byePlayer, 'finished', new Date().toISOString(), actualNextRoundMatchFormat]
         );
     }
 
