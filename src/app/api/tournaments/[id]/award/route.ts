@@ -14,7 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   const tournamentId = params.id;
-  const { player_id, prize_id } = await req.json();
+  const { player_id, prize_id, remark } = await req.json();
 
   if (!player_id || !prize_id) {
     return NextResponse.json({ message: 'Missing player_id or prize_id' }, { status: 400 });
@@ -36,8 +36,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     // Insert the award into the database
     await new Promise((resolve, reject) => {
       db.run(
-        'INSERT INTO PlayerAwards (tournament_id, player_id, prize_id, awarded_at) VALUES (?, ?, ?, ?)',
-        [tournamentId, player_id, prize_id, new Date().toISOString()],
+        'INSERT INTO PlayerAwards (tournament_id, player_id, prize_id, awarded_at, remark) VALUES (?, ?, ?, ?, ?)',
+        [tournamentId, player_id, prize_id, new Date().toISOString(), remark || null],
         function (this: any, err: Error | null) {
           if (err) {
             reject(err);

@@ -7,7 +7,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   try {
     const awards = await new Promise((resolve, reject) => {
       db.all(
-        `SELECT pa.player_id, pa.prize_id, p.name as prize_name
+        `SELECT pa.id, pa.player_id, pa.prize_id, p.name as prize_name, pa.remark
          FROM PlayerAwards pa
          JOIN Prizes p ON pa.prize_id = p.id
          WHERE pa.tournament_id = ?`,

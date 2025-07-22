@@ -68,7 +68,9 @@ export default function TournamentDetailsClient() {
   const [prizes, setPrizes] = useState<any[]>([]);
   const [awardedPrizes, setAwardedPrizes] = useState<any[]>([]);
   const [selectedPrizes, setSelectedPrizes] = useState<{ [playerId: string]: string }>({});
+  const [prizeRemarks, setPrizeRemarks] = useState<{ [playerId: string]: string }>({}); // New state for prize remarks
   const [awarding, setAwarding] = useState<string | null>(null);
+  const [editingAwardId, setEditingAwardId] = useState<number | null>(null); // New state for editing award
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
   const [registrationCodeInput, setRegistrationCodeInput] = useState('');
   const [isUserRegistered, setIsUserRegistered] = useState(false);
@@ -324,8 +326,27 @@ export default function TournamentDetailsClient() {
     }));
   };
 
-  const handleAwardPrize = async (playerId: string) => {
+  const handlePrizeRemarkChange = (playerId: string, remark: string) => {
+    setPrizeRemarks(prev => ({
+      ...prev,
+      [playerId]: remark,
+    }));
+  };
+
+  const handleEditAward = (award: any) => {
+    setEditingAwardId(award.id);
+    setSelectedPrizes(prev => ({ ...prev, [award.player_id]: award.prize_id }));
+    setPrizeRemarks(prev => ({ ...prev, [award.player_id]: award.remark || '' }));
+  };
+
+  const handleCancelEdit = () => {
+    setEditingAwardId(null);
+    // Optionally clear selectedPrizes and prizeRemarks for the cancelled edit
+  };
+
+  const handleAwardPrize = async (playerId: string, awardId: number | null = null) => {
     const prizeId = selectedPrizes[playerId];
+    const remark = prizeRemarks[playerId] || ''; // Get remark from state
     if (!prizeId) {
       alert('请为玩家选择一个奖品。');
       return;
@@ -340,26 +361,30 @@ export default function TournamentDetailsClient() {
     setAwarding(playerId);
 
     try {
-      const res = await fetch(`/api/tournaments/${tournamentId}/award`,
+      const method = awardId ? 'PUT' : 'POST';
+      const url = awardId ? `/api/player-awards/${awardId}` : `/api/tournaments/${tournamentId}/award`;
+
+      const res = await fetch(url,
         {
-          method: 'POST',
+          method: method,
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
-          body: JSON.stringify({ player_id: playerId, prize_id: prizeId }),
+          body: JSON.stringify({ player_id: playerId, prize_id: prizeId, remark: remark }), // Pass remark to API
         }
       );
 
       if (res.ok) {
         fetchDetails(); // Re-fetch details to update the UI
+        setEditingAwardId(null); // Exit editing mode
       } else {
         const data = await res.json();
-        alert(`奖品发放失败: ${data.message}`);
+        alert(`奖品发放/修改失败: ${data.message}`);
       }
     } catch (err) {
       console.error('Error awarding prize:', err);
-      alert('发放奖品时发生网络错误。');
+      alert('发放/修改奖品时发生网络错误。');
     } finally {
       setAwarding(null);
     }
@@ -861,32 +886,82 @@ export default function TournamentDetailsClient() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {isOrganizer ? (
-                          awardedPrize ? (
-                            <span className="text-green-400">已发放: {awardedPrize.prize_name}</span>
-                          ) : (
+                          editingAwardId === awardedPrize?.id ? (
                             <div className="flex items-center gap-2">
-                              <select
-                                className="p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white"
-                                value={selectedPrizes[player.player_id] || ''}
-                                onChange={(e) => handlePrizeSelectionChange(player.player_id, e.target.value)}
-                              >
-                                <option value="">选择奖品</option>
-                                {prizes.map(p => (
-                                  <option key={p.id} value={p.id}>{p.name}</option>
-                                ))}
-                              </select>
-                              <button
-                                onClick={() => handleAwardPrize(player.player_id)}
-                                disabled={awarding === player.player_id}
-                                className="p-2 bg-[#B89766] text-white rounded-lg hover:bg-[#C83C23] transition-colors duration-200 font-bold disabled:bg-gray-500"
-                              >
-                                {awarding === player.player_id ? '发放中...' : '确认发放'}
-                              </button>
+                                <select
+                                  className="p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white"
+                                  value={selectedPrizes[player.player_id] || ''}
+                                  onChange={(e) => handlePrizeSelectionChange(player.player_id, e.target.value)}
+                                >
+                                  <option value="">选择奖品</option>
+                                  {prizes.map(p => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                  ))}
+                                </select>
+                                <input
+                                  type="text"
+                                  placeholder="备注 (例如: 穿云游雪、月中诗)"
+                                  value={prizeRemarks[player.player_id] || ''}
+                                  onChange={(e) => handlePrizeRemarkChange(player.player_id, e.target.value)}
+                                  className="p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white flex-grow"
+                                />
+                                <button
+                                  onClick={() => handleAwardPrize(player.player_id, awardedPrize.id)}
+                                  disabled={awarding === player.player_id}
+                                  className="p-2 bg-[#B89766] text-white rounded-lg hover:bg-[#C83C23] transition-colors duration-200 font-bold disabled:bg-gray-500"
+                                >
+                                  {awarding === player.player_id ? '保存中...' : '保存'}
+                                </button>
+                                <button
+                                  onClick={handleCancelEdit}
+                                  className="p-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200 font-bold"
+                                >
+                                  取消
+                                </button>
                             </div>
+                          ) : (
+                            awardedPrize ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-green-400">已发放: {awardedPrize.prize_name} {awardedPrize.remark && `(${awardedPrize.remark})`}</span>
+                                <button
+                                  onClick={() => handleEditAward(awardedPrize)}
+                                  className="p-1 bg-[#B89766] text-white rounded-lg hover:bg-[#a3865e] transition-colors duration-200 text-xs"
+                                >
+                                  编辑
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <select
+                                  className="p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white"
+                                  value={selectedPrizes[player.player_id] || ''}
+                                  onChange={(e) => handlePrizeSelectionChange(player.player_id, e.target.value)}
+                                >
+                                  <option value="">选择奖品</option>
+                                  {prizes.map(p => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                  ))}
+                                </select>
+                                <input
+                                  type="text"
+                                  placeholder="备注 (例如: 穿云游雪、月中诗)"
+                                  value={prizeRemarks[player.player_id] || ''}
+                                  onChange={(e) => handlePrizeRemarkChange(player.player_id, e.target.value)}
+                                  className="p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white flex-grow"
+                                />
+                                <button
+                                  onClick={() => handleAwardPrize(player.player_id)}
+                                  disabled={awarding === player.player_id}
+                                  className="p-2 bg-[#B89766] text-white rounded-lg hover:bg-[#C83C23] transition-colors duration-200 font-bold disabled:bg-gray-500"
+                                >
+                                  {awarding === player.player_id ? '发放中...' : '确认发放'}
+                                </button>
+                              </div>
+                            )
                           )
                         ) : (
                           awardedPrize ? (
-                            <span className="text-amber-400">{awardedPrize.prize_name}</span>
+                            <span className="text-amber-400">{awardedPrize.prize_name} {awardedPrize.remark && `(${awardedPrize.remark})`}</span>
                           ) : (
                             <span className="text-gray-400">{prizeWonByRank ? (prizeWonByRank.custom_prize_name || prizeWonByRank.prize_name) : '无'}</span>
                           )

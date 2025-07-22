@@ -117,6 +117,8 @@ db.serialize(() => {
     )
   `);
 
+  db.run("ALTER TABLE PlayerAwards ADD COLUMN remark TEXT", () => {});
+
   db.run(`
     CREATE TABLE IF NOT EXISTS Registrations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
