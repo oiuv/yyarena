@@ -69,9 +69,9 @@ export default function MyRegistrationsPage() {
   return (
     <main className="flex min-h-screen flex-col items-center p-4 md:p-6 lg:p-12 bg-[#1A1A1A] text-[#F5F5F5]">
       <h1 className="text-3xl md:text-4xl font-bold mb-6 md:mb-8 text-center text-[#B89766]">我的报名</h1>
-      <div className="w-full max-w-full md:max-w-4xl px-2 md:px-0">
+      <div className="w-full max-w-6xl px-2 md:px-0">
         {registrations.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {registrations.map((reg: any) => (
               <div key={reg.registration_id} className="p-6 bg-[#2A2A2A] rounded-lg shadow-md border border-[#B89766]/50 transition-transform duration-300 hover:scale-[1.02]">
                 <Link href={`/tournaments/details?id=${reg.tournament_id}`} className="block">
