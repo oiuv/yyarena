@@ -127,14 +127,14 @@ export async function PUT(request: NextRequest) {
         avatar: updatedUser.avatar
       },
       JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: '8h' }
     );
 
     const response = NextResponse.json({ message: '资料更新成功', token: newToken });
     response.cookies.set('token', newToken, {
       httpOnly: false,
       secure: process.env.NODE_ENV !== 'development',
-      maxAge: 60 * 60, // 1 hour
+      maxAge: 8 * 60 * 60, // 8 hours
       path: '/',
     });
 

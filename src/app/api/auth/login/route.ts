@@ -80,14 +80,14 @@ export async function POST(request: NextRequest) {
     const token = jwt.sign(
       { id: user.id, username: user.username, game_id: user.game_id, character_name: user.character_name, role: tokenRole, stream_url: user.stream_url, avatar: user.avatar },
       JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: '8h' }
     );
 
     const response = NextResponse.json({ message: 'Logged in successfully', role: user.role, username: user.username, game_id: user.game_id, token });
     response.cookies.set('token', token, {
       httpOnly: false,
       secure: process.env.NODE_ENV !== 'development',
-      maxAge: 60 * 60, // 1 hour
+      maxAge: 8 * 60 * 60, // 8 hours
       path: '/',
     });
 

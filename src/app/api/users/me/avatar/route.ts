@@ -62,14 +62,14 @@ export async function PUT(request: Request) {
     const newToken = jwt.sign(
       { id: updatedUser.id, username: updatedUser.username, game_id: updatedUser.game_id, character_name: updatedUser.character_name, role: updatedUser.role, stream_url: updatedUser.stream_url, avatar: updatedUser.avatar },
       JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: '8h' }
     );
 
     const response = NextResponse.json({ message: 'Avatar updated successfully!', token: newToken }, { status: 200 });
     response.cookies.set('token', newToken, {
       httpOnly: false,
       secure: process.env.NODE_ENV !== 'development',
-      maxAge: 60 * 60, // 1 hour
+      maxAge: 8 * 60 * 60, // 8 hours
       path: '/',
     });
 
