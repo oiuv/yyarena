@@ -43,7 +43,7 @@ const StatusBadge = ({ status, type }: { status: string; type: 'tournament' | 'r
   const { text, className } = type === 'tournament' || type === 'match'
     ? getTournamentStatusText(status)
     : getRegistrationStatusText(status);
-  return <span className={`px-3 py-1 text-sm font-semibold rounded-full ${className}`}>{text}</span>;
+  return <span className={`px-3 py-1 text-base font-semibold rounded-full shadow-sm ${className}`}>{text}</span>;
 };
 
 interface Player {
@@ -118,18 +118,18 @@ export default function PlayerProfile({ playerUuid }: { playerUuid: string }) {
   const maskedGameId = player.game_id ? `${player.game_id.substring(0, 2)}******${player.game_id.substring(player.game_id.length - 2)}` : 'N/A';
 
   return (
-    <main className="min-h-screen flex flex-col items-center p-6 md:p-12 lg:p-24 text-[#F5F5F5] relative z-0">
+    <main className="min-h-screen flex flex-col items-center p-4 md:p-12 lg:p-24 text-[#F5F5F5] relative z-0">
       <div className="absolute inset-0 z-[-1]" style={{
         background: 'url(/images/yyarena.png) no-repeat center center fixed',
         backgroundSize: 'cover',
       }}></div>
-      <div className="w-full max-w-6xl mx-auto bg-[#2A2A2A]/80 p-8 rounded-2xl shadow-2xl border border-[#B89766]/50">
-        <h1 className="text-5xl font-extrabold mb-10 text-center text-[#B89766]" style={{ textShadow: '0 0 25px rgba(184,151,102,1.0), 0 0 10px rgba(0,0,0,0.5)' }}>
+      <div className="w-full max-w-6xl mx-auto bg-[#2A2A2A]/80 p-6 rounded-2xl shadow-2xl border border-[#B89766]/50">
+        <h1 className="text-4xl sm:text-5xl font-extrabold mb-6 text-center text-[#B89766]" style={{ textShadow: '0 0 25px rgba(184,151,102,1.0), 0 0 10px rgba(0,0,0,0.5)' }}>
           {player.character_name} 的主页
         </h1>
 
-        <div className="mb-6 p-4 bg-[#1A1A1A] rounded-lg border border-[#B89766]/30">
-          <h2 className="text-2xl font-bold mb-4 text-[#B89766] text-center">个人信息</h2>
+        <div className="mb-4 p-4 bg-[#1A1A1A] rounded-lg border border-[#B89766]/30">
+          <h2 className="text-2xl font-bold mb-2 text-[#B89766] text-center">个人信息</h2>
           <div className="flex flex-col items-center mb-6">
             <Image
               src={`/avatars/${player.avatar}`}
@@ -139,14 +139,14 @@ export default function PlayerProfile({ playerUuid }: { playerUuid: string }) {
               className="w-24 h-24 rounded-lg object-cover mb-4 border-2 border-[#B89766]"
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-              <div className="flex items-center p-3 bg-[#2A2A2A] rounded-md border border-[#B89766]/20">
+              <div className="flex items-center p-3 bg-[#2A2A2A] rounded-md border border-[#B89766]/20 transition-all duration-300 hover:scale-[1.02] hover:border-[#B89766]">
                 <span className="text-xl mr-3 text-[#B89766]">👤</span>
                 <div>
                   <p className="text-sm text-[#F5F5F5]/70">角色名称</p>
                   <p className="text-lg font-semibold text-[#F5F5F5]">{player.character_name}</p>
                 </div>
               </div>
-              <div className="flex items-center p-3 bg-[#2A2A2A] rounded-md border border-[#B89766]/20">
+              <div className="flex items-center p-3 bg-[#2A2A2A] rounded-md border border-[#B89766]/20 transition-all duration-300 hover:scale-[1.02] hover:border-[#B89766]">
                 <span className="text-xl mr-3 text-[#B89766]">🆔</span>
                 <div>
                   <p className="text-sm text-[#F5F5F5]/70">角色编号</p>
@@ -154,7 +154,7 @@ export default function PlayerProfile({ playerUuid }: { playerUuid: string }) {
                 </div>
               </div>
               {player.stream_url && (
-                <div className="flex items-center p-3 bg-[#2A2A2A] rounded-md border border-[#B89766]/20 col-span-full">
+                <div className="flex items-center p-3 bg-[#2A2A2A] rounded-md border border-[#B89766]/20 col-span-full transition-all duration-300 hover:scale-[1.02] hover:border-[#B89766]">
                   <span className="text-xl mr-3 text-[#B89766]">🔗</span>
                   <div>
                     <p className="text-sm text-[#F5F5F5]/70">主页/直播间</p>
@@ -170,25 +170,25 @@ export default function PlayerProfile({ playerUuid }: { playerUuid: string }) {
 
         {stats && (
           <div className="mt-4 p-4 bg-[#1A1A1A] rounded-lg">
-            <h2 className="text-2xl font-bold mb-4 text-center text-[#B89766]">比赛统计</h2>
+            <h2 className="text-2xl font-bold mb-2 text-center text-[#B89766]">比赛统计</h2>
             <div className="grid grid-cols-2 gap-4 text-center">
-              <div className="bg-[#3A3A3A] p-3 rounded-lg">
+              <div className="bg-[#3A3A3A] p-3 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:border-[#B89766] border border-transparent">
                 <p className="text-xl font-bold text-[#F5F5F5]">{stats.total_participations}</p>
                 <p className="text-sm text-[#F5F5F5]/70">参赛次数</p>
               </div>
-              <div className="bg-[#3A3A3A] p-3 rounded-lg">
+              <div className="bg-[#3A3A3A] p-3 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:border-[#B89766] border border-transparent">
                 <p className="text-xl font-bold text-[#F5F5F5]">{stats.first_place_count}</p>
                 <p className="text-sm text-[#F5F5F5]/70">第一名</p>
               </div>
-              <div className="bg-[#3A3A3A] p-3 rounded-lg">
+              <div className="bg-[#3A3A3A] p-3 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:border-[#B89766] border border-transparent">
                 <p className="text-xl font-bold text-[#F5F5F5]">{stats.second_place_count}</p>
                 <p className="text-sm text-[#F5F5F5]/70">第二名</p>
               </div>
-              <div className="bg-[#3A3A3A] p-3 rounded-lg">
+              <div className="bg-[#3A3A3A] p-3 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:border-[#B89766] border border-transparent">
                 <p className="text-xl font-bold text-[#F5F5F5]">{stats.third_place_count}</p>
                 <p className="text-sm text-[#F5F5F5]/70">第三名</p>
               </div>
-              <div className="bg-[#3A3A3A] p-3 rounded-lg col-span-2">
+              <div className="bg-[#3A3A3A] p-4 rounded-lg col-span-2 transition-all duration-300 hover:scale-[1.02] hover:border-[#B89766] border border-transparent">
                 <p className="text-xl font-bold text-[#F5F5F5]">{stats.forfeit_count}</p>
                 <p className="text-sm text-[#F5F5F5]/70">弃权次数</p>
               </div>
@@ -196,27 +196,27 @@ export default function PlayerProfile({ playerUuid }: { playerUuid: string }) {
           </div>
         )}
 
-        <div className="mt-12">
-          <h2 className="text-4xl font-extrabold mb-8 text-center text-[#B89766]" style={{ textShadow: '0 0 25px rgba(184,151,102,1.0), 0 0 10px rgba(0,0,0,0.5)' }}>
+        <div className="mt-8">
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-8 text-center text-[#B89766]" style={{ textShadow: '0 0 25px rgba(184,151,102,1.0), 0 0 10px rgba(0,0,0,0.5)' }}>
             比赛记录
           </h2>
           {matchHistory.length === 0 ? (
-            <div className="text-center py-16">
+            <div className="text-center py-16 bg-[#1A1A1A]/70 rounded-lg border border-[#B89766]/30 shadow-inner">
               <p className="text-xl text-[#F5F5F5]/70 mb-6">江湖之路，尚未开启。该玩家还没有参与过任何比赛。</p>
             </div>
           ) : (
-            <div className="space-y-12">
+            <div className="space-y-6">
               {matchHistory
                 .filter(tournament => tournament.tournament_status === 'ongoing' || tournament.tournament_status === 'finished')
                 .map((tournament) => (
                 <div
                   key={tournament.tournament_id}
-                  className="bg-[#1A1A1A]/70 border border-[#B89766]/30 p-8 rounded-xl shadow-lg transition-all duration-300 hover:shadow-[#B89766]/20 hover:border-[#B89766] hover:scale-[1.02]"
+                  className="bg-[#1A1A1A]/70 border border-[#B89766]/30 p-6 rounded-xl shadow-lg transition-all duration-300 hover:shadow-[#B89766]/20 hover:border-[#B89766] hover:scale-[1.02]"
                 >
-                  <h2 className="text-3xl font-bold mb-6 text-center text-[#B89766]">{tournament.tournament_name}</h2>
+                  <h2 className="text-3xl font-bold mb-4 text-center text-[#B89766]">{tournament.tournament_name}</h2>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-8 text-[#F5F5F5]/90">
-                    <p><strong>主办方:</strong> <span className="font-mono">{tournament.organizer_name}</span></p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-4 text-[#F5F5F5]/90">
+                    <p><strong>主 办 方:</strong> <span className="px-3 py-1 text-base font-semibold rounded-full shadow-sm bg-[#B89766] text-[#F5F5F5]">{tournament.organizer_name}</span></p>
                     <div className="flex items-center space-x-3">
                       <strong>比赛状态:</strong>
                       <StatusBadge status={tournament.tournament_status} type="tournament" />
@@ -232,14 +232,14 @@ export default function PlayerProfile({ playerUuid }: { playerUuid: string }) {
 
                   {tournament.matches.length > 0 && (
                     <div className="mt-8">
-                      <h3 className="text-2xl font-semibold mb-6 text-center text-[#F5F5F5] border-t border-b border-[#B89766]/50 py-3">
+                      <h3 className="text-2xl font-semibold mb-4 text-center text-[#F5F5F5] border-t border-b border-[#B89766]/50 py-3">
                         对局记录
                       </h3>
-                      <div className="space-y-6">
+                      <div className="space-y-4 overflow-x-auto pb-4">
                         {tournament.matches.map((match) => (
                           <div key={match.match_id} className="bg-[#2A2A2A]/80 p-6 rounded-lg border border-[#B89766]/40">
                             <p className="text-center text-lg font-semibold mb-4 text-[#B89766]">第 {match.round_number} 回合</p>
-                            <div className="flex items-center justify-around space-x-4">
+                            <div className="flex flex-row items-center justify-around space-x-4">
                               <div className="flex flex-col items-center text-center w-32">
                                 {match.player1_uuid ? (
                                   <Link href={`/players/${match.player1_uuid}`}>
@@ -248,7 +248,7 @@ export default function PlayerProfile({ playerUuid }: { playerUuid: string }) {
                                       alt={match.player1_name || '轮空'}
                                       width={80}
                                       height={80}
-                                      className="rounded-full object-cover border-4 border-[#B89766]/50 cursor-pointer"
+                                      className={`rounded-full object-cover border-4 ${match.winner_id === match.player1_id ? 'border-green-500' : match.winner_id !== null && match.winner_id !== match.player1_id ? 'border-red-500' : 'border-[#B89766]/50'} cursor-pointer`}
                                     />
                                   </Link>
                                 ) : (
@@ -257,7 +257,7 @@ export default function PlayerProfile({ playerUuid }: { playerUuid: string }) {
                                     alt={match.player1_name || '轮空'}
                                     width={80}
                                     height={80}
-                                    className="rounded-full object-cover border-4 border-[#B89766]/50"
+                                    className={`rounded-full object-cover border-4 ${match.winner_id === match.player1_id ? 'border-green-500' : match.winner_id !== null && match.winner_id !== match.player1_id ? 'border-red-500' : 'border-[#B89766]/50'}`}
                                   />
                                 )}
                                 <span className="text-md mt-2 font-semibold truncate text-[#F5F5F5]">{match.player1_name || '(轮空)'}</span>
@@ -271,7 +271,7 @@ export default function PlayerProfile({ playerUuid }: { playerUuid: string }) {
                                       alt={match.player2_name || '轮空'}
                                       width={80}
                                       height={80}
-                                      className="rounded-full object-cover border-4 border-[#B89766]/50 cursor-pointer"
+                                      className={`rounded-full object-cover border-4 ${match.winner_id === match.player2_id ? 'border-green-500' : match.winner_id !== null && match.winner_id !== match.player2_id ? 'border-red-500' : 'border-[#B89766]/50'} cursor-pointer`}
                                     />
                                   </Link>
                                 ) : (
@@ -280,7 +280,7 @@ export default function PlayerProfile({ playerUuid }: { playerUuid: string }) {
                                     alt={match.player2_name || '轮空'}
                                     width={80}
                                     height={80}
-                                    className="rounded-full object-cover border-4 border-[#B89766]/50"
+                                    className={`rounded-full object-cover border-4 ${match.winner_id === match.player2_id ? 'border-green-500' : match.winner_id !== null && match.winner_id !== match.player2_id ? 'border-red-500' : 'border-[#B89766]/50'}`}
                                   />
                                 )}
                                 <span className="text-md mt-2 font-semibold truncate text-[#F5F5F5]">{match.player2_name || '(轮空)'}</span>
@@ -300,7 +300,7 @@ export default function PlayerProfile({ playerUuid }: { playerUuid: string }) {
                                   <span className="text-xl font-bold text-[#B89766]">{match.winner_name}</span>
                                 </div>
                               ) : (
-                                <p className="text-lg font-semibold text-[#F5F5F5]/60">胜负未分</p>
+                                <p className="text-lg font-semibold text-[#F5F5F5]/60">此局胜负未定</p>
                               )}
                             </div>
                             <div className="mt-4 flex flex-col md:flex-row justify-between items-start md:items-center text-sm text-[#F5F5F5]/70 border-t border-[#B89766]/40 pt-3">
@@ -319,10 +319,10 @@ export default function PlayerProfile({ playerUuid }: { playerUuid: string }) {
                   {/* 奖品渲染 */}
                   {tournament.awards.length > 0 && (
                     <div className="mt-8">
-                      <h3 className="text-2xl font-semibold mb-6 text-center text-[#F5F5F5] border-t border-b border-[#B89766]/50 py-3">
+                      <h3 className="text-2xl font-semibold mb-4 text-center text-[#F5F5F5] border-t border-b border-[#B89766]/50 py-3">
                         我的战利品
                       </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {tournament.awards.map((award, index) => (
                           <div key={index} className="bg-[#2A2A2A]/80 p-4 rounded-lg border border-[#B89766]/60 flex items-center space-x-4">
                             <Image
