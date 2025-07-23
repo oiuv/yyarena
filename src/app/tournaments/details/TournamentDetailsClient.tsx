@@ -9,6 +9,7 @@ import Image from 'next/image';
 import { getToken } from '@/utils/clientAuth';
 import { getTournamentStatusText, getDynamicTournamentStatusText } from '@/utils/statusTranslators';
 import toast from 'react-hot-toast';
+import ConfirmationToast from '@/components/ConfirmationToast';
 
 // Helper function to determine match stage
 const getMatchStage = (matchesInRound: number): string => {
@@ -445,37 +446,42 @@ export default function TournamentDetailsClient() {
       return;
     }
 
-    if (!window.confirm('您确定要退出本次比赛吗？退出后在报名截止前仍可重新报名。')) {
-      return;
-    }
+    toast.custom((t) => (
+      <ConfirmationToast
+        t={t}
+        message="您确定要退出本次比赛吗？退出后在报名截止前仍可重新报名。"
+        onConfirm={async () => {
+          const token = getToken();
+          if (!token) {
+            toast.error('认证失败，请重新登录。');
+            return;
+          }
 
-    const token = getToken();
-    if (!token) {
-      toast.error('认证失败，请重新登录。');
-      return;
-    }
+          try {
+            const res = await fetch(`/api/registrations/${userRegistrationId}/withdraw`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                },
+              }
+            );
 
-    try {
-      const res = await fetch(`/api/registrations/${userRegistrationId}/withdraw`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (res.ok) {
-        toast.success('您已成功退出比赛。');
-        fetchDetails(); // Re-fetch details to update UI
-      } else {
-        const data = await res.json();
-        toast.error(`退出失败: ${data.message}`);
-      }
-    } catch (err) {
-      console.error('Error withdrawing from tournament:', err);
-      toast.error('退出比赛时发生网络错误。');
-    }
+            if (res.ok) {
+              toast.success('您已成功退出比赛。');
+              fetchDetails(); // Re-fetch details to update UI
+            } else {
+              const data = await res.json();
+              toast.error(`退出失败: ${data.message}`);
+            }
+          } catch (err) {
+            console.error('Error withdrawing from tournament:', err);
+            toast.error('退出比赛时发生网络错误。');
+          }
+        }}
+        onCancel={() => {}}
+      />
+    ));
   };
 
 
