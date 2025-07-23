@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const { db, query } = require('@/database.js');
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { randomUUID } from 'crypto'; // Import randomUUID
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-default-secret-key'; // It's better to use an environment variable for the secret
 
@@ -77,8 +78,24 @@ export async function POST(request: NextRequest) {
       );
     });
 
+    // If UUID is missing, generate and update it
+    if (!user.uuid) {
+      const userUuid = randomUUID();
+      await new Promise((resolve, reject) => {
+        db.run(
+          'UPDATE Users SET uuid = ? WHERE id = ?',
+          [userUuid, user.id],
+          function (this: any, err: Error | null) {
+            if (err) reject(err);
+            resolve(this);
+          }
+        );
+      });
+      user.uuid = userUuid;
+    }
+
     const token = jwt.sign(
-      { id: user.id, username: user.username, game_id: user.game_id, character_name: user.character_name, role: tokenRole, stream_url: user.stream_url, avatar: user.avatar },
+      { id: user.id, username: user.username, game_id: user.game_id, character_name: user.character_name, role: tokenRole, stream_url: user.stream_url, avatar: user.avatar, uuid: user.uuid },
       JWT_SECRET,
       { expiresIn: '8h' }
     );

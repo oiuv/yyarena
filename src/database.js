@@ -25,6 +25,7 @@ db.serialize(() => {
   db.run("ALTER TABLE Users ADD COLUMN last_login_ip TEXT", () => {});
   db.run("ALTER TABLE Users ADD COLUMN last_login_time TEXT", () => {});
   db.run("ALTER TABLE Users ADD COLUMN login_count INTEGER DEFAULT 0", () => {});
+  db.run("ALTER TABLE Users ADD COLUMN uuid TEXT", () => {});
 
   db.run(`
     CREATE TABLE IF NOT EXISTS Tournaments (

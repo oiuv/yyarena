@@ -15,19 +15,11 @@ interface User {
   role: string;
   stream_url?: string;
   avatar?: string;
-}
-
-interface UserStats {
-  total_participations: number;
-  first_place_count: number;
-  second_place_count: number;
-  third_place_count: number;
-  forfeit_count: number;
+  uuid?: string; // Add uuid to User interface
 }
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
-  const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [availableAvatars, setAvailableAvatars] = useState<string[]>([]);
   const [selectedAvatar, setSelectedAvatar] = useState<string>('');
   const [editedStreamUrl, setEditedStreamUrl] = useState<string>('');
@@ -75,24 +67,7 @@ export default function ProfilePage() {
       }
     };
 
-    const fetchUserStats = async () => {
-      try {
-        const res = await fetch('/api/users/me/stats', {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-        if (res.ok) {
-          const stats = await res.json();
-          setUserStats(stats);
-        } else {
-          console.error('Failed to fetch user stats.');
-        }
-      } catch (error) {
-        console.error('Error fetching user stats:', error);
-      }
-    };
-
     fetchAvatars();
-    fetchUserStats();
   }, [router]);
 
   const handleAvatarChange = async () => {
@@ -329,39 +304,11 @@ export default function ProfilePage() {
           </div>
         </div>
 
-          {userStats && (
-            <div className="mt-4 p-4 bg-[#1A1A1A] rounded-lg">
-              <h2 className="text-2xl font-bold mb-4 text-center text-[#B89766]">比赛统计</h2>
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div className="bg-[#3A3A3A] p-3 rounded-lg">
-                  <p className="text-xl font-bold text-[#F5F5F5]">{userStats.total_participations}</p>
-                  <p className="text-sm text-[#F5F5F5]/70">参赛次数</p>
-                </div>
-                <div className="bg-[#3A3A3A] p-3 rounded-lg">
-                  <p className="text-xl font-bold text-[#F5F5F5]">{userStats.first_place_count}</p>
-                  <p className="text-sm text-[#F5F5F5]/70">第一名</p>
-                </div>
-                <div className="bg-[#3A3A3A] p-3 rounded-lg">
-                  <p className="text-xl font-bold text-[#F5F5F5]">{userStats.second_place_count}</p>
-                  <p className="text-sm text-[#F5F5F5]/70">第二名</p>
-                </div>
-                <div className="bg-[#3A3A3A] p-3 rounded-lg">
-                  <p className="text-xl font-bold text-[#F5F5F5]">{userStats.third_place_count}</p>
-                  <p className="text-sm text-[#F5F5F5]/70">第三名</p>
-                </div>
-                <div className="bg-[#3A3A3A] p-3 rounded-lg col-span-2">
-                  <p className="text-xl font-bold text-[#F5F5F5]">{userStats.forfeit_count}</p>
-                  <p className="text-sm text-[#F5F5F5]/70">弃权次数</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <Link href="/match-history">
+          <Link href={`/players/${user.uuid}`}>
             <button
               className="w-full bg-[#B89766] hover:bg-[#A0855A] text-[#1A1A1A] font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 transition-colors duration-300"
             >
-              查看我的比赛记录
+              查看我的公开主页和比赛记录
             </button>
           </Link>
           

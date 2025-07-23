@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 const { db, query } = require('@/database.js');
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken'; // Import jsonwebtoken
+import { randomUUID } from 'crypto'; // Import randomUUID
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-default-secret-key'; // Ensure this is defined
 
@@ -22,10 +23,11 @@ export async function POST(request: Request) {
         return NextResponse.json({ message: 'Missing required fields for organizer' }, { status: 400 });
       }
       const hashedPassword = await bcrypt.hash(password, 10);
+      const userUuid = randomUUID(); // Generate UUID
       user = await new Promise((resolve, reject) => {
         db.run(
-          'INSERT INTO Users (username, password, game_id, character_name, phone_number, role, stream_url, avatar, last_login_ip, last_login_time, login_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [username, hashedPassword, game_id, character_name, phone_number, role, stream_url, avatar || '000.webp', clientIp, currentTime, 1],
+          'INSERT INTO Users (username, password, game_id, character_name, phone_number, role, stream_url, avatar, last_login_ip, last_login_time, login_count, uuid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [username, hashedPassword, game_id, character_name, phone_number, role, stream_url, avatar || '000.webp', clientIp, currentTime, 1, userUuid],
           function (this: any, err: Error | null) {
             if (err) {
               if (err.message.includes('UNIQUE constraint failed: Users.character_name')) {
@@ -38,7 +40,7 @@ export async function POST(request: Request) {
                 reject(err);
               }
             } else {
-              resolve({ id: this.lastID, username, game_id, character_name, phone_number, role, stream_url });
+              resolve({ id: this.lastID, username, game_id, character_name, phone_number, role, stream_url, uuid: userUuid });
             }
           }
         );
@@ -56,6 +58,21 @@ export async function POST(request: Request) {
       });
 
       if (existingPlayer) {
+        // If UUID is missing, generate and update it
+        if (!existingPlayer.uuid) {
+          const userUuid = randomUUID();
+          await new Promise((resolve, reject) => {
+            db.run(
+              'UPDATE Users SET uuid = ? WHERE id = ?',
+              [userUuid, existingPlayer.id],
+              function (this: any, err: Error | null) {
+                if (err) reject(err);
+                resolve(this);
+              }
+            );
+          });
+          existingPlayer.uuid = userUuid;
+        }
         // Game ID exists, update character_name if provided and missing
         if (character_name && !existingPlayer.character_name) {
           await new Promise((resolve, reject) => {
@@ -112,10 +129,11 @@ export async function POST(request: Request) {
         if (!character_name) {
           return NextResponse.json({ message: '新玩家必须提供角色名称。' }, { status: 400 });
         }
+        const userUuid = randomUUID(); // Generate UUID for new player
         user = await new Promise((resolve, reject) => {
           db.run(
-            'INSERT INTO Users (game_id, character_name, phone_number, role, avatar, last_login_ip, last_login_time, login_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [game_id, character_name, phone_number, role, avatar || '000.webp', clientIp, currentTime, 1],
+            'INSERT INTO Users (game_id, character_name, phone_number, role, avatar, last_login_ip, last_login_time, login_count, uuid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [game_id, character_name, phone_number, role, avatar || '000.webp', clientIp, currentTime, 1, userUuid],
             function (this: any, err: Error | null) {
               if (err) {
                 if (err.message.includes('UNIQUE constraint failed: Users.character_name')) {
@@ -124,7 +142,7 @@ export async function POST(request: Request) {
                   reject(err);
                 }
               } else {
-                resolve({ id: this.lastID, game_id, character_name, phone_number, role, avatar: avatar || '000.webp' });
+                resolve({ id: this.lastID, game_id, character_name, phone_number, role, avatar: avatar || '000.webp', uuid: userUuid });
               }
             }
           );
@@ -134,7 +152,7 @@ export async function POST(request: Request) {
 
     // Generate JWT token and set as cookie
     const token = jwt.sign(
-      { id: user.id, username: user.username, game_id: user.game_id, character_name: user.character_name, role: user.role, stream_url: user.stream_url, avatar: user.avatar },
+      { id: user.id, username: user.username, game_id: user.game_id, character_name: user.character_name, role: user.role, stream_url: user.stream_url, avatar: user.avatar, uuid: user.uuid },
       JWT_SECRET,
       { expiresIn: '8h' }
     );

@@ -1014,13 +1014,25 @@ export default function TournamentDetailsClient() {
 
               <div className="flex items-center justify-center space-x-6 mb-4">
                 <div className="flex flex-col items-center">
-                  <Image
-                    src={match.player1_avatar ? `/avatars/${match.player1_avatar}` : '/avatars/000.webp'}
-                    alt={match.player1_character_name || 'Player 1'}
-                    width={64}
-                    height={64}
-                    className="rounded-full border-2 border-blue-500"
-                  />
+                  {match.player1_uuid ? (
+                    <Link href={`/players/${match.player1_uuid}`}>
+                      <Image
+                        src={match.player1_avatar ? `/avatars/${match.player1_avatar}` : '/avatars/000.webp'}
+                        alt={match.player1_character_name || 'Player 1'}
+                        width={64}
+                        height={64}
+                        className="rounded-full border-2 border-blue-500 cursor-pointer"
+                      />
+                    </Link>
+                  ) : (
+                    <Image
+                      src={match.player1_avatar ? `/avatars/${match.player1_avatar}` : '/avatars/000.webp'}
+                      alt={match.player1_character_name || 'Player 1'}
+                      width={64}
+                      height={64}
+                      className="rounded-full border-2 border-blue-500"
+                    />
+                  )}
                   <span className="mt-2 text-lg font-medium text-center text-[#F5F5F5]">
                     {match.player1_character_name || 'Player 1'}
                     {match.player1_registration_status === 'forfeited' ? ' (弃权)' : ''}
@@ -1030,13 +1042,25 @@ export default function TournamentDetailsClient() {
                 <span className="text-3xl font-bold text-[#B89766]">VS</span>
 
                 <div className="flex flex-col items-center">
-                  <Image
-                    src={match.player2_avatar ? `/avatars/${match.player2_avatar}` : '/avatars/000.webp'}
-                    alt={match.player2_character_name || 'Player 2'}
-                    width={64}
-                    height={64}
-                    className="rounded-full border-2 border-[#C83C23]"
-                  />
+                  {match.player2_uuid ? (
+                    <Link href={`/players/${match.player2_uuid}`}>
+                      <Image
+                        src={match.player2_avatar ? `/avatars/${match.player2_avatar}` : '/avatars/000.webp'}
+                        alt={match.player2_character_name || 'Player 2'}
+                        width={64}
+                        height={64}
+                        className="rounded-full border-2 border-[#C83C23] cursor-pointer"
+                      />
+                    </Link>
+                  ) : (
+                    <Image
+                      src={match.player2_avatar ? `/avatars/${match.player2_avatar}` : '/avatars/000.webp'}
+                      alt={match.player2_character_name || 'Player 2'}
+                      width={64}
+                      height={64}
+                      className="rounded-full border-2 border-[#C83C23]"
+                    />
+                  )}
                   <span className="mt-2 text-lg font-medium text-center text-[#F5F5F5]">
                     {match.player2_character_name || (match.player2_id === null ? '(轮空)' : 'Player 2')}
                     {match.player2_registration_status === 'forfeited' ? ' (弃权)' : ''}
@@ -1107,13 +1131,25 @@ export default function TournamentDetailsClient() {
                 <div className="flex flex-wrap justify-center gap-4">
                   {registeredPlayers.map((player: any, idx: number) => (
                     <div key={idx} className="flex flex-col items-center">
-                      <Image
-                        src={player.avatar ? `/avatars/${player.avatar}` : '/avatars/000.webp'}
-                        alt={player.character_name}
-                        width={64}
-                        height={64}
-                        className="inline-block h-16 w-16 rounded-full ring-2 ring-[#B89766]"
-                      />
+                      {player.uuid ? (
+                        <Link href={`/players/${player.uuid}`}>
+                          <Image
+                            src={player.avatar ? `/avatars/${player.avatar}` : '/avatars/000.webp'}
+                            alt={player.character_name}
+                            width={64}
+                            height={64}
+                            className="inline-block h-16 w-16 rounded-full ring-2 ring-[#B89766] cursor-pointer"
+                          />
+                        </Link>
+                      ) : (
+                        <Image
+                          src={player.avatar ? `/avatars/${player.avatar}` : '/avatars/000.webp'}
+                          alt={player.character_name}
+                          width={64}
+                          height={64}
+                          className="inline-block h-16 w-16 rounded-full ring-2 ring-[#B89766]"
+                        />
+                      )}
                       <p className="text-sm mt-1">{player.character_name}</p>
                     </div>
                   ))}

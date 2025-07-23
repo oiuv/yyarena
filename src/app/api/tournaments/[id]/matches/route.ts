@@ -11,8 +11,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           m.*,
           p1.character_name as player1_character_name,
           p1.avatar as player1_avatar,
+          p1.uuid as player1_uuid,
           p2.character_name as player2_character_name,
           p2.avatar as player2_avatar,
+          p2.uuid as player2_uuid,
           w.character_name as winner_character_name,
           r1.status as player1_registration_status,
           r2.status as player2_registration_status

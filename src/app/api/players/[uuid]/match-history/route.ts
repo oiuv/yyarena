@@ -1,24 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 const { db, query } = require('@/database.js');
-import { jwtDecode } from 'jwt-decode';
 
-export async function GET(request: NextRequest) {
-  const token = request.headers.get('Authorization')?.split(' ')[1];
-
-  if (!token) {
-    return NextResponse.json({ message: '未授权' }, { status: 401 });
-  }
-
-  let decodedToken: any;
+export async function GET(request: Request, { params }: { params: { uuid: string } }) {
   try {
-    decodedToken = jwtDecode(token);
-  } catch (e) {
-    return NextResponse.json({ message: '无效的令牌' }, { status: 401 });
-  }
+    const { uuid } = params;
 
-  const userId = decodedToken.id;
+    if (!uuid) {
+      return NextResponse.json({ message: 'UUID is required' }, { status: 400 });
+    }
 
-  try {
+    const user = await query('SELECT id FROM Users WHERE uuid = ?', [uuid]);
+
+    if (user.length === 0) {
+      return NextResponse.json({ message: 'Player not found' }, { status: 404 });
+    }
+
+    const userId = user[0].id;
+
     const matchHistoryRaw: any[] = await new Promise((resolve, reject) => {
       db.all(
         `SELECT
@@ -41,8 +39,10 @@ export async function GET(request: NextRequest) {
            M.finished_at,
            P1.character_name AS player1_name,
            P1.avatar AS player1_avatar,
+           P1.uuid AS player1_uuid,
            P2.character_name AS player2_name,
            P2.avatar AS player2_avatar,
+           P2.uuid AS player2_uuid,
            PW.character_name AS winner_name,
            PW.avatar AS winner_avatar
          FROM Registrations R
@@ -99,8 +99,10 @@ export async function GET(request: NextRequest) {
           finished_at: row.finished_at,
           player1_name: row.player1_name,
           player1_avatar: row.player1_avatar,
+          player1_uuid: row.player1_uuid, // Include player1_uuid
           player2_name: row.player2_name,
           player2_avatar: row.player2_avatar,
+          player2_uuid: row.player2_uuid, // Include player2_uuid
           winner_name: row.winner_name,
           winner_avatar: row.winner_avatar,
         });
