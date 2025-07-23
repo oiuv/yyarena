@@ -15,10 +15,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   try {
     const tournament: any = await new Promise((resolve, reject) => {
       db.get(
-        `SELECT T.*, U.stream_url AS organizer_stream_url, U.character_name AS organizer_character_name, U.avatar AS organizer_avatar
+        `SELECT T.*, U.stream_url AS organizer_stream_url, U.character_name AS organizer_character_name, U.avatar AS organizer_avatar,
+                CAST(COUNT(CASE WHEN r.status != 'withdrawn' THEN r.id ELSE NULL END) AS INTEGER) as registeredPlayersCount
          FROM Tournaments T
          JOIN Users U ON T.organizer_id = U.id
-         WHERE T.id = ?`,
+         LEFT JOIN Registrations r ON T.id = r.tournament_id
+         WHERE T.id = ?
+         GROUP BY T.id`,
         [tournamentId],
         (err: Error | null, row: any) => {
           if (err) reject(err);

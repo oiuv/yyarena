@@ -78,6 +78,15 @@ export default function TournamentDetailsClient() {
   const [isUserRegistered, setIsUserRegistered] = useState(false);
   const [userRegistrationId, setUserRegistrationId] = useState<number | null>(null);
 
+  // Derived states - these depend on other states and should be re-calculated on each render
+  const isOrganizer = currentUser && currentUser.role === 'organizer' && tournament && currentUser.id === tournament.organizer_id;
+  const isPlayer = currentUser && currentUser.role === 'player';
+  const isRegistrationOpen = tournament ? new Date(tournament.registration_deadline) > new Date() : false;
+  const isTournamentUpcoming = tournament ? new Date(tournament.start_time) > new Date() : false;
+  const isTournamentActionable = tournament ? tournament.status !== 'ongoing' && tournament.status !== 'finished' : false;
+  const canRegister = isRegistrationOpen && isTournamentActionable && currentUser && !isOrganizer && !isUserRegistered;
+  const canWithdraw = isRegistrationOpen && isTournamentActionable && currentUser && !isOrganizer && isUserRegistered;
+
   const fetchDetails = useCallback(async () => {
     if (!tournamentId) return;
     const token = getToken();
@@ -95,6 +104,13 @@ export default function TournamentDetailsClient() {
       const matchesData = await matchesRes.json();
       const prizesData = await prizesRes.json();
       const awardedPrizesData = await awardedPrizesRes.json();
+
+      console.log('Tournament Data:', tournamentData);
+      console.log('Tournament Status:', tournamentData.status);
+      console.log('Registration Deadline:', tournamentData.registration_deadline);
+      console.log('Start Time:', tournamentData.start_time);
+      console.log('Registered Players Count:', tournamentData.registeredPlayersCount);
+      console.log('Min Players:', tournamentData.min_players);
 
       setTournament(tournamentData);
       setMatches(matchesData);
@@ -141,7 +157,12 @@ export default function TournamentDetailsClient() {
       }
 
     } catch (err) {
-      setError('Failed to fetch tournament details.');
+      // 只有当错误不是预期的 403 时才设置全局错误
+      if (err instanceof Error && err.message.includes('Failed to fetch room info with status: 403')) {
+        console.warn('Expected 403 error during fetchDetails, not setting global error.');
+      } else {
+        setError('Failed to fetch tournament details.');
+      }
     }
   }, [tournamentId]);
 
@@ -158,8 +179,8 @@ export default function TournamentDetailsClient() {
     if (tournamentId) {
       fetchDetails();
 
-      // Fetch room info if user is logged in
-      if (token) {
+      // Fetch room info if user is logged in AND is organizer or registered
+      if (token && (isOrganizer || isUserRegistered)) {
         const fetchRoomInfo = async () => {
           try {
             const res = await fetch(`/api/tournaments/${tournamentId}/room-info`, {
@@ -169,16 +190,17 @@ export default function TournamentDetailsClient() {
               const data = await res.json();
               setRoomDetails(data);
             } else {
-              console.error('Failed to fetch room info', res.status);
+              // This console.warn is for unexpected non-200 responses for authorized users
+              console.warn('Room info fetch failed with status:', res.status);
             }
           } catch (err) {
-            console.error('Error fetching room info:', err);
+            console.error('Network error fetching room info:', err);
           }
         };
         fetchRoomInfo();
       }
     }
-  }, [tournamentId, fetchDetails]);
+  }, [tournamentId, fetchDetails, isOrganizer, isUserRegistered]);
 
   const handleStartTournament = async () => {
     setIsRoomModalOpen(true);
@@ -492,14 +514,6 @@ export default function TournamentDetailsClient() {
   if (!tournament) {
     return <div className="text-center p-8">加载中...</div>;
   }
-
-  const isOrganizer = currentUser && currentUser.role === 'organizer' && currentUser.id === tournament.organizer_id;
-  const isPlayer = currentUser && currentUser.role === 'player';
-  const isRegistrationOpen = new Date(tournament.registration_deadline) > new Date();
-  const isTournamentUpcoming = new Date(tournament.start_time) > new Date();
-  const isTournamentActionable = tournament.status !== 'ongoing' && tournament.status !== 'finished';
-  const canRegister = isRegistrationOpen && isTournamentActionable && currentUser && !isOrganizer && !isUserRegistered;
-  const canWithdraw = isRegistrationOpen && isTournamentActionable && currentUser && !isOrganizer && isUserRegistered;
 
   return (
     <main className="flex min-h-screen flex-col items-center p-4 md:p-6 lg:p-12 bg-[#1A1A1A] text-[#F5F5F5]">

@@ -24,7 +24,7 @@ const nextConfig = {
     remotePatterns,
   },
   compiler: {
-    removeConsole: true,
+    removeConsole: process.env.NODE_ENV === 'production',
   },
 };
 

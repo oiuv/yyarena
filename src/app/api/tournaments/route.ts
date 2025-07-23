@@ -10,7 +10,7 @@ export async function GET() {
   try {
     const tournaments: any[] = await new Promise((resolve, reject) => {
       db.all(`
-        SELECT t.*, u.username as organizerUsername, u.character_name as organizerCharacterName, u.avatar as organizerAvatar, CAST(COUNT(r.id) AS INTEGER) as registeredPlayersCount
+        SELECT t.*, u.username as organizerUsername, u.character_name as organizerCharacterName, u.avatar as organizerAvatar, CAST(COUNT(CASE WHEN r.status != 'withdrawn' THEN r.id ELSE NULL END) AS INTEGER) as registeredPlayersCount
         FROM Tournaments t
         LEFT JOIN Registrations r ON t.id = r.tournament_id
         LEFT JOIN Users u ON t.organizer_id = u.id

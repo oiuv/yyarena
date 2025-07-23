@@ -33,35 +33,35 @@ export const getDynamicTournamentStatusText = (tournament: any) => {
   // 1. 优先判断数据库中的明确状态
   if (tournament.status === 'finished') return '已结束';
   if (tournament.status === 'ongoing') return '正在比赛中';
-  if (tournament.status === 'failed') return '活动组织失败';
   if (tournament.status === 'extended_registration') return '延期报名中';
+  if (tournament.status === 'failed') return '活动组织失败'; // 数据库明确标记为失败
 
-  // 2. 然后判断“火热报名中”
+  // 2. 判断“火热报名中”
   if (now < registrationDeadline) {
     return '火热报名中';
   }
 
-  // 从这里开始，当前时间已过报名截止时间
+  // 从这里开始，当前时间已过报名截止时间。
 
-  // 3. 其次判断“活动组织失败”
+  // 3. 判断“活动组织失败” (报名截止，人数未达标)
   if (registeredPlayersCount < minPlayers) {
     return '活动组织失败';
   }
 
-  // 从这里开始，报名人数已达标
+  // 从这里开始，报名已截止，且人数已达标。
 
-  // 4. 接着判断“即将开始”
+  // 4. 判断“即将开始” (报名截止，人数达标，但未到开始时间)
   if (now < startTime) {
     return '即将开始';
   }
 
-  // 从这里开始，当前时间已过比赛开始时间
+  // 从这里开始，当前时间已过比赛开始时间，且人数已达标。
 
-  // 5. 最后判断“比赛准备中”
+  // 5. 最后判断“比赛准备中” (报名截止，人数达标，已过开始时间，但未启动)
   if (tournament.status === 'pending' || tournament.status === 'registration_closed') {
     return '比赛准备中';
   }
 
-  // Fallback to static status text
+  // Fallback to static status text (should ideally not be reached if all states are covered)
   return getTournamentStatusText(tournament.status).text;
 };
