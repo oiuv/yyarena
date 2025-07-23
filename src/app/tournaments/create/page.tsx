@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { getToken } from '@/utils/clientAuth';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
   export default function CreateTournamentPage() {
   const router = useRouter();
@@ -59,7 +60,7 @@ import { useRouter } from 'next/navigation';
     e.preventDefault();
     const token = getToken();
     if (!token) {
-      alert('请登录后创建比赛。');
+      toast.error('请登录后创建比赛。');
       return;
     }
 
@@ -68,25 +69,25 @@ import { useRouter } from 'next/navigation';
     const now = new Date();
 
     if (startDateTime < now) {
-      alert('比赛开始时间不能是过去的时间。');
+      toast.error('比赛开始时间不能是过去的时间。');
       return;
     }
 
     const registrationDeadlineDateTime = registrationDeadline ? new Date(registrationDeadline) : null;
 
     if (registrationDeadlineDateTime && registrationDeadlineDateTime > startDateTime) {
-      alert('报名截止时间不得大于比赛开始时间。');
+      toast.error('报名截止时间不得大于比赛开始时间。');
       return;
     }
 
     // Custom prize validation
     for (const cp of customPrizes) {
       if (cp.rangeStart < 0 || cp.rangeStart > 50 || cp.rangeEnd < 0 || cp.rangeEnd > 50) {
-        alert('自定义奖项的排名范围必须在 0 到 50 之间。');
+        toast.error('自定义奖项的排名范围必须在 0 到 50 之间。');
         return;
       }
       if (cp.rangeStart > cp.rangeEnd) {
-        alert('自定义奖项的起始名次不能大于结束名次。');
+        toast.error('自定义奖项的起始名次不能大于结束名次。');
         return;
       }
     }
@@ -125,14 +126,15 @@ import { useRouter } from 'next/navigation';
 
       if (res.ok) {
         const newTournament = await res.json();
+        toast.success('比赛创建成功！');
         router.push(`/tournaments/details?id=${newTournament.id}`);
       } else {
         const errorData = await res.json();
-        alert(`创建比赛失败: ${errorData.message || '未知错误'}`);
+        toast.error(errorData.message || '未知错误');
       }
     } catch (error) {
       console.error('Submit error:', error);
-      alert('提交时发生网络错误。');
+      toast.error('提交时发生网络错误。');
     }
   };
 

@@ -8,6 +8,7 @@ import Image from 'next/image';
 
 import { getToken } from '@/utils/clientAuth';
 import { getTournamentStatusText, getDynamicTournamentStatusText } from '@/utils/statusTranslators';
+import toast from 'react-hot-toast';
 
 // Helper function to determine match stage
 const getMatchStage = (matchesInRound: number): string => {
@@ -186,7 +187,7 @@ export default function TournamentDetailsClient() {
     e.preventDefault();
     const token = getToken();
     if (!token) {
-        alert('请先登录');
+        toast.error('请先登录');
         return;
     }
 
@@ -212,26 +213,26 @@ export default function TournamentDetailsClient() {
 
         const data = await res.json();
         if (res.ok) {
-            alert('比赛已成功开始！');
+            toast.success('比赛已成功开始！');
             window.location.reload();
         } else {
-            alert(`错误: ${data.message}`);
+            toast.error(`错误: ${data.message}`);
         }
     } catch (err) {
-        alert('一个未知错误发生');
+        toast.error('一个未知错误发生');
     }
   };
 
   const handleMarkWinner = async (match: any) => { // Removed winnerSelection and selectedMatchFormat from params
     const currentSelection = matchSelections[match.id];
     if (!currentSelection || !currentSelection.winnerSelection) {
-      alert('请选择一个获胜者或弃权类型。');
+      toast.error('请选择一个获胜者或弃权类型。');
       return;
     }
 
     const token = getToken();
     if (!token) {
-      alert('请先登录');
+      toast.error('请先登录');
       return;
     }
 
@@ -348,13 +349,13 @@ export default function TournamentDetailsClient() {
     const prizeId = selectedPrizes[playerId];
     const remark = prizeRemarks[playerId] || ''; // Get remark from state
     if (!prizeId) {
-      alert('请为玩家选择一个奖品。');
+      toast.error('请为玩家选择一个奖品。');
       return;
     }
 
     const token = getToken();
     if (!token) {
-      alert('认证失败，请重新登录。');
+      toast.error('认证失败，请重新登录。');
       return;
     }
 
@@ -380,11 +381,11 @@ export default function TournamentDetailsClient() {
         setEditingAwardId(null); // Exit editing mode
       } else {
         const data = await res.json();
-        alert(`奖品发放/修改失败: ${data.message}`);
+        toast.error(`奖品发放/修改失败: ${data.message}`);
       }
     } catch (err) {
       console.error('Error awarding prize:', err);
-      alert('发放/修改奖品时发生网络错误。');
+      toast.error('发放/修改奖品时发生网络错误。');
     } finally {
       setAwarding(null);
     }
@@ -393,7 +394,7 @@ export default function TournamentDetailsClient() {
   const executeRegistration = useCallback(async (code: string | null) => {
     const token = getToken();
     if (!token) {
-      alert('请登录后报名比赛。');
+      toast.error('请登录后报名比赛。');
       return;
     }
 
@@ -409,16 +410,16 @@ export default function TournamentDetailsClient() {
 
       const data = await res.json();
       if (res.ok) {
-        alert(`成功报名比赛: ${tournament.name}！`);
+        toast.success(`成功报名比赛: ${tournament.name}！`);
         fetchDetails(); // Re-fetch details to update player list
         setIsRegistrationModalOpen(false);
         setRegistrationCodeInput('');
       } else {
-        alert(`报名失败: ${data.message || '未知错误'}`);
+        toast.error(`报名失败: ${data.message || '未知错误'}`);
       }
     } catch (error) {
       console.error('Registration error:', error);
-      alert('报名时发生网络错误。');
+      toast.error('报名时发生网络错误。');
     }
   }, [tournamentId, tournament, fetchDetails]);
 
@@ -432,7 +433,7 @@ export default function TournamentDetailsClient() {
 
   const handleModalSubmit = () => {
     if (!registrationCodeInput) {
-      alert('请输入参赛验证码。');
+      toast.error('请输入参赛验证码。');
       return;
     }
     executeRegistration(registrationCodeInput);
@@ -440,7 +441,7 @@ export default function TournamentDetailsClient() {
 
   const handleWithdrawal = async () => {
     if (!userRegistrationId) {
-      alert('无法找到您的报名记录，请刷新页面后重试。');
+      toast.error('无法找到您的报名记录，请刷新页面后重试。');
       return;
     }
 
@@ -450,7 +451,7 @@ export default function TournamentDetailsClient() {
 
     const token = getToken();
     if (!token) {
-      alert('认证失败，请重新登录。');
+      toast.error('认证失败，请重新登录。');
       return;
     }
 
@@ -465,15 +466,15 @@ export default function TournamentDetailsClient() {
       );
 
       if (res.ok) {
-        alert('您已成功退出比赛。');
+        toast.success('您已成功退出比赛。');
         fetchDetails(); // Re-fetch details to update UI
       } else {
         const data = await res.json();
-        alert(`退出失败: ${data.message}`);
+        toast.error(`退出失败: ${data.message}`);
       }
     } catch (err) {
       console.error('Error withdrawing from tournament:', err);
-      alert('退出比赛时发生网络错误。');
+      toast.error('退出比赛时发生网络错误。');
     }
   };
 
