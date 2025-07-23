@@ -1,8 +1,8 @@
 # Environment variables
+.env.production.local
 .env.local
-.env.development
-.env.test
 .env.production
+.env
 
 # Dependency directories
 node_modules/
