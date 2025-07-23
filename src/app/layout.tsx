@@ -15,6 +15,8 @@ import { getToken } from '@/utils/clientAuth';
 
 
 
+import { Toaster } from 'react-hot-toast';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -50,6 +52,27 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        <Toaster
+          toastOptions={{
+            style: {
+              background: '#1A1A1A', // 深숯灰
+              color: '#F5F5F5', // 象牙白
+              border: '1px solid #B89766', // 暗金边框
+            },
+            success: {
+              iconTheme: {
+                primary: '#B89766', // 暗金图标
+                secondary: '#1A1A1A', // 深숯灰背景
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: '#C83C23', // 朱砂红图标
+                secondary: '#1A1A1A', // 深숯灰背景
+              },
+            },
+          }}
+        />
         <nav className="w-full flex justify-between items-center mb-8 p-4 bg-gray-900 text-white border-b-2 border-amber-600 shadow-lg">
           <Link href="/" className="flex items-center">
             <Image

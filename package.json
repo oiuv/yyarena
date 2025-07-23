@@ -23,6 +23,7 @@
     "node-fetch": "^3.3.2",
     "react": "^18",
     "react-dom": "^18",
+    "react-hot-toast": "^2.5.2",
     "sharp": "^0.34.3",
     "sqlite3": "^5.1.7",
     "uuid": "^11.1.0"

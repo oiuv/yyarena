@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { getToken } from '@/utils/clientAuth';
 import { useRouter, useParams } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 export default function EditTournamentPage() {
   const router = useRouter();
@@ -64,13 +65,13 @@ export default function EditTournamentPage() {
             // Note: prize_settings are not editable, so we don't populate them
           } else {
             const errorData = await tournamentRes.json();
-            alert(`获取比赛数据失败: ${errorData.message || '未知错误'}`);
+            toast.error(`获取比赛数据失败: ${errorData.message || '未知错误'}`);
             router.push('/my-tournaments'); // Redirect if data fetch fails
           }
         }
       } catch (error) {
         console.error('Error fetching data:', error);
-        alert('获取数据时发生网络错误。');
+        toast.error('获取数据时发生网络错误。');
         router.push('/my-tournaments');
       }
     };
@@ -89,34 +90,35 @@ export default function EditTournamentPage() {
     e.preventDefault();
     const token = getToken();
     if (!token) {
-      alert('请登录后操作。');
-      return;
-    }
+        toast.error('请登录后操作。');
+        router.push('/login');
+        return;
+      }
 
     // Validation
     const startDateTime = new Date(startTime);
     const now = new Date();
 
     if (startDateTime < now) {
-      alert('比赛开始时间不能是过去的时间。');
+      toast.error('比赛开始时间不能是过去的时间。');
       return;
     }
 
     const registrationDeadlineDateTime = registrationDeadline ? new Date(registrationDeadline) : null;
 
     if (registrationDeadlineDateTime && registrationDeadlineDateTime > startDateTime) {
-      alert('报名截止时间不得大于比赛开始时间。');
+      toast.error('报名截止时间不得大于比赛开始时间。');
       return;
     }
 
     // Custom prize validation (still needed for form validation, even if not submitted)
     for (const cp of customPrizes) {
       if (cp.rangeStart < 0 || cp.rangeStart > 50 || cp.rangeEnd < 0 || cp.rangeEnd > 50) {
-        alert('自定义奖项的排名范围必须在 0 到 50 之间。');
+        toast.error('自定义奖项的排名范围必须在 0 到 50 之间。');
         return;
       }
       if (cp.rangeStart > cp.rangeEnd) {
-        alert('自定义奖项的起始名次不能大于结束名次。');
+        toast.error('自定义奖项的起始名次不能大于结束名次。');
         return;
       }
     }
@@ -150,15 +152,15 @@ export default function EditTournamentPage() {
       });
 
       if (res.ok) {
-        alert('比赛更新成功！');
+        toast.success('比赛更新成功！');
         router.push(`/tournaments/details?id=${id}`);
       } else {
         const errorData = await res.json();
-        alert(`更新比赛失败: ${errorData.message || '未知错误'}`);
+        toast.error(`更新比赛失败: ${errorData.message || '未知错误'}`);
       }
     } catch (error) {
       console.error('Submit error:', error);
-      alert('提交时发生网络错误。');
+      toast.error('提交时发生网络错误。');
     }
   };
 
