@@ -87,11 +87,20 @@ export default function MyTournamentsPage() {
                 <p className="text-brand-ivory/90 mb-1">报名截止: {new Date(tournament.registration_deadline).toLocaleString()}</p>
                 <p className="text-brand-ivory/90 mb-1">状态: {getTournamentStatusText(tournament.status).text}</p>
                 <p className="text-brand-ivory/90 mb-4">参赛人数: {tournament.min_players}-{tournament.max_players}</p>
-                <Link href={`/tournaments/details?id=${tournament.id}`} className="block mt-4">
-                  <button className="w-full bg-brand-gold hover:bg-brand-gold/80 text-brand-charcoal font-bold py-2 px-4 rounded transition-colors duration-300 md:w-auto">
-                    查看详情
-                  </button>
-                </Link>
+                <div className="flex flex-col md:flex-row gap-2 mt-4">
+                  <Link href={`/tournaments/details?id=${tournament.id}`} className="block w-full md:w-auto">
+                    <button className="w-full bg-brand-gold hover:bg-brand-gold/80 text-brand-charcoal font-bold py-2 px-4 rounded transition-colors duration-300">
+                      查看详情
+                    </button>
+                  </Link>
+                  {tournament.status !== 'ongoing' && tournament.status !== 'finished' && (
+                    <Link href={`/tournaments/${tournament.id}/edit`} className="block w-full md:w-auto">
+                      <button className="w-full bg-brand-red hover:bg-brand-red/80 text-brand-ivory font-bold py-2 px-4 rounded transition-colors duration-300">
+                        编辑
+                      </button>
+                    </Link>
+                  )}
+                </div>
               </div>
             ))}
           </div>

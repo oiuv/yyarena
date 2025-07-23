@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-const { db, query } = require('@/database.js');
+import { promises as fs } from 'fs';
+import path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 import { jwtDecode } from 'jwt-decode';
+import { db, query } from '@/database';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const tournamentId = parseInt(params.id, 10);
@@ -121,7 +124,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   const tournamentId = parseInt(params.id, 10);
-  const { name, start_time, registration_deadline, min_players, max_players, event_description, wechat_qr_code_url, room_name, room_number, room_password, livestream_url, registration_code } = await request.json();
 
   if (isNaN(tournamentId)) {
     return NextResponse.json({ message: '无效的比赛ID' }, { status: 400 });
@@ -141,7 +143,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
   try {
     const existingTournament: any = await new Promise((resolve, reject) => {
-      db.get('SELECT organizer_id FROM Tournaments WHERE id = ?', [tournamentId], (err: Error | null, row: any) => {
+      db.get('SELECT organizer_id, status FROM Tournaments WHERE id = ?', [tournamentId], (err: Error | null, row: any) => {
         if (err) reject(err);
         resolve(row);
       });
@@ -149,6 +151,43 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     if (!existingTournament || existingTournament.organizer_id !== currentUser.id) {
       return NextResponse.json({ message: '无权修改此比赛' }, { status: 403 });
+    }
+
+    if (existingTournament.status === 'ongoing' || existingTournament.status === 'finished') {
+      return NextResponse.json({ message: '比赛已开始或已结束，无法编辑' }, { status: 403 });
+    }
+
+    const formData = await request.formData();
+    const name = formData.get('name') as string;
+    const start_time = formData.get('start_time') as string;
+    const registration_deadline = formData.get('registration_deadline') as string;
+    const min_players = parseInt(formData.get('min_players') as string, 10);
+    const max_players = parseInt(formData.get('max_players') as string, 10);
+    const event_description = formData.get('event_description') as string;
+    const default_match_format = formData.get('default_match_format') as string;
+    const registration_code = formData.get('registration_code') as string;
+
+    let wechat_qr_code_url = existingTournament.wechat_qr_code_url; // Keep existing if not updated
+    let cover_image_url = existingTournament.cover_image_url; // Keep existing if not updated
+
+    const wechatQrCodeFile = formData.get('wechat_qr_code_image') as File | null;
+    if (wechatQrCodeFile && wechatQrCodeFile.size > 0) {
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'qrcodes');
+      await fs.mkdir(uploadDir, { recursive: true });
+      const uniqueFilename = `${uuidv4()}${path.extname(wechatQrCodeFile.name)}`;
+      const filePath = path.join(uploadDir, uniqueFilename);
+      await fs.writeFile(filePath, Buffer.from(await wechatQrCodeFile.arrayBuffer()));
+      wechat_qr_code_url = `/uploads/qrcodes/${uniqueFilename}`;
+    }
+
+    const coverImageFile = formData.get('cover_image') as File | null;
+    if (coverImageFile && coverImageFile.size > 0) {
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'covers');
+      await fs.mkdir(uploadDir, { recursive: true });
+      const uniqueFilename = `${uuidv4()}${path.extname(coverImageFile.name)}`;
+      const filePath = path.join(uploadDir, uniqueFilename);
+      await fs.writeFile(filePath, Buffer.from(await coverImageFile.arrayBuffer()));
+      cover_image_url = `/uploads/covers/${uniqueFilename}`;
     }
 
     await new Promise((resolve, reject) => {
@@ -161,13 +200,23 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
            max_players = ?,
            event_description = ?,
            wechat_qr_code_url = ?,
-           room_name = ?,
-           room_number = ?,
-           room_password = ?,
-           livestream_url = ?,
+           cover_image_url = ?,
+           default_match_format = ?,
            registration_code = ?
          WHERE id = ?`,
-        [name, start_time, registration_deadline, min_players, max_players, event_description, wechat_qr_code_url, room_name, room_number, room_password, livestream_url, registration_code, tournamentId],
+        [
+          name,
+          start_time,
+          registration_deadline,
+          min_players,
+          max_players,
+          event_description,
+          wechat_qr_code_url,
+          cover_image_url,
+          default_match_format,
+          registration_code,
+          tournamentId,
+        ],
         function (this: any, err: Error | null) {
           if (err) reject(err);
           resolve(this.changes);

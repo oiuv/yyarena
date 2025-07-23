@@ -49,7 +49,12 @@
 
 *   **特定比赛详情与更新 (`src/app/api/tournaments/[id]/route.ts`)**
     *   **GET：** 获取特定比赛详情，包含主办方信息、解析奖品设置、已结束比赛的最终排名。
-    *   **PUT：** 允许主办方更新其创建的比赛信息（名称、时间、人数、说明、房间信息、验证码等），需主办方认证和所有权验证。
+    *   **PUT：** 允许主办方更新其创建的比赛信息。
+        *   **权限验证：** 需主办方认证和所有权验证。
+        *   **状态限制：** 禁止编辑状态为 `ongoing`（进行中）或 `finished`（已结束）的比赛。
+        *   **可编辑字段：** 比赛名称、开始时间、报名截止时间、最少/最多参赛人数、赛事说明、微信群二维码、比赛封面图、默认比赛赛制、参赛验证码。
+        *   **文件上传：** 支持更新微信群二维码和比赛封面图。
+        *   **奖品设置：** 奖品设置禁止更改，即使提交也不会更新。
     *   **DELETE：** 禁止删除比赛。
 
 *   **启动比赛 (`src/app/api/tournaments/[id]/start/route.ts`)**
@@ -74,13 +79,18 @@
         *   更新比赛记录并调用 `advanceTournamentRound` 推进比赛。
         *   **更新玩家统计数据：** 增加参赛玩家的 `total_participations`，弃权玩家的 `forfeit_count`。
 
+*   **发放玩家奖品 (`src/app/api/tournaments/[id]/award/route.ts`)**
+    *   **POST：** 为指定玩家发放奖品。
+        *   支持 `player_id`, `prize_id` 和 `remark` 字段。
+        *   需有效 JWT。
+
 ### 3. 比赛报名
 
 *   **比赛报名 (玩家) (`src/app/api/tournaments/register/route.ts`)**
-    *   **POST：** 玩家报名比赛。
-        *   需 `tournament_id`、`character_name`、`character_id` 和有效 JWT。
-        *   验证比赛状态、报名人数是否已满。
-        *   插入报名记录，若达到最少人数则可能启动比赛。
+    *   **POST：** 此 API 已被 `src/app/api/registrations/route.ts` 取代，功能上存在重叠，建议废弃。
+        *   原功能：玩家报名比赛，需 `tournament_id`、`character_name`、`character_id` 和有效 JWT。
+        *   原功能：验证比赛状态、报名人数是否已满。
+        *   原功能：插入报名记录，若达到最少人数则可能启动比赛。
 
 *   **玩家报名 (通用) (`src/app/api/registrations/route.ts`)**
     *   **POST：** 玩家报名比赛。
