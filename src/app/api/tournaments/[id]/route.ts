@@ -143,11 +143,13 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
   try {
     const existingTournament: any = await new Promise((resolve, reject) => {
-      db.get('SELECT organizer_id, status FROM Tournaments WHERE id = ?', [tournamentId], (err: Error | null, row: any) => {
+      db.get('SELECT organizer_id, status, wechat_qr_code_url, cover_image_url FROM Tournaments WHERE id = ?', [tournamentId], (err: Error | null, row: any) => {
         if (err) reject(err);
         resolve(row);
       });
     });
+
+    console.log('Existing tournament data:', existingTournament);
 
     if (!existingTournament || existingTournament.organizer_id !== currentUser.id) {
       return NextResponse.json({ message: '无权修改此比赛' }, { status: 403 });
@@ -167,8 +169,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const default_match_format = formData.get('default_match_format') as string;
     const registration_code = formData.get('registration_code') as string;
 
-    let wechat_qr_code_url = existingTournament.wechat_qr_code_url; // Keep existing if not updated
-    let cover_image_url = existingTournament.cover_image_url; // Keep existing if not updated
+    if (min_players < 10) {
+      return NextResponse.json({ message: '最少参赛人数不得少于10人。' }, { status: 400 });
+    }
+    if (max_players > 48) {
+      return NextResponse.json({ message: '最大参赛人数不得超过48人。' }, { status: 400 });
+    }
+
+    let wechat_qr_code_url = formData.get('wechat_qr_code_url') as string | null;
+    let cover_image_url = formData.get('cover_image_url') as string | null;
 
     const wechatQrCodeFile = formData.get('wechat_qr_code_image') as File | null;
     if (wechatQrCodeFile && wechatQrCodeFile.size > 0) {
@@ -227,7 +236,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ message: '比赛更新成功' });
   } catch (error: any) {
     console.error('Error updating tournament:', error);
-    return NextResponse.json({ message: error.message || '更新比赛失败' }, { status: 500 });
+    return NextResponse.json({ message: error.message || '更新失败' }, { status: 500 });
   }
 }
 

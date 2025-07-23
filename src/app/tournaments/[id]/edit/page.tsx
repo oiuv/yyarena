@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { getToken } from '@/utils/clientAuth';
 import { useRouter, useParams } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { formatDateToLocalISO } from '@/utils/datetime';
 
 export default function EditTournamentPage() {
   const router = useRouter();
@@ -18,6 +19,8 @@ export default function EditTournamentPage() {
   const [eventDescription, setEventDescription] = useState('');
   const [wechatQrCodeFile, setWechatQrCodeFile] = useState<File | null>(null);
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [currentWechatQrCodeUrl, setCurrentWechatQrCodeUrl] = useState<string | null>(null);
+  const [currentCoverImageUrl, setCurrentCoverImageUrl] = useState<string | null>(null);
   const [registrationDeadline, setRegistrationDeadline] = useState('');
   const [defaultMatchFormat, setDefaultMatchFormat] = useState<string>('1局1胜');
   const [registrationCode, setRegistrationCode] = useState('');
@@ -54,13 +57,17 @@ export default function EditTournamentPage() {
           if (tournamentRes.ok) {
             const tournamentData = await tournamentRes.json();
             setName(tournamentData.name);
-            setStartTime(new Date(tournamentData.start_time).toISOString().slice(0, 16));
+
+            setStartTime(formatDateToLocalISO(tournamentData.start_time));
             setMinPlayers(tournamentData.min_players);
             setMaxPlayers(tournamentData.max_players);
             setEventDescription(tournamentData.event_description);
-            setRegistrationDeadline(tournamentData.registration_deadline ? new Date(tournamentData.registration_deadline).toISOString().slice(0, 16) : '');
+            setRegistrationDeadline(formatDateToLocalISO(tournamentData.registration_deadline));
             setDefaultMatchFormat(tournamentData.default_match_format || '1局1胜');
             setRegistrationCode(tournamentData.registration_code || '');
+
+            setCurrentWechatQrCodeUrl(tournamentData.wechat_qr_code_url);
+            setCurrentCoverImageUrl(tournamentData.cover_image_url);
 
             // Note: prize_settings are not editable, so we don't populate them
           } else {
@@ -132,9 +139,13 @@ export default function EditTournamentPage() {
     formData.append('event_description', eventDescription);
     if (wechatQrCodeFile) {
       formData.append('wechat_qr_code_image', wechatQrCodeFile);
+    } else if (currentWechatQrCodeUrl) {
+      formData.append('wechat_qr_code_url', currentWechatQrCodeUrl);
     }
     if (coverImageFile) {
       formData.append('cover_image', coverImageFile);
+    } else if (currentCoverImageUrl) {
+      formData.append('cover_image_url', currentCoverImageUrl);
     }
     formData.append('default_match_format', defaultMatchFormat);
     if (registrationCode) {
@@ -156,7 +167,7 @@ export default function EditTournamentPage() {
         router.push(`/tournaments/details?id=${id}`);
       } else {
         const errorData = await res.json();
-        toast.error(`更新比赛失败: ${errorData.message || '未知错误'}`);
+        toast.error(errorData.message || '未知错误');
       }
     } catch (error) {
       console.error('Submit error:', error);
