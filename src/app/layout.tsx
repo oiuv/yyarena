@@ -89,6 +89,9 @@ export default function RootLayout({
                 <span className="text-amber-200">欢迎, {characterName}</span>
                 <button onClick={handleLogout} className="text-amber-400 hover:underline transition-colors duration-200">退出登录</button>
                 <Link href="/tournamentRegister" className="text-amber-400 hover:underline transition-colors duration-200">报名比赛</Link>
+                {isLoggedIn && (
+                  <Link href="/my-registrations" className="text-amber-400 hover:underline transition-colors duration-200">我的报名</Link>
+                )}
                 <Link href="/profile" className="text-amber-400 hover:underline transition-colors duration-200">我的资料</Link>
               </>
             ) : (
@@ -96,9 +99,6 @@ export default function RootLayout({
                 <Link href="/register" className="text-amber-400 hover:underline transition-colors duration-200">注册</Link>
                 <Link href="/login" className="text-amber-400 hover:underline transition-colors duration-200">登录</Link>
               </>
-            )}
-            {isLoggedIn && (
-              <Link href="/my-registrations" className="text-amber-400 hover:underline transition-colors duration-200">我的报名</Link>
             )}
             {userRole === 'organizer' && (
               <>
