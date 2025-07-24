@@ -28,6 +28,25 @@
 *   **公平的轮空机制：** 确保每轮比赛的轮空机会对所有玩家都是随机且公平的。
 *   **严格的报名限制：** 自动关闭报名通道，确保参赛人数符合比赛设定。
 
+## 项目截图
+
+以下是平台主要界面的截图：
+
+### 项目首页
+![项目首页](public/images/screenshots/homepage.png)
+
+### 比赛详情页
+![比赛详情页](public/images/screenshots/tournament-details.jpeg)
+
+### 对战图
+![对战图](public/images/screenshots/match-bracket.png)
+
+### 比赛排名图
+![比赛排名图](public/images/screenshots/match-ranking.png)
+
+### 数据统计
+![数据统计](public/images/screenshots/player-stats.png)
+
 ## 特别声明
 
 **本项目的所有代码和文档（包括您现在正在阅读的 `README.md` 和项目设计文档 `GEMINI.md`）均由 Google 的大型语言模型 GEMINI-CLI 独立完成。**
