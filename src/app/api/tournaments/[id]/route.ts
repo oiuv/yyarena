@@ -3,7 +3,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { jwtDecode } from 'jwt-decode';
-import { db, query } from '@/database';
+import { db, query } from '@/database.mjs';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const tournamentId = parseInt(params.id, 10);

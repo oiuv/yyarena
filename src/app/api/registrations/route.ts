@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-const { db, query } = require('@/database.js');
+import { db, query } from '@/database.mjs';
 import { verifyToken } from '@/utils/auth';
 
 export async function POST(request: NextRequest) {

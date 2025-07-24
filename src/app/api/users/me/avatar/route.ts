@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-const { db, query } = require('@/database.js');
+import { db, query } from '@/database.mjs';
 import { verifyToken } from '@/utils/auth';
 import fs from 'fs';
 import path from 'path';

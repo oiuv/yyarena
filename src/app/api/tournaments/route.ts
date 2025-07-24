@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-const { db, query } = require('@/database.js');
+import { db, query } from '@/database.mjs';
 import { verifyToken } from '../../../utils/auth';
 import fs from 'fs/promises';
 import path from 'path';
@@ -10,7 +10,7 @@ export async function GET() {
   try {
     const tournaments: any[] = await new Promise((resolve, reject) => {
       db.all(`
-        SELECT t.*, u.username as organizerUsername, u.character_name as organizerCharacterName, u.avatar as organizerAvatar, CAST(COUNT(CASE WHEN r.status != 'withdrawn' THEN r.id ELSE NULL END) AS INTEGER) as registeredPlayersCount
+        SELECT t.id, t.name, t.organizer_id, t.start_time, t.registration_deadline, t.min_players, t.max_players, t.status, t.prize_settings, t.event_description, t.wechat_qr_code_url, t.room_name, t.room_number, t.room_password, t.livestream_url, t.winner_id, t.default_match_format, t.final_rankings, t.cover_image_url, t.view_count, u.username as organizerUsername, u.character_name as organizerCharacterName, u.avatar as organizerAvatar, CAST(COUNT(CASE WHEN r.status != 'withdrawn' THEN r.id ELSE NULL END) AS INTEGER) as registeredPlayersCount
         FROM Tournaments t
         LEFT JOIN Registrations r ON t.id = r.tournament_id
         LEFT JOIN Users u ON t.organizer_id = u.id

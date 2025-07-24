@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-const { db, query } = require('@/database.js');
+import { db, query } from '@/database.mjs';
 import { jwtDecode } from 'jwt-decode';
 
 export async function GET(request: NextRequest) {

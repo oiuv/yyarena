@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-const { db, query } = require('@/database.js');
+import { db, query } from '@/database.mjs';
 import { advanceTournamentRound } from '@/tournamentUtils';
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {

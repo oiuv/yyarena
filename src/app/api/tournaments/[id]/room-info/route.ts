@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-const { db, query } = require('@/database.js');
+import { db, query } from '@/database.mjs';
 import { verifyToken } from '@/utils/auth';
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {

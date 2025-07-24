@@ -3,7 +3,7 @@
 **功能定位：** 本文档作为产品需求文档 (PRD)，旨在明确1v1竞技比赛管理平台的功能需求、用户体验要求和系统行为规范，为 Gemini-CLI 提供清晰的开发指南和框架。
 
 **版本:** 1.0.0
-**最后更新:** 2025年7月22日
+**最后更新:** 2025年7月24日
 
 ## 1. 项目概述
 
@@ -193,10 +193,10 @@
 
 ### 5.3. 数据库操作规范
 
-*   **优先使用 `query` 辅助函数:** 为了简化异步操作并统一错误处理，所有数据库查询都应优先使用 `src/database.js` 中提供的 `query` 辅助函数。
+*   **优先使用 `query` 辅助函数:** 为了简化异步操作并统一错误处理，所有数据库查询都应优先使用 `src/database.mjs` 中提供的 `query` 辅助函数。
 *   **`query` 函数用法:**
     ```javascript
-    const { query } = require('@/database.js');
+    import { query } from '@/database.mjs';
     const results = await query('SELECT * FROM Users WHERE id = ?', [userId]);
     ```
 *   **直接访问 `db` 对象:** 仅在需要执行事务或 `query` 函数无法满足的复杂场景下，才应直接使用 `db` 对象。
@@ -211,3 +211,4 @@
     *   在执行 `git commit` 操作时，我必须使用 `git commit -F commit_message.txt` 的方式提交。
     *   在执行 `git commit` 操作后，我必须使用 `del commit_message.txt` 删除临时文件。
 3.  **GEMINI.md 更新与维护:** 当项目出现新的产品需求或核心功能定义时，我将主动请求更新 `GEMINI.md`。在更新过程中，若发现与现有规则存在冲突，我将寻求用户确认，以确保关键信息不被误删或遗漏。
+4.  **数据库文件路径规范:** 鉴于 Next.js 构建环境的特殊性，为确保数据库文件 `database.db` 始终能被正确访问，应使用 `path.join(process.cwd(), 'database.db')` 来构建数据库文件的绝对路径。这能保证无论在开发环境还是生产构建后，应用程序都能正确找到位于项目根目录的数据库文件。

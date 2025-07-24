@@ -1,5 +1,16 @@
-const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('./database.db');
+import sqlite3 from 'sqlite3';
+import path from 'path';
+
+const dbPath = path.join(process.cwd(), 'database.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    console.log(`Attempting to connect to database at: ${dbPath}`);
+    if (err) {
+        console.error('Error opening database:', err.message);
+    } else {
+        console.log('Connected to the SQLite database.');
+        // ... (rest of the database initialization)
+    }
+});
 
 db.serialize(() => {
   db.run(`
@@ -166,4 +177,4 @@ function query(sql, params = []) {
   });
 }
 
-module.exports = { db, query };
+export { db, query };

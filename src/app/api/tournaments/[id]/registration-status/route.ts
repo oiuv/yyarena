@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/utils/auth';
-const { query } = require('@/database');
+import { db, query } from '@/database.mjs';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const tournamentId = params.id;

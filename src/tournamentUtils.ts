@@ -1,4 +1,4 @@
-const { db, query } = require('@/database.js');
+import { db, query } from './database.mjs';
 
 interface Match {
   tournament_id: number;
