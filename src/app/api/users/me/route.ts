@@ -4,7 +4,7 @@ import { jwtDecode } from 'jwt-decode';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-default-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 export async function PUT(request: NextRequest) {
   const token = request.headers.get('Authorization')?.split(' ')[1];
@@ -126,7 +126,7 @@ export async function PUT(request: NextRequest) {
         stream_url: updatedUser.stream_url,
         avatar: updatedUser.avatar
       },
-      JWT_SECRET,
+      JWT_SECRET!,
       { expiresIn: '8h' }
     );
 

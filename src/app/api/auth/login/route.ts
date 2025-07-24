@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto'; // Import randomUUID
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-default-secret-key'; // It's better to use an environment variable for the secret
+const JWT_SECRET = process.env.JWT_SECRET; // It's better to use an environment variable for the secret
 
 export async function POST(request: NextRequest) {
   try {
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
 
     const token = jwt.sign(
       { id: user.id, username: user.username, game_id: user.game_id, character_name: user.character_name, role: tokenRole, stream_url: user.stream_url, avatar: user.avatar, uuid: user.uuid },
-      JWT_SECRET,
+      JWT_SECRET!,
       { expiresIn: '8h' }
     );
 

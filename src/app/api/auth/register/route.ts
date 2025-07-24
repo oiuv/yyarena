@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken'; // Import jsonwebtoken
 import { randomUUID } from 'crypto'; // Import randomUUID
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-default-secret-key'; // Ensure this is defined
+const JWT_SECRET = process.env.JWT_SECRET; // Ensure this is defined
 
 export async function POST(request: Request) {
   try {
@@ -153,7 +153,7 @@ export async function POST(request: Request) {
     // Generate JWT token and set as cookie
     const token = jwt.sign(
       { id: user.id, username: user.username, game_id: user.game_id, character_name: user.character_name, role: user.role, stream_url: user.stream_url, avatar: user.avatar, uuid: user.uuid },
-      JWT_SECRET,
+      JWT_SECRET!,
       { expiresIn: '8h' }
     );
 
