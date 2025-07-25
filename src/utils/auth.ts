@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
 
 export function verifyToken(token: string): { id: number; role: string; character_name: string; game_id: string } | null {
   try {

@@ -2,14 +2,23 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-default-secret-key');
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
 
 const protectedRoutes: { [key: string]: { methods: string[], roles: string[] } } = {
   '/api/tournaments': { methods: ['POST'], roles: ['organizer'] },
-  '/api/matches/winner': { methods: ['POST'], roles: ['organizer'] },
   '/api/registrations': { methods: ['POST'], roles: ['player', 'organizer'] },
   '/api/users/me/registrations': { methods: ['GET'], roles: ['player'] },
 };
+
+// 动态路由匹配函数
+function matchProtectedRoute(path: string, method: string): { roles: string[] } | null {
+  // Matches /api/matches/:id/winner
+  const match = path.match(/^\/api\/matches\/(\d+)\/winner$/);
+  if (match && method === 'POST') {
+    return { roles: ['organizer'] };
+  }
+  return null;
+}
 
 const publicPrefixes = [
     '/api/auth',
@@ -64,7 +73,15 @@ export async function middleware(request: NextRequest) {
     const userRole = payload.role as string;
     console.log(`Middleware: Token decoded, UserRole=${userRole}`);
 
-    const routeRule = protectedRoutes[path];
+    let routeRule = protectedRoutes[path];
+    // Check for dynamic routes if static route not found
+    if (!routeRule) {
+      const dynamicRouteRule = matchProtectedRoute(path, method);
+      if (dynamicRouteRule) {
+        routeRule = { methods: [method], roles: dynamicRouteRule.roles };
+      }
+    }
+    
     if (routeRule && routeRule.methods.includes(method)) {
         console.log(`Middleware: Protected route, checking role for path=${path}`);
         if (!routeRule.roles.includes(userRole)) {

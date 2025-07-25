@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto'; // Import randomUUID
 
-const JWT_SECRET = process.env.JWT_SECRET; // It's better to use an environment variable for the secret
+const JWT_SECRET = process.env.JWT_SECRET!; // It's better to use an environment variable for the secret
 
 export async function POST(request: NextRequest) {
   try {

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { db, query } from '@/database.mjs';
 import { jwtVerify } from 'jose';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

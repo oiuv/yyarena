@@ -3,7 +3,7 @@ import { db, query } from '@/database.mjs';
 import { generateMatchesAndStartTournament } from '@/tournamentUtils';
 import { jwtVerify } from 'jose';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-default-secret-key');
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
 
 export async function POST(request: Request) {
   const { tournament_id, character_name, character_id } = await request.json();
