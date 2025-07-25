@@ -202,10 +202,8 @@ export default function PlayerProfile({ playerUuid }: { playerUuid: string }) {
           </h2>
           {matchHistory.length === 0 ? (
             <div className="text-center py-16 bg-[#1A1A1A]/70 rounded-lg border border-[#B89766]/30 shadow-inner">
-              <div className="text-center">
-  <p className="text-xl text-[#F5F5F5]/70 mb-2">江湖之路，尚未开启。</p>
-  <p className="text-xl text-[#F5F5F5]/70">该玩家还没有参与过任何比赛。</p>
-</div>
+              <p className="text-xl text-[#F5F5F5]/70 mb-2">江湖之路，尚未开启。</p>
+              <p className="text-xl text-[#F5F5F5]/70">该玩家还没有参与过任何比赛。</p>
             </div>
           ) : (
             <div className="space-y-6">
