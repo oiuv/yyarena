@@ -47,7 +47,7 @@ db.serialize(() => {
       registration_deadline TEXT NOT NULL, -- 报名截止时间
       min_players INTEGER NOT NULL,
       max_players INTEGER NOT NULL,
-      status TEXT NOT NULL CHECK(status IN ('pending', 'registration_closed', 'ongoing', 'finished', 'failed', 'extended_registration')) DEFAULT 'pending',
+      status TEXT NOT NULL CHECK(status IN ('pending', 'ongoing', 'finished', 'failed')) DEFAULT 'pending',
       prize_settings TEXT, -- JSON string for prize allocation
       event_description TEXT,
       wechat_qr_code_url TEXT, -- 存储图片URL，可选
