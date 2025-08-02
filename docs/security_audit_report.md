@@ -4,15 +4,16 @@
 
 **总结发现的潜在安全漏洞：**
 
-1.  **硬编码的 `JWT_SECRET` (严重):**
-    *   `src/app/api/auth/register/route.ts`
-    *   `src/app/api/auth/login/route.ts`
-    *   `src/app/api/prizes/prizeById.ts`
-    *   `src/app/api/users/me/route.ts`
-    *   `src/utils/auth.ts`
-    *   **风险:** 在生产环境中使用硬编码的密钥会使系统极易受到攻击，攻击者可以伪造 JWT 令牌，从而绕过认证和授权。
+1.  ~~**硬编码的 `JWT_SECRET` (严重):**~~
+    ~~*   `src/app/api/auth/register/route.ts`~~
+    ~~*   `src/app/api/auth/login/route.ts`~~
+    ~~*   `src/app/api/prizes/prizeById.ts`~~
+    ~~*   `src/app/api/users/me/route.ts`~~
+    ~~*   `src/utils/auth.ts`~~
+    ~~*   **风险:** 在生产环境中使用硬编码的密钥会使系统极易受到攻击，攻击者可以伪造 JWT 令牌，从而绕过认证和授权。~~
+    *   **状态:** ✅ **已修复** - 所有JWT_SECRET已改为从环境变量获取
 
-2.  **输入验证不足 (中等):**
+2.  **输入验证不足 (中等):
     *   `src/app/api/users/me/avatar/route.ts` (PUT 方法中的 `avatar` 字段)
     *   `src/app/api/tournaments/[id]/route.ts` (PUT 方法中的文件上传类型)
     *   `src/app/api/users/me/route.ts` (PUT 方法中的 `stream_url` 和 `avatar` 字段)

@@ -57,6 +57,25 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Check if user is banned
+    const banCheck = await new Promise((resolve, reject) => {
+      db.get(`
+        SELECT * FROM UserBans 
+        WHERE user_id = ? AND (expires_at IS NULL OR expires_at > datetime('now'))
+        ORDER BY banned_at DESC LIMIT 1
+      `, [user.id], (err: Error | null, row: any) => {
+        if (err) reject(err);
+        resolve(row);
+      });
+    });
+
+    if (banCheck) {
+      const banInfo = banCheck as { reason: string; expires_at?: string };
+      return NextResponse.json({ 
+        message: `账号已被封禁${banInfo.expires_at ? '（临时封禁）' : '（永久封禁）'}：${banInfo.reason}` 
+      }, { status: 403 });
+    }
+
     let tokenRole = user.role;
     // If logging in via game_id or phone_number, the token role should always be 'player'
     if (game_id || phone_number) {

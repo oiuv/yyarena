@@ -21,7 +21,7 @@ db.serialize(() => {
       game_id TEXT UNIQUE, -- For players
       character_name TEXT UNIQUE, -- For players
       phone_number TEXT, -- Optional for players
-      role TEXT NOT NULL CHECK(role IN ('organizer', 'player')),
+      role TEXT NOT NULL CHECK(role IN ('organizer', 'player', 'admin')),
       stream_url TEXT, -- 主播直播间/主页地址，可选
       avatar TEXT DEFAULT '000.webp' -- Add avatar column with default value
     )
@@ -161,6 +161,19 @@ db.serialize(() => {
       FOREIGN KEY (player1_id) REFERENCES Users(id),
       FOREIGN KEY (player2_id) REFERENCES Users(id),
       FOREIGN KEY (winner_id) REFERENCES Users(id)
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS UserBans (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      reason TEXT NOT NULL,
+      banned_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      banned_by INTEGER NOT NULL,
+      expires_at TEXT,
+      FOREIGN KEY (user_id) REFERENCES Users(id),
+      FOREIGN KEY (banned_by) REFERENCES Users(id)
     )
   `);
 });
