@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-
+import toast from 'react-hot-toast';
 import Image from 'next/image';
+import ConfirmationToast from '@/components/ConfirmationToast';
 
 function getToken() {
   const name = 'token=';
@@ -134,31 +135,38 @@ export default function ManagePrizesPage() {
                     编辑
                   </Link>
                   <button
-                    onClick={async () => {
-                      const confirmDelete = window.confirm('确定要删除此奖品吗？');
-                      if (!confirmDelete) return;
+                    onClick={() => {
+                      toast.custom((t) => (
+                        <ConfirmationToast
+                          t={t}
+                          message="确定要删除此奖品吗？删除后无法恢复。"
+                          onConfirm={async () => {
+                            const token = getToken();
+                            if (!token) {
+                              setMessage('未授权：请以主办方身份登录。');
+                              return;
+                            }
 
-                      const token = getToken();
-                      if (!token) {
-                        setMessage('未授权：请以主办方身份登录。');
-                        return;
-                      }
-
-                      try {
-                        const res = await fetch(`/api/prizes/prizeById?id=${prize.id}`, {
-                          method: 'DELETE',
-                          headers: { 'Authorization': `Bearer ${token}` },
-                        });
-                        if (res.ok) {
-                          setMessage('奖品删除成功！');
-                          fetchPrizes();
-                        } else {
-                          const data = await res.json();
-                          setMessage(data.error || '删除奖品失败。');
-                        }
-                      } catch (error) {
-                        setMessage('删除奖品时发生错误。');
-                      }
+                            try {
+                              const res = await fetch(`/api/prizes/prizeById?id=${prize.id}`, {
+                                method: 'DELETE',
+                                headers: { 'Authorization': `Bearer ${token}` },
+                              });
+                              if (res.ok) {
+                                toast.success('奖品删除成功！');
+                                fetchPrizes();
+                              } else {
+                                const data = await res.json();
+                                toast.error(data.error || '删除奖品失败。');
+                              }
+                            } catch (error) {
+                              console.error('Error deleting prize:', error);
+                              toast.error('删除奖品时发生错误。');
+                            }
+                          }}
+                          onCancel={() => {}}
+                        />
+                      ));
                     }}
                     className="text-red-500 hover:underline"
                   >

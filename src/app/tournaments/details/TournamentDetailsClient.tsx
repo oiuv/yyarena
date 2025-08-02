@@ -218,10 +218,28 @@ export default function TournamentDetailsClient() {
     const tournamentStartTime = new Date(tournament.start_time);
 
     if (now < tournamentStartTime) {
-      const confirmStart = window.confirm('比赛尚未到开始时间，确定要提前开始吗？');
-      if (!confirmStart) {
+      toast.custom((t) => (
+        <ConfirmationToast
+          t={t}
+          message="比赛尚未到开始时间，确定要提前开始吗？"
+          onConfirm={async () => {
+            await proceedWithStart();
+          }}
+          onCancel={() => {}}
+        />
+      ));
+      return;
+    }
+
+    // 如果不需要确认，直接执行开始
+    await proceedWithStart();
+  };
+
+  const proceedWithStart = async () => {
+    const token = getToken();
+    if (!token) {
+        toast.error('请先登录');
         return;
-      }
     }
 
     try {
