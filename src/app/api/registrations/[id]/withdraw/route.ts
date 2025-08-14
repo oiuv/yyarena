@@ -13,7 +13,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   const token = authHeader.split(' ')[1];
   const decodedToken = verifyToken(token);
 
-  if (!decodedToken || typeof decodedToken === 'string' || decodedToken.role !== 'player') {
+  if (!decodedToken || typeof decodedToken === 'string') {
     return NextResponse.json({ message: '无权限' }, { status: 403 });
   }
   const playerId = decodedToken.id;
