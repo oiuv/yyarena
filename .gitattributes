@@ -1,0 +1,21 @@
+# 设置所有文本文件默认使用LF换行
+* text=auto eol=lf
+
+# 确保Windows批处理文件使用CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 确保Unix脚本使用LF
+*.sh text eol=lf
+
+# 二进制文件不进行换行转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.db binary
+*.sqlite binary
+*.sqlite3 binary
