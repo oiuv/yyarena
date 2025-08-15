@@ -77,6 +77,35 @@
 - 所有数据库操作应使用src/database.mjs中的查询辅助函数
 - 文件上传使用基于UUID的文件名以避免兼容性问题
 
+## 数据库命名规范（未来开发标准）
+
+### 用户标识字段统一
+- **主键**: `id` (Users表主键)
+- **外键引用**: `user_id` (所有引用Users.id的字段统一使用)
+- **角色特定引用**: `{role}_user_id` (如organizer_user_id, winner_user_id)
+- **操作者ID**: `operator_user_id` (用于记录操作执行者)
+
+### 游戏角色标识统一
+- **游戏角色编号**: `character_id` (燕云十六声游戏内角色唯一编号)
+- **游戏角色名称**: `character_name` (游戏内角色昵称)
+
+### 命名规范对照表
+| 当前实际命名 | 推荐规范命名 | 适用场景 |
+|-------------|-------------|----------|
+| `game_id` | `character_id` | 游戏角色唯一编号 |
+| `character_id` | `character_id` | ✅ 已符合规范 |
+| `player_id` | `user_id` | 引用Users表主键 |
+| `organizer_id` | `organizer_user_id` | 比赛主办方用户ID |
+| `winner_id` | `winner_user_id` | 比赛获胜者用户ID |
+| `banned_by` | `operator_user_id` | 执行封禁的管理员ID |
+| `awarded_by` | `operator_user_id` | 发放奖品的管理员ID |
+
+### 字段类型规范
+- 用户ID字段: INTEGER 类型
+- 角色ID字段: TEXT 类型 (游戏角色编号为字符串)
+- 时间字段: DATETIME 类型
+- 状态字段: TEXT 类型 (使用预定义枚举值)
+
 ## 测试
 
 - 通过UI进行手动测试
