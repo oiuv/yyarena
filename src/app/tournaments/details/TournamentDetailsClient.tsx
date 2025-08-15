@@ -408,7 +408,6 @@ export default function TournamentDetailsClient() {
 
         const data = await res.json();
         if (res.ok) {
-          toast.success('比赛结果确认成功！');
           await fetchDetails();
           const updatedMatchElement = document.getElementById(`match-${match.id}`);
           if (updatedMatchElement) {

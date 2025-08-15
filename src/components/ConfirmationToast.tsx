@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 
 interface ConfirmationToastProps {
   t: any; // toast object provided by react-hot-toast
-  message: string;
+  message: React.ReactNode; // 支持JSX内容
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -36,9 +36,15 @@ const ConfirmationToast: React.FC<ConfirmationToastProps> = ({ t, message, onCon
             </svg>
           </div>
           <div className="ml-3 flex-1">
-            <p className="text-sm font-medium text-brand-ivory">
-              {message}
-            </p>
+            {typeof message === 'string' ? (
+              <p className="text-sm font-medium text-brand-ivory">
+                {message}
+              </p>
+            ) : (
+              <div className="text-sm font-medium text-brand-ivory">
+                {message}
+              </div>
+            )}
           </div>
         </div>
       </div>
