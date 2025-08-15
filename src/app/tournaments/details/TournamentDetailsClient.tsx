@@ -63,6 +63,7 @@ export default function TournamentDetailsClient() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [matchSelections, setMatchSelections] = useState<{[matchId: number]: { winnerSelection: number | 'forfeit_player1' | 'forfeit_player2' | 'forfeit_both' | null, matchFormat: string }}>({}); // New state for individual match selections
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
+  const [isEditRoomModalOpen, setIsEditRoomModalOpen] = useState(false);
   const [roomInfo, setRoomInfo] = useState<{ name: string, number: string, pass: string, livestreamUrl: string }>({ name: '', number: '', pass: '', livestreamUrl: '' });
   const [roomDetails, setRoomDetails] = useState<{ room_name: string, room_number: string, room_password: string, livestreamUrl: string } | null>(null);
   const [registeredPlayers, setRegisteredPlayers] = useState<any[]>([]); // New state for registered players when no matches
@@ -206,6 +207,17 @@ export default function TournamentDetailsClient() {
     setIsRoomModalOpen(true);
   };
 
+  const handleEditRoomInfo = async () => {
+    // 预填充现有信息
+    setRoomInfo({
+      name: roomDetails?.room_name || '',
+      number: roomDetails?.room_number || '',
+      pass: roomDetails?.room_password || '',
+      livestreamUrl: roomDetails?.livestreamUrl || ''
+    });
+    setIsEditRoomModalOpen(true);
+  };
+
   const handleSubmitRoomInfoAndStart = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = getToken();
@@ -256,6 +268,42 @@ export default function TournamentDetailsClient() {
         if (res.ok) {
             toast.success('比赛已成功开始！');
             window.location.reload();
+        } else {
+            toast.error(`错误: ${data.message}`);
+        }
+    } catch (err) {
+        toast.error('一个未知错误发生');
+    }
+  };
+
+  const handleSubmitRoomInfoOnly = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = getToken();
+    if (!token) {
+        toast.error('请先登录');
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/tournaments/${tournamentId}/room-info-update`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ 
+                room_name: roomInfo.name, 
+                room_number: roomInfo.number, 
+                room_password: roomInfo.pass, 
+                livestream_url: roomInfo.livestreamUrl 
+            }),
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+            toast.success('比赛信息更新成功！');
+            setIsEditRoomModalOpen(false);
+            fetchDetails(); // 重新获取数据以更新显示
         } else {
             toast.error(`错误: ${data.message}`);
         }
@@ -661,12 +709,20 @@ export default function TournamentDetailsClient() {
           {/* 直播信息 */}
           <div className="p-4 bg-[#2A2A2A] rounded-lg flex flex-col items-center justify-center text-center border border-[#B89766]/50">
             <h3 className="text-xl font-bold mb-2 text-[#B89766]">直播信息</h3>
-            {tournament && tournament.livestream_url && tournament.status === 'ongoing' ? (
-              <a href={tournament.livestream_url} target="_blank" rel="noopener noreferrer">
-                <button className="bg-[#C83C23] hover:bg-[#B89766] text-white font-bold py-2 px-4 rounded">
-                  正在直播中
-                </button>
-              </a>
+            {tournament && tournament.livestream_url ? (
+              tournament.status === 'ongoing' ? (
+                <a href={tournament.livestream_url} target="_blank" rel="noopener noreferrer">
+                  <button className="bg-[#C83C23] hover:bg-[#B89766] text-white font-bold py-2 px-4 rounded">
+                    正在直播中
+                  </button>
+                </a>
+              ) : (
+                <a href={tournament.livestream_url} target="_blank" rel="noopener noreferrer">
+                  <button className="bg-[#B89766] hover:bg-[#C83C23] text-white font-bold py-2 px-4 rounded">
+                    进入直播间
+                  </button>
+                </a>
+              )
             ) : (
               <p className="text-gray-400">暂无直播</p>
             )}
@@ -786,12 +842,20 @@ export default function TournamentDetailsClient() {
       </div>
 
       {isOrganizer && tournament.status === 'pending' && (
-        <button 
-          onClick={handleStartTournament} 
-          className="bg-[#B89766] hover:bg-[#C83C23] text-white font-bold py-2 px-4 rounded mb-8"
-        >
-          {isTournamentUpcoming ? '提前开始比赛' : '开始比赛'}
-        </button>
+        <div className="flex gap-4 mb-8">
+          <button 
+            onClick={handleStartTournament} 
+            className="bg-[#B89766] hover:bg-[#C83C23] text-white font-bold py-2 px-4 rounded"
+          >
+            {isTournamentUpcoming ? '提前开始比赛' : '开始比赛'}
+          </button>
+          <button 
+            onClick={handleEditRoomInfo} 
+            className="bg-[#1A1A1A] border border-[#B89766] hover:bg-[#B89766] text-[#B89766] hover:text-white font-bold py-2 px-4 rounded transition-colors duration-300"
+          >
+            {roomDetails?.room_name ? '编辑房间信息' : '填写房间信息'}
+          </button>
+        </div>
       )}
 
       {isRoomModalOpen && (
@@ -857,6 +921,76 @@ export default function TournamentDetailsClient() {
                 </button>
                 <button type="submit" className="bg-[#B89766] hover:bg-[#C83C23] text-white font-bold py-2 px-4 rounded">
                   确认并开始比赛
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isEditRoomModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-[#2A2A2A] p-8 rounded-lg shadow-xl border border-[#B89766]/50">
+            <h2 className="text-2xl font-bold mb-4 text-[#B89766]">{roomDetails?.room_name ? '编辑砺兵台房间信息' : '填写砺兵台房间信息'}</h2>
+            <form onSubmit={handleSubmitRoomInfoOnly}>
+              <div className="mb-4">
+                <label htmlFor="editRoomName" className="block mb-2 text-[#B89766]">房间名</label>
+                <input
+                  id="editRoomName"
+                  type="text"
+                  value={roomInfo.name}
+                  onChange={(e) => setRoomInfo({ ...roomInfo, name: e.target.value })}
+                  className="w-full p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white"
+                  maxLength={9}
+                  placeholder="请填写在游戏中创建的砺兵台房间名称 (限制9个字符)"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label htmlFor="editRoomNumber" className="block mb-2 text-[#B89766]">房间ID</label>
+                <input
+                  id="editRoomNumber"
+                  type="text"
+                  value={roomInfo.number}
+                  onChange={(e) => setRoomInfo({ ...roomInfo, number: e.target.value })}
+                  className="w-full p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white"
+                  maxLength={10}
+                  pattern="\d{10}"
+                  placeholder="请填写在游戏中创建的砺兵台房间ID (10位数字)"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label htmlFor="editRoomPassword" className="block mb-2 text-[#B89766]">房间密码 (可选)</label>
+                <input
+                  id="editRoomPassword"
+                  type="text"
+                  value={roomInfo.pass}
+                  onChange={(e) => setRoomInfo({ ...roomInfo, pass: e.target.value })}
+                  className="w-full p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white"
+                  maxLength={4}
+                  pattern="\d{4}"
+                  placeholder="请填写房间密码 (4位数字，无密码则留空)"
+                />
+              </div>
+              <div className="mb-4">
+                <label htmlFor="editLivestreamUrl" className="block mb-2 text-[#B89766]">直播网址 (可选)</label>
+                <input
+                  id="editLivestreamUrl"
+                  type="url"
+                  value={roomInfo.livestreamUrl}
+                  onChange={(e) => setRoomInfo({ ...roomInfo, livestreamUrl: e.target.value })}
+                  className="w-full p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white"
+                  placeholder="例如: https://live.douyin.com/244993118346"
+                />
+              </div>
+              <p className="text-sm text-gray-400 mb-4">提示：创建房间的玩法类型必须是1V1，挑战模式必须是管理模式。</p>
+              <div className="flex justify-end gap-4">
+                <button type="button" onClick={() => setIsEditRoomModalOpen(false)} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                  取消
+                </button>
+                <button type="submit" className="bg-[#B89766] hover:bg-[#C83C23] text-white font-bold py-2 px-4 rounded">
+                  确认更新
                 </button>
               </div>
             </form>
