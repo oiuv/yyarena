@@ -176,6 +176,24 @@ db.serialize(() => {
       FOREIGN KEY (banned_by) REFERENCES Users(id)
     )
   `);
+
+  // 额外获奖记录表（用于直播间抽奖、解说奖等非比赛标准奖品）
+  db.run(`
+    CREATE TABLE IF NOT EXISTS ExtraAwards (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tournament_id INTEGER,
+      game_id TEXT NOT NULL,
+      prize_id INTEGER NOT NULL,
+      prize_description TEXT,
+      remark TEXT,
+      awarded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      awarded_by INTEGER NOT NULL,
+      FOREIGN KEY (tournament_id) REFERENCES Tournaments(id),
+      FOREIGN KEY (game_id) REFERENCES Users(game_id),
+      FOREIGN KEY (prize_id) REFERENCES Prizes(id),
+      FOREIGN KEY (awarded_by) REFERENCES Users(id)
+    )
+  `);
 });
 
 function query(sql, params = []) {

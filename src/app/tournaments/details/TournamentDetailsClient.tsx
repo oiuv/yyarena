@@ -78,6 +78,12 @@ export default function TournamentDetailsClient() {
   const [registrationCodeInput, setRegistrationCodeInput] = useState('');
   const [isUserRegistered, setIsUserRegistered] = useState(false);
   const [userRegistrationId, setUserRegistrationId] = useState<number | null>(null);
+  const [extraAwards, setExtraAwards] = useState<any[]>([]);
+  const [editingExtraAward, setEditingExtraAward] = useState<any | null>(null);
+  const [editGameId, setEditGameId] = useState('');
+  const [editPrizeId, setEditPrizeId] = useState('');
+  const [editPrizeDesc, setEditPrizeDesc] = useState('');
+  const [editRemark, setEditRemark] = useState('');
 
   // Derived states - these depend on other states and should be re-calculated on each render
   const isOrganizer = currentUser && currentUser.role === 'organizer' && tournament && currentUser.id === tournament.organizer_id;
@@ -93,18 +99,20 @@ export default function TournamentDetailsClient() {
     const token = getToken();
 
     try {
-      const [tournamentRes, matchesRes, prizesRes, awardedPrizesRes, registrationStatusRes] = await Promise.all([
+      const [tournamentRes, matchesRes, prizesRes, awardedPrizesRes, registrationStatusRes, extraAwardsRes] = await Promise.all([
         fetch(`/api/tournaments/${tournamentId}`),
         fetch(`/api/tournaments/${tournamentId}/matches`),
         fetch(`/api/prizes`),
         fetch(`/api/tournaments/${tournamentId}/awards`),
-        token ? fetch(`/api/tournaments/${tournamentId}/registration-status`, { headers: { 'Authorization': `Bearer ${token}` } }) : Promise.resolve(null)
+        token ? fetch(`/api/tournaments/${tournamentId}/registration-status`, { headers: { 'Authorization': `Bearer ${token}` } }) : Promise.resolve(null),
+        fetch(`/api/tournaments/${tournamentId}/extra-awards`)
       ]);
 
       const tournamentData = await tournamentRes.json();
       const matchesData = await matchesRes.json();
       const prizesData = await prizesRes.json();
       const awardedPrizesData = await awardedPrizesRes.json();
+      const extraAwardsData = await extraAwardsRes.json();
 
       console.log('Tournament Data:', tournamentData);
       console.log('Tournament Status:', tournamentData.status);
@@ -117,6 +125,7 @@ export default function TournamentDetailsClient() {
       setMatches(matchesData);
       setPrizes(prizesData);
       setAwardedPrizes(awardedPrizesData);
+      setExtraAwards(extraAwardsData);
 
       if (registrationStatusRes && registrationStatusRes.ok) {
         const regData = await registrationStatusRes.json();
@@ -409,6 +418,137 @@ export default function TournamentDetailsClient() {
     }));
   };
 
+  const [addGameId, setAddGameId] = useState('');
+  const [addPrizeId, setAddPrizeId] = useState('');
+  const [addPrizeDesc, setAddPrizeDesc] = useState('');
+  const [addRemark, setAddRemark] = useState('');
+
+  const handleAddExtraAward = async () => {
+    const token = getToken();
+    if (!token) {
+      toast.error('请先登录');
+      return;
+    }
+
+    if (!addGameId || !addPrizeId) {
+      toast.error('请填写游戏角色编号并选择奖品');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/tournaments/${tournamentId}/extra-awards`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          game_id: addGameId,
+          prize_id: parseInt(addPrizeId),
+          prize_description: addPrizeDesc,
+          remark: addRemark,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        toast.success('额外奖品添加成功！');
+        fetchDetails(); // 重新获取数据
+        // 清空表单
+        setAddGameId('');
+        setAddPrizeId('');
+        setAddPrizeDesc('');
+        setAddRemark('');
+      } else {
+        toast.error(`错误: ${data.message}`);
+      }
+    } catch (err) {
+      toast.error('添加失败，请检查游戏角色编号是否正确');
+    }
+  };
+
+  const handleEditExtraAward = (award: any) => {
+    setEditingExtraAward(award);
+    setEditGameId(award.game_id);
+    setEditPrizeId(award.prize_id?.toString() || '');
+    setEditPrizeDesc(award.prize_description || '');
+    setEditRemark(award.remark || '');
+  };
+
+  const handleUpdateExtraAward = async () => {
+    const token = getToken();
+    if (!token || !editingExtraAward) return;
+
+    if (!editGameId || !editPrizeId) {
+      toast.error('请填写游戏角色编号并选择奖品');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/tournaments/${tournamentId}/extra-awards/${editingExtraAward.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          game_id: editGameId,
+          prize_id: parseInt(editPrizeId),
+          prize_description: editPrizeDesc,
+          remark: editRemark,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        toast.success('额外奖品更新成功！');
+        fetchDetails();
+        setEditingExtraAward(null);
+      } else {
+        toast.error(`错误: ${data.message}`);
+      }
+    } catch (err) {
+      toast.error('更新失败，请检查游戏角色编号是否正确');
+    }
+  };
+
+  const handleDeleteExtraAward = async (awardId: number) => {
+    const token = getToken();
+    if (!token) return;
+
+    toast.custom((t) => (
+      <ConfirmationToast
+        t={t}
+        message="确定要删除这条额外奖品记录吗？"
+        onConfirm={async () => {
+          try {
+            const res = await fetch(`/api/tournaments/${tournamentId}/extra-awards/${awardId}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+              toast.success('额外奖品删除成功！');
+              fetchDetails();
+            } else {
+              toast.error(`错误: ${data.message}`);
+            }
+          } catch (err) {
+            toast.error('删除失败');
+          }
+        }}
+        onCancel={() => {}}
+      />
+    ));
+  };
+
+  const handleCancelEdit = () => {
+    setEditingExtraAward(null);
+  };
+
   const handlePrizeSelectionChange = (playerId: string, prizeId: string) => {
     setSelectedPrizes(prev => ({
       ...prev,
@@ -429,7 +569,7 @@ export default function TournamentDetailsClient() {
     setPrizeRemarks(prev => ({ ...prev, [award.player_id]: award.remark || '' }));
   };
 
-  const handleCancelEdit = () => {
+  const handleCancelAwardEdit = () => {
     setEditingAwardId(null);
     // Optionally clear selectedPrizes and prizeRemarks for the cancelled edit
   };
@@ -1086,7 +1226,7 @@ export default function TournamentDetailsClient() {
                                   {awarding === player.player_id ? '保存中...' : '保存'}
                                 </button>
                                 <button
-                                  onClick={handleCancelEdit}
+                                  onClick={handleCancelAwardEdit}
                                   className="p-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200 font-bold"
                                 >
                                   取消
@@ -1146,6 +1286,209 @@ export default function TournamentDetailsClient() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* 额外奖品展示 */}
+      {tournament.status === 'finished' && (
+        <div className="w-full max-w-6xl bg-[#2A2A2A] rounded-lg shadow-md p-6 mb-8 border border-[#B89766]/50">
+          <h2 className="text-3xl font-bold mb-4 text-center text-[#B89766]">🎁 额外奖品 🎁</h2>
+          
+          {isOrganizer && (
+            <div className="mb-6 p-4 border border-[#B89766]/30 rounded-lg">
+              <p className="text-sm text-gray-300 mb-3">说明：此区域用于记录直播间抽奖、解说互动奖、特殊贡献奖等非比赛标准奖品的发放。</p>
+              
+              {editingExtraAward ? (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-bold text-[#B89766] mb-2">编辑额外奖品</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-[#B89766] mb-2">游戏角色编号</label>
+                      <input
+                        type="text"
+                        placeholder="请输入玩家游戏角色编号"
+                        value={editGameId}
+                        onChange={(e) => setEditGameId(e.target.value)}
+                        className="w-full p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#B89766] mb-2">奖品</label>
+                      <select
+                        value={editPrizeId}
+                        onChange={(e) => setEditPrizeId(e.target.value)}
+                        className="w-full p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white"
+                      >
+                        <option value="">选择奖品</option>
+                        {prizes.map(prize => (
+                          <option key={prize.id} value={prize.id}>{prize.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-[#B89766] mb-2">具体奖品</label>
+                      <input
+                        type="text"
+                        placeholder="具体奖品详情（如：时装红尘书）"
+                        value={editPrizeDesc}
+                        onChange={(e) => setEditPrizeDesc(e.target.value)}
+                        className="w-full p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#B89766] mb-2">备注</label>
+                      <input
+                        type="text"
+                        placeholder="奖励来源（如：直播间抽奖）"
+                        value={editRemark}
+                        onChange={(e) => setEditRemark(e.target.value)}
+                        className="w-full p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-center gap-4">
+                    <button
+                      onClick={handleUpdateExtraAward}
+                      className="bg-[#B89766] hover:bg-[#C83C23] text-white font-bold py-2 px-6 rounded transition-colors duration-300"
+                    >
+                      保存修改
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded transition-colors duration-300"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-sm font-medium text-[#B89766] mb-2">游戏角色编号</label>
+                      <input
+                        type="text"
+                        placeholder="请输入玩家游戏角色编号"
+                        value={addGameId}
+                        onChange={(e) => setAddGameId(e.target.value)}
+                        className="w-full p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#B89766] mb-2">奖品</label>
+                      <select
+                        value={addPrizeId}
+                        onChange={(e) => setAddPrizeId(e.target.value)}
+                        className="w-full p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white"
+                      >
+                        <option value="">选择奖品</option>
+                        {prizes.map(prize => (
+                          <option key={prize.id} value={prize.id}>{prize.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-sm font-medium text-[#B89766] mb-2">具体奖品</label>
+                      <input
+                        type="text"
+                        placeholder="具体奖品详情（如：时装红尘书）"
+                        value={addPrizeDesc}
+                        onChange={(e) => setAddPrizeDesc(e.target.value)}
+                        className="w-full p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#B89766] mb-2">备注</label>
+                      <input
+                        type="text"
+                        placeholder="奖励来源（如：直播间抽奖）"
+                        value={addRemark}
+                        onChange={(e) => setAddRemark(e.target.value)}
+                        className="w-full p-2 border rounded bg-[#1A1A1A] border-[#B89766]/50 text-white"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-center">
+                    <button
+                      onClick={handleAddExtraAward}
+                      className="bg-[#B89766] hover:bg-[#C83C23] text-white font-bold py-2 px-6 rounded transition-colors duration-300 min-w-[120px]"
+                    >
+                      添加额外奖品记录
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {extraAwards.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-700">
+                <thead className="bg-[#1A1A1A]">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[#B89766] uppercase tracking-wider">玩家</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[#B89766] uppercase tracking-wider">奖品</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[#B89766] uppercase tracking-wider">备注</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[#B89766] uppercase tracking-wider">时间</th>
+                    {isOrganizer && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[#B89766] uppercase tracking-wider">操作</th>}
+                  </tr>
+                </thead>
+                <tbody className="bg-[#2A2A2A] divide-y divide-gray-700">
+                  {extraAwards.map((award: any) => (
+                    <tr key={award.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-8 w-8">
+                            <Image
+                              src={award.avatar ? `/avatars/${award.avatar}` : '/avatars/000.webp'}
+                              alt={award.character_name}
+                              width={32}
+                              height={32}
+                              className="rounded-full"
+                            />
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-[#F5F5F5]">{award.character_name}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#F5F5F5]">{award.prize_name} {award.prize_description && `(${award.prize_description})`}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{award.remark || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{new Date(award.awarded_at).toLocaleString()}</td>
+                      {isOrganizer && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#F5F5F5]">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleEditExtraAward(award)}
+                              className="text-blue-400 hover:text-blue-300 font-medium"
+                            >
+                              编辑
+                            </button>
+                            <button
+                              onClick={() => handleDeleteExtraAward(award.id)}
+                              className="text-red-400 hover:text-red-300 font-medium"
+                            >
+                              删除
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          
+          {extraAwards.length === 0 && (
+            <div className="text-center text-gray-400 py-8">
+              <p>暂无额外奖品</p>
+            </div>
+          )}
         </div>
       )}
 
