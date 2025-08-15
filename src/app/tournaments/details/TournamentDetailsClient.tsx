@@ -321,7 +321,7 @@ export default function TournamentDetailsClient() {
     }
   };
 
-  const handleMarkWinner = async (match: any) => { // Removed winnerSelection and selectedMatchFormat from params
+  const handleMarkWinner = async (match: any) => {
     const currentSelection = matchSelections[match.id];
     if (!currentSelection || !currentSelection.winnerSelection) {
       toast.error('请选择一个获胜者或弃权类型。');
@@ -336,49 +336,91 @@ export default function TournamentDetailsClient() {
 
     let winnerIdToSend: number | null = null;
     let forfeitType: string | null = null;
+    let actionDescription = '';
 
     // Determine winnerIdToSend and forfeitType based on winnerSelection
     if (typeof currentSelection.winnerSelection === 'number') {
       winnerIdToSend = currentSelection.winnerSelection;
+      const winner = match.player1_id === currentSelection.winnerSelection ? match.player1_character_name : match.player2_character_name;
+      actionDescription = `确认 ${winner} 为本场比赛胜者`;
     } else if (currentSelection.winnerSelection === 'forfeit_player1') {
-      winnerIdToSend = match.player2_id; // Player 2 wins by Player 1 forfeiting
+      winnerIdToSend = match.player2_id;
       forfeitType = 'player1';
+      actionDescription = `确认 ${match.player1_character_name} 弃权，${match.player2_character_name} 获胜`;
     } else if (currentSelection.winnerSelection === 'forfeit_player2') {
-      winnerIdToSend = match.player1_id; // Player 1 wins by Player 2 forfeiting
+      winnerIdToSend = match.player1_id;
       forfeitType = 'player2';
+      actionDescription = `确认 ${match.player2_character_name} 弃权，${match.player1_character_name} 获胜`;
     } else if (currentSelection.winnerSelection === 'forfeit_both') {
-      winnerIdToSend = null; // No winner
+      winnerIdToSend = null;
       forfeitType = 'both';
+      actionDescription = '确认双方弃权';
     }
 
-    try {
-      const res = await fetch(`/api/matches/${match.id}/winner`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          winner_id: winnerIdToSend,
-          match_format: currentSelection.matchFormat, // Use individual match format
-          forfeit_type: forfeitType,
-        }),
-      });
+    // 使用promise-based的确认弹窗
+    const confirmContent = (
+      <div className="text-left">
+        <p className="font-bold text-lg mb-2 text-[#B89766]">确认比赛结果</p>
+        <p className="mb-2 text-[#F5F5F5]">{actionDescription}</p>
+        <p className="text-sm text-gray-300 mb-2">
+          比赛：第 {match.round_number} 轮 - {getMatchStage(matches.filter(m => m.round_number === match.round_number).length)}
+        </p>
+        <p className="text-sm text-gray-300 mb-3">
+          赛制：{currentSelection.matchFormat}
+        </p>
+        <div className="bg-red-900/30 border border-red-500 text-red-200 p-2 rounded text-sm">
+          ⚠️ 确认后无法修改，请仔细核对！
+        </div>
+      </div>
+    );
 
-      const data = await res.json();
-      if (res.ok) {
-        console.log('获胜者已标记！响应数据:', data);
-        await fetchDetails(); // Re-fetch data instead of full reload
-        // Scroll to the updated match
-        const updatedMatchElement = document.getElementById(`match-${match.id}`);
-        if (updatedMatchElement) {
-          updatedMatchElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const confirmed = await new Promise((resolve) => {
+      toast.custom((t) => (
+        <ConfirmationToast
+          t={t}
+          message={confirmContent}
+          onConfirm={() => {
+            resolve(true);
+            toast.dismiss(t.id);
+          }}
+          onCancel={() => {
+            resolve(false);
+            toast.dismiss(t.id);
+          }}
+        />
+      ));
+    });
+
+    if (confirmed) {
+      try {
+        const res = await fetch(`/api/matches/${match.id}/winner`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            winner_id: winnerIdToSend,
+            match_format: currentSelection.matchFormat,
+            forfeit_type: forfeitType,
+          }),
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          toast.success('比赛结果确认成功！');
+          await fetchDetails();
+          const updatedMatchElement = document.getElementById(`match-${match.id}`);
+          if (updatedMatchElement) {
+            updatedMatchElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        } else {
+          toast.error(`设置失败：${data.error || data.message}`);
         }
-      } else {
-        console.error(`错误: ${data.error || data.message}`);
+      } catch (err) {
+        console.error('设置比赛结果错误:', err);
+        toast.error('网络错误，请重试');
       }
-    } catch (err) {
-      console.error('一个未知错误发生:', err);
     }
   };
 
@@ -540,7 +582,7 @@ export default function TournamentDetailsClient() {
             toast.error('删除失败');
           }
         }}
-        onCancel={() => {}}
+        onCancel={() => toast.dismiss(t.id)}
       />
     ));
   };
@@ -707,7 +749,7 @@ export default function TournamentDetailsClient() {
             toast.error('退出比赛时发生网络错误。');
           }
         }}
-        onCancel={() => {}}
+        onCancel={() => toast.dismiss(t.id)}
       />
     ));
   };
@@ -1528,9 +1570,15 @@ export default function TournamentDetailsClient() {
                       className="rounded-full border-2 border-blue-500"
                     />
                   )}
-                  <span className="mt-2 text-lg font-medium text-center text-[#F5F5F5]">
+                  <span className={`mt-2 text-lg font-medium text-center ${
+                    match.player1_registration_status === 'forfeited' 
+                      ? 'text-red-400 line-through' 
+                      : 'text-[#F5F5F5]'
+                  }`}>
                     {match.player1_character_name || 'Player 1'}
-                    {match.player1_registration_status === 'forfeited' ? ' (弃权)' : ''}
+                    {match.player1_registration_status === 'forfeited' && 
+                      <span className="ml-1 text-red-400 font-bold">(弃权)</span>
+                    }
                   </span>
                 </div>
 
@@ -1556,9 +1604,15 @@ export default function TournamentDetailsClient() {
                       className="rounded-full border-2 border-[#C83C23]"
                     />
                   )}
-                  <span className="mt-2 text-lg font-medium text-center text-[#F5F5F5]">
+                  <span className={`mt-2 text-lg font-medium text-center ${
+                    match.player2_registration_status === 'forfeited' 
+                      ? 'text-red-400 line-through' 
+                      : 'text-[#F5F5F5]'
+                  }`}>
                     {match.player2_character_name || (match.player2_id === null ? '(轮空)' : 'Player 2')}
-                    {match.player2_registration_status === 'forfeited' ? ' (弃权)' : ''}
+                    {match.player2_registration_status === 'forfeited' && 
+                      <span className="ml-1 text-red-400 font-bold">(弃权)</span>
+                    }
                   </span>
                 </div>
               </div>
@@ -1567,6 +1621,10 @@ export default function TournamentDetailsClient() {
                 {match.winner_id ? (
                   <p className="text-xl font-bold text-green-400">
                     胜者: {match.winner_character_name} (赛制: {match.match_format})
+                  </p>
+                ) : match.status === 'forfeited' ? (
+                  <p className="text-xl font-bold text-red-400">
+                    双方弃权
                   </p>
                 ) : (
                   isOrganizer && match.status === 'pending' ? (
