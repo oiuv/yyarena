@@ -917,12 +917,30 @@ export default function TournamentDetailsClient() {
           <div className="mt-4 p-4 bg-[#2A2A2A] rounded-lg flex flex-col items-center text-center border border-[#B89766]/50">
             <h3 className="text-xl font-bold mb-2 text-[#B89766]">🛡️ 砺兵台房间信息 🛡️</h3>
             <p>房间名: {roomDetails.room_name}  |  房间ID: {roomDetails.room_number}{roomDetails.room_password && `  |  房间密码: ${roomDetails.room_password}`}</p>
+            {isOrganizer && tournament.status === 'pending' && (
+              <button 
+                onClick={handleEditRoomInfo} 
+                className="mt-3 bg-[#1A1A1A] border border-[#B89766] hover:bg-[#B89766] text-[#B89766] hover:text-white font-bold py-2 px-4 rounded transition-colors duration-300 text-sm"
+              >
+                编辑房间信息
+              </button>
+            )}
           </div>
         ) : (
           <div className="mt-4 p-4 bg-[#2A2A2A] rounded-lg flex flex-col items-center text-center text-gray-400 border border-[#B89766]/50">
             <h3 className="text-xl font-bold mb-2 text-[#B89766]">🛡️ 砺兵台房间信息 🛡️</h3>
             { (currentUser && (isOrganizer || isUserRegistered)) ? (
-                <p>（由主办方在正式开赛前填写）</p>
+                <>
+                  <p>（由主办方在正式开赛前填写）</p>
+                  {isOrganizer && tournament.status === 'pending' && (
+                    <button 
+                      onClick={handleEditRoomInfo} 
+                      className="mt-3 bg-[#1A1A1A] border border-[#B89766] hover:bg-[#B89766] text-[#B89766] hover:text-white font-bold py-2 px-4 rounded transition-colors duration-300 text-sm"
+                    >
+                      填写房间信息
+                    </button>
+                  )}
+                </>
               ) : (
                 <p>（房间信息仅对已报名玩家开放，请登录并报名后查看）</p>
               )
@@ -1031,12 +1049,6 @@ export default function TournamentDetailsClient() {
             className="bg-[#B89766] hover:bg-[#C83C23] text-white font-bold py-2 px-4 rounded"
           >
             {isTournamentUpcoming ? '提前开始比赛' : '开始比赛'}
-          </button>
-          <button 
-            onClick={handleEditRoomInfo} 
-            className="bg-[#1A1A1A] border border-[#B89766] hover:bg-[#B89766] text-[#B89766] hover:text-white font-bold py-2 px-4 rounded transition-colors duration-300"
-          >
-            {roomDetails?.room_name ? '编辑房间信息' : '填写房间信息'}
           </button>
         </div>
       )}

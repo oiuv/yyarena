@@ -80,7 +80,7 @@ export default function RootLayout({
             },
           }}
         />
-        <nav className="w-full flex justify-between items-center mb-8 p-4 bg-gray-900 text-white border-b-2 border-amber-600 shadow-lg relative z-50">
+        <nav className="w-full flex justify-between items-center p-4 bg-gray-900 text-white border-b-2 border-amber-600 shadow-lg relative z-50">
           <Link href="/" className="flex items-center">
             <Image
               src="/images/logo.png"
