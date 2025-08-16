@@ -164,7 +164,7 @@ export default function ManagePrizesPage() {
                               toast.error('删除奖品时发生错误。');
                             }
                           }}
-                          onCancel={() => {}}
+                          onCancel={() => toast.dismiss(t.id)}
                         />
                       ));
                     }}

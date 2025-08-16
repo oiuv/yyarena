@@ -244,9 +244,10 @@ export default function TournamentDetailsClient() {
           t={t}
           message="比赛尚未到开始时间，确定要提前开始吗？"
           onConfirm={async () => {
+            toast.dismiss(t.id);
             await proceedWithStart();
           }}
-          onCancel={() => {}}
+          onCancel={() => toast.dismiss(t.id)}
         />
       ));
       return;
@@ -380,12 +381,12 @@ export default function TournamentDetailsClient() {
           t={t}
           message={confirmContent}
           onConfirm={() => {
-            resolve(true);
             toast.dismiss(t.id);
+            resolve(true);
           }}
           onCancel={() => {
-            resolve(false);
             toast.dismiss(t.id);
+            resolve(false);
           }}
         />
       ));
@@ -720,6 +721,7 @@ export default function TournamentDetailsClient() {
         t={t}
         message="您确定要退出本次比赛吗？退出后在报名截止前仍可重新报名。"
         onConfirm={async () => {
+          toast.dismiss(t.id);
           const token = getToken();
           if (!token) {
             toast.error('认证失败，请重新登录。');

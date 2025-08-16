@@ -13,12 +13,10 @@ interface ConfirmationToastProps {
 const ConfirmationToast: React.FC<ConfirmationToastProps> = ({ t, message, onConfirm, onCancel }) => {
   const handleConfirm = () => {
     onConfirm();
-    toast.dismiss(t.id);
   };
 
   const handleCancel = () => {
     onCancel();
-    toast.dismiss(t.id);
   };
 
   return (
