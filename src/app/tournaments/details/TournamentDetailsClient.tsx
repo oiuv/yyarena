@@ -99,14 +99,41 @@ export default function TournamentDetailsClient() {
     const token = getToken();
 
     try {
-      const [tournamentRes, matchesRes, prizesRes, awardedPrizesRes, registrationStatusRes, extraAwardsRes] = await Promise.all([
+      const promises = [
         fetch(`/api/tournaments/${tournamentId}`),
         fetch(`/api/tournaments/${tournamentId}/matches`),
         fetch(`/api/prizes`),
         fetch(`/api/tournaments/${tournamentId}/awards`),
-        token ? fetch(`/api/tournaments/${tournamentId}/registration-status`, { headers: { 'Authorization': `Bearer ${token}` } }) : Promise.resolve(null),
         fetch(`/api/tournaments/${tournamentId}/extra-awards`)
-      ]);
+      ];
+
+      // 添加房间信息获取
+      if (token && (isOrganizer || isUserRegistered)) {
+        promises.push(fetch(`/api/tournaments/${tournamentId}/room-info`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }));
+      } else {
+        promises.push(Promise.resolve(new Response(null, { status: 404 })));
+      }
+
+      // 添加报名状态获取
+      if (token) {
+        promises.push(fetch(`/api/tournaments/${tournamentId}/registration-status`, { 
+          headers: { 'Authorization': `Bearer ${token}` } 
+        }));
+      } else {
+        promises.push(Promise.resolve(new Response(null, { status: 404 })));
+      }
+
+      const [
+        tournamentRes, 
+        matchesRes, 
+        prizesRes, 
+        awardedPrizesRes, 
+        extraAwardsRes,
+        roomInfoRes,
+        registrationStatusRes
+      ] = await Promise.all(promises);
 
       const tournamentData = await tournamentRes.json();
       const matchesData = await matchesRes.json();
@@ -127,10 +154,22 @@ export default function TournamentDetailsClient() {
       setAwardedPrizes(awardedPrizesData);
       setExtraAwards(extraAwardsData);
 
+      // 处理房间信息
+      if (roomInfoRes && roomInfoRes.ok) {
+        const roomData = await roomInfoRes.json();
+        setRoomDetails(roomData);
+      } else {
+        setRoomDetails(null);
+      }
+
+      // 处理报名状态
       if (registrationStatusRes && registrationStatusRes.ok) {
         const regData = await registrationStatusRes.json();
         setIsUserRegistered(regData.isRegistered);
         setUserRegistrationId(regData.registrationId);
+      } else {
+        setIsUserRegistered(false);
+        setUserRegistrationId(null);
       }
 
       // Create a map of player IDs to avatars from the matches data
@@ -174,7 +213,7 @@ export default function TournamentDetailsClient() {
         setError('Failed to fetch tournament details.');
       }
     }
-  }, [tournamentId]);
+  }, [tournamentId, isOrganizer, isUserRegistered]);
 
   useEffect(() => {
     const token = getToken();
@@ -188,27 +227,6 @@ export default function TournamentDetailsClient() {
 
     if (tournamentId) {
       fetchDetails();
-
-      // Fetch room info if user is logged in AND is organizer or registered
-      if (token && (isOrganizer || isUserRegistered)) {
-        const fetchRoomInfo = async () => {
-          try {
-            const res = await fetch(`/api/tournaments/${tournamentId}/room-info`, {
-              headers: { 'Authorization': `Bearer ${token}` },
-            });
-            if (res.ok) {
-              const data = await res.json();
-              setRoomDetails(data);
-            } else {
-              // This console.warn is for unexpected non-200 responses for authorized users
-              console.warn('Room info fetch failed with status:', res.status);
-            }
-          } catch (err) {
-            console.error('Network error fetching room info:', err);
-          }
-        };
-        fetchRoomInfo();
-      }
     }
   }, [tournamentId, fetchDetails, isOrganizer, isUserRegistered]);
 
