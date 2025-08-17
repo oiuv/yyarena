@@ -15,7 +15,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   try {
     const tournament: any = await new Promise((resolve, reject) => {
       db.get(
-        `SELECT T.*, U.stream_url AS organizer_stream_url, U.character_name AS organizer_character_name, U.avatar AS organizer_avatar,
+        `SELECT T.id, T.name, T.organizer_id, T.start_time, T.registration_deadline, T.min_players, T.max_players, T.status, T.prize_settings, T.event_description, T.wechat_qr_code_url, T.room_name, T.room_number, T.livestream_url, T.winner_id, T.default_match_format, T.final_rankings, T.cover_image_url, T.view_count, U.stream_url AS organizer_stream_url, U.character_name AS organizer_character_name, U.avatar AS organizer_avatar,
                 CAST(COUNT(CASE WHEN r.status != 'withdrawn' THEN r.id ELSE NULL END) AS INTEGER) as registeredPlayersCount
          FROM Tournaments T
          JOIN Users U ON T.organizer_id = U.id
